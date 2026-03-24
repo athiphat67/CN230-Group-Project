@@ -39,18 +39,7 @@ focusing on real-world database design and application development.
 
 ## 📁 Project Structure
 ```
-CN230-Group-Project/
-├── frontend/              
-│
-├── backend/               
-│
-├── database/
-│
-├── documents/
-│
-├── .env.example
-├── .gitignore
-└── README.md
+
 ```
 
 ---

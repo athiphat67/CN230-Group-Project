@@ -11,6 +11,10 @@ from flask import Flask, jsonify
 from routes.auth import auth_bp
 from routes.pets import pets_bp
 from routes.staff import staff_bp
+from routes.bookings import bookings_bp
+from routes.invoice import invoice_bp
+from routes.care_logs import care_logs_bp   
+from routes.inventory import inventory_bp
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -35,6 +39,10 @@ def test_connection():
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(pets_bp, url_prefix='/api/pets')
 app.register_blueprint(staff_bp, url_prefix='/api/staff')
+app.register_blueprint(bookings_bp, url_prefix='/api/bookings')
+app.register_blueprint(invoice_bp, url_prefix='/api/invoice')
+app.register_blueprint(care_logs_bp, url_prefix='/api/care-logs')
+app.register_blueprint(inventory_bp, url_prefix='/api/inventory')
 
 if __name__ == '__main__':
     app.run(debug=True)

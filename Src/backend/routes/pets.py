@@ -45,34 +45,38 @@ def add_pet():
     try:
         data = request.get_json()
         
-        # รับข้อมูลจากหน้าเว็บ
         customer_id = data.get('customer_id')
         name = data.get('name')
-        species = data.get('species') # 'DOG' หรือ 'CAT'
+        species = data.get('species')
         breed = data.get('breed')
         weight = data.get('weight')
+        
+        # [NEW] รับข้อมูลสุขภาพมาบังคับกรอก
+        is_vaccinated = data.get('is_vaccinated')
+        vaccine_record = data.get('vaccine_record')
+        medical_condition = data.get('medical_condition', 'ไม่มี')
+        allergy = data.get('allergy', 'ไม่มี')
+
+        # บังคับว่าต้องแจ้งสถานะวัคซีน (ป้องกันการรับสัตว์ที่ไม่ได้ฉีดวัคซีนเข้าพัก)
+        if is_vaccinated is None:
+            return jsonify({"status": "error", "message": "กรุณาระบุสถานะการฉีดวัคซีน"}), 400
 
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # ใช้คำสั่ง INSERT เพื่อสร้างข้อมูลใหม่ (Create)
         query = """
-            INSERT INTO Pet (CustomerID, Name, Species, Breed, Weight)
-            VALUES (%s, %s, %s, %s, %s)
+            INSERT INTO Pet (CustomerID, Name, Species, Breed, Weight, IsVaccinated, VaccineRecord, MedicalCondition, Allergy)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING PetID;
         """
-        cur.execute(query, (customer_id, name, species, breed, weight))
+        cur.execute(query, (customer_id, name, species, breed, weight, is_vaccinated, vaccine_record, medical_condition, allergy))
         new_id = cur.fetchone()[0]
         
         conn.commit()
         cur.close()
         conn.close()
 
-        return jsonify({
-            "status": "success", 
-            "message": f"เพิ่มสัตว์เลี้ยง '{name}' สำเร็จ!",
-            "pet_id": new_id
-        }), 201 # 201 คือ Status Code สำหรับการ Created สำเร็จ
+        return jsonify({"status": "success", "pet_id": new_id}), 201
 
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500

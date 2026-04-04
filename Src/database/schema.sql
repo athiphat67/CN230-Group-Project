@@ -1,3 +1,8 @@
+-- ============================================================
+-- Purrfect Stay — schema.sql (v2 — Business Logic Fixed)
+-- แก้ไข 4 จุด: PARTIAL deposit, Pet NOT NULL, IsChargeable, BookingDetailID
+-- ============================================================
+
 -- ── ENUMS ────────────────────────────────────────────────────
 CREATE TYPE species_enum       AS ENUM ('DOG', 'CAT', 'BIRD', 'OTHER');
 CREATE TYPE attendance_status  AS ENUM ('ONTIME', 'LATE', 'ABSENT');
@@ -9,12 +14,14 @@ CREATE TYPE room_status_enum   AS ENUM ('AVAILABLE', 'OCCUPIED', 'MAINTENANCE');
 CREATE TYPE booking_status     AS ENUM ('PENDING', 'ACTIVE', 'COMPLETED', 'CANCELLED');
 CREATE TYPE food_status_enum   AS ENUM ('ALL', 'LITTLE', 'NONE');
 CREATE TYPE potty_status_enum  AS ENUM ('NORMAL', 'ABNORMAL', 'NONE');
-CREATE TYPE payment_status     AS ENUM ('UNPAID', 'PAID');
+-- [FIX 1] เพิ่ม PARTIAL สำหรับสถานะมัดจำ
+CREATE TYPE payment_status     AS ENUM ('UNPAID', 'PARTIAL', 'PAID');
 
 -- ── 1. CUSTOMER ──────────────────────────────────────────────
 CREATE TABLE Customer (
     CustomerID       SERIAL PRIMARY KEY,
     CustomerUsername VARCHAR(50)  NOT NULL UNIQUE,
+    PasswordHash     VARCHAR(255) NOT NULL,
     FirstName        VARCHAR(255) NOT NULL,
     LastName         VARCHAR(255) NOT NULL,
     PhoneNumber      VARCHAR(20),
@@ -29,7 +36,7 @@ CREATE TABLE Staff (
     PasswordHash  VARCHAR(255) NOT NULL,
     FirstName     VARCHAR(255) NOT NULL,
     LastName      VARCHAR(255) NOT NULL,
-    Role          VARCHAR(50)  NOT NULL,  -- 'ADMIN' | 'STAFF'
+    Role          VARCHAR(50)  NOT NULL,
     IsOnDuty      BOOLEAN      NOT NULL DEFAULT FALSE,
     PhoneNumber   VARCHAR(20),
     StaffEmail    VARCHAR(50)  NOT NULL UNIQUE,
@@ -63,6 +70,7 @@ CREATE TABLE LeaveRecord (
 );
 
 -- ── 5. PET ────────────────────────────────────────────────────
+-- [FIX 2] บังคับ MedicalCondition, Allergy, VaccineRecord ด้วย DEFAULT 'ไม่มี'
 CREATE TABLE Pet (
     PetID            SERIAL PRIMARY KEY,
     CustomerID       INT          NOT NULL REFERENCES Customer(CustomerID) ON DELETE CASCADE,
@@ -70,10 +78,10 @@ CREATE TABLE Pet (
     Species          species_enum NOT NULL,
     Breed            VARCHAR(100),
     Weight           DECIMAL(5,2),
-    MedicalCondition TEXT,
-    Allergy          TEXT,
+    MedicalCondition TEXT         NOT NULL DEFAULT 'ไม่มี',
+    Allergy          TEXT         NOT NULL DEFAULT 'ไม่มี',
     IsVaccinated     BOOLEAN      NOT NULL DEFAULT FALSE,
-    VaccineRecord    TEXT
+    VaccineRecord    TEXT         NOT NULL DEFAULT 'ไม่มี'
 );
 
 -- ── 6. ROOM ───────────────────────────────────────────────────
@@ -109,7 +117,7 @@ CREATE TABLE BookingDetail (
     CONSTRAINT uq_booking_room UNIQUE (BookingID, RoomID)
 );
 
--- ── 9. CARE LOG ───────────────────────────────────────────────
+-- ── 9. CARE LOG ──────────────────────────────────────────────
 CREATE TABLE CareLog (
     LogID            SERIAL PRIMARY KEY,
     BookingDetailID  INT               NOT NULL REFERENCES BookingDetail(BookingDetailID) ON DELETE CASCADE,
@@ -123,26 +131,41 @@ CREATE TABLE CareLog (
 );
 
 -- ── 10. INVENTORY ITEM ────────────────────────────────────────
+-- [FIX 3] เพิ่ม IsChargeable เพื่อแยกของฟรี vs คิดเงิน
 CREATE TABLE InventoryItem (
     ItemID            SERIAL PRIMARY KEY,
     ItemName          VARCHAR(255)  NOT NULL,
     Category          VARCHAR(50),   -- 'FOOD' | 'SUPPLY' | 'SERVICE'
-    QuantityInStock   INT           NOT NULL DEFAULT 0 CHECK (QuantityInStock >= 0),
+    QuantityInStock   INT           NOT NULL DEFAULT 0,
     UnitPrice         DECIMAL(10,2),
-    LowStockThreshold INT           NOT NULL DEFAULT 0
+    LowStockThreshold INT           NOT NULL DEFAULT 0,
+    IsChargeable      BOOLEAN       NOT NULL DEFAULT TRUE,  -- FALSE = ของฟรี/รวมในแพ็กเกจ
+    CONSTRAINT chk_stock_non_negative CHECK (QuantityInStock >= 0)
 );
 
--- ── 11. INVENTORY USAGE ───────────────────────────────────────
--- Note: ผูกกับ Booking โดยตรง (ไม่ต้องผ่าน BookingDetail) เพื่อรวมบิล
+-- ── 11. BOOKING SERVICE ────────────────────────────────────────
+CREATE TABLE BookingService (
+    BookingServiceID SERIAL PRIMARY KEY,
+    BookingID        INT NOT NULL REFERENCES Booking(BookingID) ON DELETE CASCADE,
+    ItemID           INT NOT NULL REFERENCES InventoryItem(ItemID),
+    Quantity         INT NOT NULL DEFAULT 1 CHECK (Quantity > 0),
+    UnitPrice        DECIMAL(10,2) NOT NULL,
+    CONSTRAINT uq_booking_service UNIQUE (BookingID, ItemID)
+);
+
+-- ── 12. INVENTORY USAGE ───────────────────────────────────────
+-- [FIX 4] เปลี่ยนจาก BookingID → BookingDetailID เพื่อระบุตัวสัตว์ที่ใช้ของ
 CREATE TABLE InventoryUsage (
-    UsageID      SERIAL PRIMARY KEY,
-    BookingID    INT       NOT NULL REFERENCES Booking(BookingID),
-    ItemID       INT       NOT NULL REFERENCES InventoryItem(ItemID),
-    QuantityUsed INT       NOT NULL CHECK (QuantityUsed > 0),
-    UsageDate    TIMESTAMP NOT NULL DEFAULT NOW()
+    UsageID         SERIAL PRIMARY KEY,
+    BookingDetailID INT       NOT NULL REFERENCES BookingDetail(BookingDetailID),
+    ItemID          INT       NOT NULL REFERENCES InventoryItem(ItemID),
+    QuantityUsed    INT       NOT NULL CHECK (QuantityUsed > 0),
+    UsageDate       TIMESTAMP NOT NULL DEFAULT NOW(),
+    StaffID         INT       REFERENCES Staff(StaffID)   -- พนักงานที่เบิกของ
 );
 
--- ── 12. INVOICE ───────────────────────────────────────────────
+-- ── 13. INVOICE ───────────────────────────────────────────────
+-- [FIX 1] เพิ่ม DepositPaid สำหรับยอดมัดจำที่รับมาแล้ว
 CREATE TABLE Invoice (
     InvoiceID        SERIAL PRIMARY KEY,
     BookingID        INT            NOT NULL UNIQUE REFERENCES Booking(BookingID),
@@ -151,15 +174,18 @@ CREATE TABLE Invoice (
     ServiceTotal     DECIMAL(10,2)  NOT NULL DEFAULT 0,
     VetEmergencyCost DECIMAL(10,2)  NOT NULL DEFAULT 0,
     GrandTotal       DECIMAL(10,2)  GENERATED ALWAYS AS (RoomTotal + ServiceTotal + VetEmergencyCost) STORED,
-    PaymentMethod    VARCHAR(50),   -- 'CASH' | 'TRANSFER'
+    DepositPaid      DECIMAL(10,2)  NOT NULL DEFAULT 0,    -- ยอดมัดจำที่รับไปแล้ว
+    PaymentMethod    VARCHAR(50),
     PaymentStatus    payment_status NOT NULL DEFAULT 'UNPAID',
     PaymentDate      TIMESTAMP
 );
 
 -- ── INDEXES ───────────────────────────────────────────────────
-CREATE INDEX idx_booking_customer   ON Booking(CustomerID);
-CREATE INDEX idx_booking_status     ON Booking(Status);
-CREATE INDEX idx_bookingdetail_room ON BookingDetail(RoomID);
-CREATE INDEX idx_bookingdetail_pet  ON BookingDetail(PetID);
-CREATE INDEX idx_carelog_detail     ON CareLog(BookingDetailID);
-CREATE INDEX idx_attendance_staff   ON Attendance(StaffID, WorkDate);
+CREATE INDEX idx_booking_customer     ON Booking(CustomerID);
+CREATE INDEX idx_booking_status       ON Booking(Status);
+CREATE INDEX idx_bookingdetail_room   ON BookingDetail(RoomID);
+CREATE INDEX idx_bookingdetail_pet    ON BookingDetail(PetID);
+CREATE INDEX idx_carelog_detail       ON CareLog(BookingDetailID);
+CREATE INDEX idx_attendance_staff     ON Attendance(StaffID, WorkDate);
+CREATE INDEX idx_bookingservice_book  ON BookingService(BookingID);
+CREATE INDEX idx_inventoryusage_bkdet ON InventoryUsage(BookingDetailID);

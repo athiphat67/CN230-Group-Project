@@ -7,7 +7,10 @@ import psycopg2
 from config import Config
 from flask import Flask, jsonify
 
+# import Blueprint routes ต่างๆ เข้ามาใช้งานใน app หลัก
 from routes.auth import auth_bp
+from routes.pets import pets_bp
+from routes.staff import staff_bp
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -30,6 +33,8 @@ def test_connection():
         return jsonify({"status": "error", "message": str(e)}), 500
     
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
+app.register_blueprint(pets_bp, url_prefix='/api/pets')
+app.register_blueprint(staff_bp, url_prefix='/api/staff')
 
 if __name__ == '__main__':
     app.run(debug=True)

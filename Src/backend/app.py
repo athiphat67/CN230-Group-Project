@@ -1,0 +1,35 @@
+"""
+app.py (ผู้จัดการร้าน/เซิร์ฟเวอร์หลัก): เป็นตัวรันเปิดร้าน (เปิด Port 5000) 
+มันจะเรียกใช้กุญแจจาก config.py เพื่อสร้างท่อเชื่อมต่อไปยังโกดัง (Supabase) 
+และเป็นจุดศูนย์กลางที่คอยรับคำสั่งทั้งหมดที่เข้ามายังระบบ
+"""
+import psycopg2
+from config import Config
+from flask import Flask, jsonify
+
+from routes.auth import auth_bp
+
+app = Flask(__name__)
+app.config.from_object(Config)
+
+def get_db_connection():
+    # เชื่อมต่อโดยใช้ URI จากไฟล์ .env
+    return psycopg2.connect(app.config['SQLALCHEMY_DATABASE_URI'])
+
+@app.route('/api/test-connection')
+def test_connection():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute('SELECT version();')
+        db_version = cur.fetchone()
+        cur.close()
+        conn.close()
+        return jsonify({"status": "success", "db_version": db_version[0]}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+    
+app.register_blueprint(auth_bp, url_prefix='/api/auth')
+
+if __name__ == '__main__':
+    app.run(debug=True)

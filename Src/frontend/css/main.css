@@ -1,0 +1,66 @@
+/* ============================================================
+   main.css  — Global reset, CSS variables, base body styles
+   Purrfect Stay Admin Panel
+   ============================================================ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg:        #f0f4f8;
+  --surface:   #ffffff;
+  --surface2:  #f7f9fc;
+  --border:    #e2e8f0;
+  --border2:   #cbd5e1;
+  --accent:    #3b82f6;
+  --accent2:   #0ea5e9;
+  --accent-s:  #e0f2fe;
+  --teal:      #0d9488;
+  --teal-s:    #ccfbf1;
+  --text-1:    #0f172a;
+  --text-2:    #475569;
+  --text-3:    #94a3b8;
+  --sidebar:   #0f172a;
+  --sidebar2:  #1e293b;
+  --sidebar-t: #94a3b8;
+  --sidebar-a: #3b82f6;
+  --red:       #ef4444;
+  --red-s:     #fee2e2;
+  --amber:     #f59e0b;
+  --amber-s:   #fef3c7;
+  --green:     #10b981;
+  --green-s:   #d1fae5;
+  --shadow:    0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.05);
+  --shadow2:   0 2px 8px rgba(59,130,246,.15);
+  --r:         12px;
+  --r2:        8px;
+
+  /* sidebar layout constant */
+  --sidebar-w: 240px;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text-1);
+  display: flex;
+  min-height: 100vh;
+  font-size: 14px;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px) scale(.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}

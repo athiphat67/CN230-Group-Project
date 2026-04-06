@@ -1,0 +1,217 @@
+/* ============================================================
+   StaffManagement.css  — Page-specific styles
+   stat cards · tabs · table · attendance toolbar
+   ============================================================ */
+
+/* ── CONTENT ── */
+.content { padding: 28px 32px; flex: 1; }
+
+/* ── STAT CARDS ── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+  animation: fadeUp .5s ease both;
+}
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+  transition: transform .2s, box-shadow .2s;
+}
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0,0,0,.08);
+}
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+.stat-card.blue::before  { background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+.stat-card.teal::before  { background: linear-gradient(90deg, var(--teal), #14b8a6); }
+.stat-card.amber::before { background: linear-gradient(90deg, var(--amber), #fbbf24); }
+.stat-card.red::before   { background: linear-gradient(90deg, var(--red), #f87171); }
+
+.stat-label {
+  font-size: 12px;
+  color: var(--text-3);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.stat-value {
+  font-family: 'Syne', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-1);
+  margin: 6px 0 4px;
+  line-height: 1;
+}
+.stat-sub { font-size: 12px; color: var(--text-2); }
+.stat-icon {
+  position: absolute; top: 18px; right: 18px;
+  width: 36px; height: 36px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+}
+.stat-card.blue  .stat-icon { background: var(--accent-s); color: var(--accent); }
+.stat-card.teal  .stat-icon { background: var(--teal-s);   color: var(--teal); }
+.stat-card.amber .stat-icon { background: var(--amber-s);  color: var(--amber); }
+.stat-card.red   .stat-icon { background: var(--red-s);    color: var(--red); }
+
+/* ── TABS CONTAINER ── */
+.tabs-container {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+  animation: fadeUp .5s .1s ease both;
+}
+.tabs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border);
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.tabs-nav { display: flex; gap: 0; flex-shrink: 0; }
+.tab-btn {
+  padding: 16px 20px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-3);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color .2s, border-color .2s;
+  font-family: 'DM Sans', sans-serif;
+  display: flex; align-items: center; gap: 7px;
+  white-space: nowrap;
+}
+.tab-btn:hover { color: var(--text-2); }
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.tab-count {
+  font-size: 11px; font-weight: 600;
+  background: var(--accent-s); color: var(--accent);
+  padding: 1px 7px; border-radius: 20px;
+}
+.tab-btn:not(.active) .tab-count {
+  background: var(--surface2);
+  color: var(--text-3);
+}
+
+.tabs-tools { display: flex; align-items: center; gap: 10px; }
+
+.search-wrap { position: relative; }
+.search-wrap svg {
+  position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+  color: var(--text-3); width: 15px; height: 15px; pointer-events: none;
+}
+.search-input {
+  padding: 8px 12px 8px 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--text-1);
+  background: var(--surface2);
+  width: 200px;
+  outline: none;
+  transition: border-color .2s, background .2s, box-shadow .2s;
+}
+.search-input:focus {
+  border-color: var(--accent);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(59,130,246,.1);
+}
+.filter-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  background: var(--surface2);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+  white-space: nowrap;
+}
+.filter-btn:hover { border-color: var(--border2); background: #fff; }
+
+/* ── TAB CONTENT ── */
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* ── TABLE ── */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+thead tr { border-bottom: 1px solid var(--border); }
+thead th {
+  padding: 12px 20px;
+  text-align: left;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  white-space: nowrap;
+  background: var(--surface2);
+}
+
+tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background .15s;
+  animation: fadeUp .4s ease both;
+}
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: #f8fafd; }
+
+td { padding: 14px 20px; vertical-align: middle; }
+
+.staff-cell { display: flex; align-items: center; gap: 12px; }
+.staff-name { font-weight: 500; font-size: 13.5px; color: var(--text-1); }
+.staff-email { font-size: 12px; color: var(--text-3); margin-top: 1px; }
+
+.action-btns { display: flex; gap: 6px; }
+.empty-row td { text-align: center; padding: 48px; color: var(--text-3); font-size: 13px; }
+
+/* tbody row stagger animation */
+tbody tr:nth-child(1) { animation-delay: .05s; }
+tbody tr:nth-child(2) { animation-delay: .10s; }
+tbody tr:nth-child(3) { animation-delay: .15s; }
+tbody tr:nth-child(4) { animation-delay: .20s; }
+tbody tr:nth-child(5) { animation-delay: .25s; }
+tbody tr:nth-child(6) { animation-delay: .30s; }
+
+/* ── ATTENDANCE TOOLBAR ── */
+.att-toolbar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+  flex-wrap: wrap;
+}
+.att-label { font-size: 12.5px; color: var(--text-2); }
+.date-input {
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--text-1);
+  background: #fff;
+  outline: none;
+  transition: border-color .2s;
+}
+.date-input:focus { border-color: var(--accent); }

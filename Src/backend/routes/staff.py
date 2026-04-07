@@ -9,29 +9,34 @@ def get_db_connection():
     return psycopg2.connect(current_app.config['SQLALCHEMY_DATABASE_URI'])
 
 # --- 1. Create (C): เพิ่มพนักงานใหม่ ---
-@staff_bp.route('/add', methods=['POST'])
+# ✅ โค้ดใหม่ที่ถูกต้อง -- เปลี่ยน route เป็น '' แทน '/add' และแก้ชื่อ Key ใน JSON ให้ตรงกับที่ Frontend ส่งมา
+# เปลี่ยนตัวแปรรับ requests ให้ตรงกับที่ Frontend ส่งมา เช่น staff_username, staff_email, phone_number และเพิ่ม hire_date ตามสเปค
+@staff_bp.route('', methods=['POST']) # แก้ Route ตรงนี้
 def add_staff():
     try:
         data = request.get_json()
-        username = data.get('username')
+        # แก้ชื่อ Key ให้ตรงกับ Frontend ส่งมา
+        username = data.get('staff_username') 
         password = data.get('password')
         first_name = data.get('first_name')
         last_name = data.get('last_name')
-        role = data.get('role', 'STAFF') # ถ้าไม่ได้ส่งมาให้เป็น STAFF
-        phone = data.get('phone')
-        email = data.get('email')
+        role = data.get('role', 'STAFF')
+        phone = data.get('phone_number')
+        email = data.get('staff_email')
+        hire_date = data.get('hire_date') # รับ hire_date เพิ่มเข้ามาตามสเปค
 
-        # เข้ารหัสผ่าน
         hashed_pw = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
         conn = get_db_connection()
         cur = conn.cursor()
+        # เพิ่มคอลัมน์ HireDate และ IsActive (ถ้าไม่ได้ตั้ง default ไว้) ในคำสั่ง SQL
         query = """
-            INSERT INTO Staff (StaffUsername, PasswordHash, FirstName, LastName, Role, IsOnDuty, PhoneNumber, StaffEmail, HireDate)
-            VALUES (%s, %s, %s, %s, %s, TRUE, %s, %s, CURRENT_DATE)
-            RETURNING StaffID;
+            INSERT INTO staff (staffusername, passwordhash, firstname, lastname, role, isonduty, phonenumber, staffemail, hiredate, "isActive")
+            VALUES (%s, %s, %s, %s, %s, TRUE, %s, %s, %s, TRUE)
+            RETURNING staffid;
         """
-        cur.execute(query, (username, hashed_pw, first_name, last_name, role, phone, email))
+        cur.execute(query, (username, hashed_pw, first_name, last_name, role, phone, email, hire_date))
+        # ... (เหมือนเดิม)
         new_id = cur.fetchone()[0]
         
         conn.commit()
@@ -43,13 +48,29 @@ def add_staff():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 # --- 2. Read (R): ดูรายชื่อพนักงานทั้งหมด ---
-@staff_bp.route('/', methods=['GET'])
+# ✅ โค้ดใหม่ที่ถูกต้อง
+@staff_bp.route('', methods=['GET'])
 def get_all_staff():
     try:
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        # ไม่ดึง PasswordHash ออกมาเพื่อความปลอดภัย
-        cur.execute("SELECT StaffID, StaffUsername, FirstName, LastName, Role, IsOnDuty, PhoneNumber, StaffEmail FROM Staff")
+        
+        # ใส่ AS เพื่อให้ชื่อ Key ตรงกับที่ Frontend รอรับ (snake_case)
+        query = """
+            SELECT 
+                staffid AS staff_id, 
+                staffusername AS staff_username, 
+                firstname AS first_name, 
+                lastname AS last_name, 
+                role AS role, 
+                isonduty AS is_on_duty, 
+                phonenumber AS phone_number, 
+                staffemail AS staff_email,
+                hiredate AS hire_date
+            FROM staff
+            WHERE "isActive" = TRUE
+        """
+        cur.execute(query)
         staff_list = cur.fetchall()
         cur.close()
         conn.close()
@@ -58,7 +79,7 @@ def get_all_staff():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 # --- 3. Update (U): อัปเดตข้อมูล (เช่น เปลี่ยนตำแหน่ง หรือสถานะเข้าเวร) ---
-@staff_bp.route('/update/<int:staff_id>', methods=['PUT'])
+@staff_bp.route('/<int:staff_id>', methods=['PUT'])
 def update_staff(staff_id):
     try:
         data = request.get_json()
@@ -78,16 +99,26 @@ def update_staff(staff_id):
         return jsonify({"status": "error", "message": str(e)}), 500
 
 # --- 4. Delete (D): ลบพนักงาน (กรณีลาออก) ---
-@staff_bp.route('/delete/<int:staff_id>', methods=['DELETE'])
-def delete_staff(staff_id):
+# ✅ โค้ดใหม่ที่ถูกต้อง
+@staff_bp.route('/<int:staff_id>/deactivate', methods=['PATCH'])
+def deactivate_staff(staff_id):
     try:
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("DELETE FROM Staff WHERE StaffID = %s", (staff_id,))
+        
+        # เปลี่ยนสถานะเป็น FALSE แทนการลบข้อมูล
+        query = "UPDATE Staff SET IsActive = FALSE WHERE StaffID = %s"
+        cur.execute(query, (staff_id,))
+        
+        # ตรวจสอบว่ามีแถวถูกอัปเดตจริงไหม (เผื่อส่ง ID ผิดมา)
+        if cur.rowcount == 0:
+            conn.rollback()
+            return jsonify({"status": "error", "message": "ไม่พบพนักงานที่ต้องการ Deactivate"}), 404
+            
         conn.commit()
         cur.close()
         conn.close()
 
-        return jsonify({"status": "success", "message": f"ลบพนักงาน ID {staff_id} ออกจากระบบแล้ว"}), 200
+        return jsonify({"status": "success", "message": f"ปิดการใช้งานพนักงาน ID {staff_id} เรียบร้อยแล้ว"}), 200
     except Exception as e:
-        return jsonify({"status": "error", "message": "ไม่สามารถลบได้ (อาจมีประวัติการดูแลสัตว์เลี้ยงค้างอยู่)"}), 400
+        return jsonify({"status": "error", "message": str(e)}), 500

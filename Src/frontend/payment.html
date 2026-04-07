@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Portal | Purrfect Stay</title>
+    <link rel="stylesheet" href="./css/payment.css">
+</head>
+
+<body>
+    <aside class="sidebar">
+        <div class="brand-logo">
+            <span class="logo-icon">🐾</span>
+            <div class="logo-text">
+                <h3>Purrfect Stay</h3>
+                <p>ADMIN PORTAL</p>
+            </div>
+        </div>
+
+        <nav class="sidebar-menu">
+            <a href="dashboard.html" class="menu-item">
+                <span class="menu-icon">⊞</span> ภาพรวม (Dashboard)
+            </a>
+            <a href="calendar.html" class="menu-item">
+                <span class="menu-icon">📅</span> ปฏิทิน (Calendar)
+            </a>
+            <a href="bookings.html" class="menu-item">
+                <span class="menu-icon">📋</span> การจอง (Bookings)
+            </a>
+            <a href="invoice.html" class="menu-item active">
+                <span class="menu-icon">💳</span> การเงิน (Billing)
+            </a>
+        </nav>
+
+        <div class="user-profile">
+            <div class="user-avatar">
+                <img src="https://ui-avatars.com/api/?name=Somchai+M&background=0D8ABC&color=fff" alt="User">
+            </div>
+            <div class="user-info">
+                <p class="user-name" id="display-staff-name">สมชาย มั่นคง</p>
+                <p class="user-role" id="display-staff-role">ผู้ดูแลระบบ (Admin)</p>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="payment-wrapper">
+
+            <div class="page-header">
+                <h1>ระบุข้อมูลการชำระเงินของคุณ $321.00</h1>
+                <button class="btn-primary" onclick="window.location.href='success.html'">ชำระเงิน →</button>
+            </div>
+
+            <div class="form-card">
+                <h2 class="section-title">PAYMENT METHOD</h2>
+
+                <div class="form-group mb-4">
+                    <label>Please select a payment method</label>
+                    <div class="select-wrapper card-select">
+                        <select class="form-control">
+                            <option>Visa</option>
+                            <option>Mastercard</option>
+                            <option>PromptPay</option>
+                        </select>
+                        <div class="card-icons">
+                            💳
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row-multi">
+                    <div class="form-group flex-2">
+                        <label>Card number</label>
+                        <input type="text" class="form-control" placeholder="0000 0000 0000 0000">
+                    </div>
+                    <div class="form-group flex-1">
+                        <label>Expiration date</label>
+                        <div class="date-inputs">
+                            <select class="form-control">
+                                <option>--</option>
+                            </select>
+                            <select class="form-control">
+                                <option>---</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group flex-half">
+                        <label>Security code</label>
+                        <div class="cvv-input">
+                            <input type="text" class="form-control">
+                            <span class="help-icon">?</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-card">
+                <h2 class="section-title">BILLING INFORMATION</h2>
+
+                <div class="form-grid-2-col">
+                    <div class="form-group">
+                        <label>First name</label>
+                        <input type="text" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Last name</label>
+                        <input type="text" class="form-control">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Billing address</label>
+                        <input type="text" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>City</label>
+                        <input type="text" class="form-control">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Billing address, line 2</label>
+                        <input type="text" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Zip or postal code</label>
+                        <input type="text" class="form-control">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Country</label>
+                        <select class="form-control">
+                            <option>Thailand</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone number</label>
+                        <input type="text" class="form-control">
+                    </div>
+                </div>
+
+                <div class="checkbox-group mt-4">
+                    <input type="checkbox" id="save-info" checked>
+                    <label for="save-info">Save my payment information so checkout is easy next time</label>
+                </div>
+                <p class="form-note">You'll have a chance to review your order before it's placed.</p>
+            </div>
+
+            <div class="payment-footer">
+                <div class="footer-left">
+                    ต้องการความช่วยเหลือเพิ่มเติม <a href="#">แชท</a> หรือโทร 1800-01-9209
+                </div>
+
+                <div class="footer-right">
+                    <div class="summary-row">
+                        <span>ยอดรวม (ก่อนภาษี)</span>
+                        <span class="dots"></span>
+                        <span>$300.00</span>
+                    </div>
+                    <div class="summary-row border-bottom">
+                        <span>รวมค่าภาษี (7%)</span>
+                        <span class="dots"></span>
+                        <span>+ $21.00</span>
+                    </div>
+
+                    <div class="summary-total">
+                        <span>ยอดชำระเงินของคุณ</span>
+                        <span class="dots"></span>
+                        <span class="total-price">$321.00</span>
+                    </div>
+                    <div class="vat-note">รวม VAT จำนวน $21.00</div>
+                    <div class="installment-link">
+                        <a href="#">$32.10/เดือน เป็นเวลา 10 เดือน ดอกเบี้ย 0% ⊕</a>
+                    </div>
+
+                    <button class="btn-primary full-width mt-4"
+                        onclick="window.location.href='success.html'">ชำระเงิน →</button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+</body>
+
+</html>

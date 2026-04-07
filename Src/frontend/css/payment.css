@@ -1,0 +1,341 @@
+/* =========================================
+   1. ตัวแปรสีและฟอนต์ (CSS Variables)
+========================================= */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap');
+
+:root {
+    --bg-body: #f4f7f8;
+    --bg-white: #ffffff;
+    --primary-blue: #0066ff;
+    --primary-hover: #0052cc;
+    --text-dark: #111827;
+    --text-muted: #6b7280;
+    --text-light: #9ca3af;
+    --text-gray: #86868b;
+    --border-light: #e5e7eb;
+    --border-color: #d2d2d7;
+    --bg-color: #ffffff;
+    --sidebar-width: 260px;
+}
+
+/* Reset Layout Globally */
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Lock the browser window and set up side-by-side layout */
+body {
+    font-family: 'Prompt', 'Inter', sans-serif;
+    color: var(--text-dark);
+    background-color: var(--bg-color);
+    -webkit-font-smoothing: antialiased;
+    
+    /* Flexbox Layout */
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden; /* Prevents the whole page from scrolling */
+}
+
+/* =========================================
+   2. Sidebar (แถบซ้ายสีขาว - FIXED)
+========================================= */
+.sidebar {
+    width: var(--sidebar-width);
+    height: 100vh;
+    background-color: var(--bg-white);
+    border-right: 1px solid var(--border-light);
+    display: flex;
+    flex-direction: column;
+    z-index: 10;
+    flex-shrink: 0; /* Prevents squishing */
+    overflow-x: hidden;
+    overflow-y: auto; /* Sidebar scrolls only if menu gets long */
+}
+
+.brand-logo {
+    height: 80px;
+    display: flex;
+    align-items: center;
+    padding: 0 1.5rem;
+    gap: 12px;
+}
+
+.logo-icon {
+    font-size: 24px;
+}
+
+.logo-text h3 {
+    font-size: 16px;
+    color: var(--primary-blue);
+    font-weight: 700;
+}
+
+.logo-text p {
+    font-size: 10px;
+    color: var(--text-light);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.sidebar-menu {
+    width: 260px;
+    flex: 1;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: all 0.2s;
+    width: 100%;
+}
+
+.menu-item:hover {
+    background-color: #f3f4f6;
+    color: var(--text-dark);
+}
+
+.menu-item.active {
+    background-color: #eff6ff;
+    color: var(--primary-blue);
+    font-weight: 600;
+}
+
+.user-profile {
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background-color: #f8fafc;
+    border-radius: 12px;
+    margin: 16px;
+}
+
+.user-avatar img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+.user-name {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.user-role {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.main-content {
+    flex: 1;
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background-color: #fafbfc;
+}
+
+.payment-wrapper {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 60px 40px;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.page-header h1 {
+    font-size: 26px;
+    font-weight: 600;
+}
+
+.btn-primary {
+    background-color: var(--primary-blue);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 10px 24px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: 0.3s;
+}
+.btn-primary:hover { background-color: var(--primary-hover); }
+.btn-primary.full-width { width: 100%; border-radius: 8px; padding: 16px; font-size: 18px; }
+
+/* =========================================
+   4. Form Cards & Inputs
+========================================= */
+.form-card {
+    background-color: var(--bg-white);
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+
+.section-title {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin-bottom: 24px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: var(--text-dark);
+}
+
+.form-control {
+    padding: 12px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 15px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+    background-color: var(--bg-white);
+}
+
+.form-control:focus {
+    border-color: var(--primary-blue);
+}
+
+/* Form Layout Grids */
+.form-grid-2-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+.form-row-multi {
+    display: flex;
+    gap: 24px;
+}
+.flex-2 { flex: 2; }
+.flex-1 { flex: 1.2; }
+.flex-half { flex: 0.8; }
+
+.date-inputs {
+    display: flex;
+    gap: 12px;
+}
+.date-inputs select { width: 100%; }
+
+.cvv-input {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.help-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border: 1px solid var(--primary-blue);
+    color: var(--primary-blue);
+    border-radius: 50%;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+/* Custom Checkbox */
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.checkbox-group input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary-blue);
+}
+.checkbox-group label { margin-bottom: 0; cursor: pointer; }
+.form-note { font-size: 14px; color: var(--text-gray); margin-top: 8px; }
+
+/* Spacing Helpers */
+.mb-4 { margin-bottom: 24px; }
+.mt-4 { margin-top: 24px; }
+
+/* =========================================
+   5. Footer Summary Section
+========================================= */
+.payment-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: 40px;
+    padding-top: 40px;
+    border-top: 1px solid var(--border-light);
+}
+
+.footer-left {
+    font-size: 14px;
+    color: var(--text-dark);
+}
+
+.footer-right {
+    width: 100%;
+    max-width: 400px;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 15px;
+    margin-bottom: 12px;
+}
+.summary-row.border-bottom {
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 16px;
+}
+
+.summary-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 18px;
+    font-weight: 600;
+}
+.total-price {
+    font-size: 24px;
+}
+
+.vat-note { text-align: right; font-size: 12px; color: var(--text-gray); margin-top: 4px; }
+.installment-link { text-align: right; margin-top: 8px; font-size: 13px; }
+
+/* Decorative dots between text and numbers */
+.dots {
+    flex-grow: 1;
+    border-bottom: 1px dotted var(--border-color);
+    margin: 0 12px;
+    position: relative;
+    top: -6px;
+}

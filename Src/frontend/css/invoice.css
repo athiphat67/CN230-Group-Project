@@ -1,0 +1,419 @@
+/* =========================================
+   1. ตัวแปรสีและฟอนต์ (CSS Variables)
+========================================= */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap');
+
+:root {
+    --bg-body: #f4f7f8;
+    --bg-white: #ffffff;
+    --primary-blue: #0066ff;
+    --primary-hover: #0052cc;
+    --text-dark: #111827;
+    --text-muted: #6b7280;
+    --text-light: #9ca3af;
+    --text-gray: #86868b;
+    --border-light: #e5e7eb;
+    --border-color: #d2d2d7;
+    --bg-color: #ffffff;
+    --sidebar-width: 260px;
+}
+
+/* Reset Layout Globally */
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Lock the browser window and set up side-by-side layout */
+body {
+    font-family: 'Prompt', 'Inter', sans-serif;
+    color: var(--text-dark);
+    background-color: var(--bg-color);
+    -webkit-font-smoothing: antialiased;
+    
+    /* Flexbox Layout */
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden; /* Prevents the whole page from scrolling */
+}
+
+/* =========================================
+   2. Sidebar (แถบซ้ายสีขาว - FIXED)
+========================================= */
+.sidebar {
+    width: var(--sidebar-width);
+    height: 100vh;
+    background-color: var(--bg-white);
+    border-right: 1px solid var(--border-light);
+    display: flex;
+    flex-direction: column;
+    z-index: 10;
+    flex-shrink: 0; /* Prevents squishing */
+    overflow-x: hidden;
+    overflow-y: auto; /* Sidebar scrolls only if menu gets long */
+}
+
+.brand-logo {
+    height: 80px;
+    display: flex;
+    align-items: center;
+    padding: 0 1.5rem;
+    gap: 12px;
+}
+
+.logo-icon {
+    font-size: 24px;
+}
+
+.logo-text h3 {
+    font-size: 16px;
+    color: var(--primary-blue);
+    font-weight: 700;
+}
+
+.logo-text p {
+    font-size: 10px;
+    color: var(--text-light);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.sidebar-menu {
+    width: 260px;
+    flex: 1;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: all 0.2s;
+    width: 100%;
+}
+
+.menu-item:hover {
+    background-color: #f3f4f6;
+    color: var(--text-dark);
+}
+
+.menu-item.active {
+    background-color: #eff6ff;
+    color: var(--primary-blue);
+    font-weight: 600;
+}
+
+.user-profile {
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background-color: #f8fafc;
+    border-radius: 12px;
+    margin: 16px;
+}
+
+.user-avatar img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+.user-name {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.user-role {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* =========================================
+   3. Cart Container (SCROLLABLE RIGHT SIDE)
+========================================= */
+.cart-container {
+    flex: 1; /* Takes up all remaining space next to sidebar */
+    height: 100vh; /* Locks to screen height */
+    
+    /* THIS IS THE MAGIC: Forces the vertical scrollbar */
+    overflow-y: auto; 
+    overflow-x: hidden;
+    
+    /* Centers the inner content */
+    display: flex;
+    flex-direction: column;
+    align-items: center; 
+    padding: 60px 20px;
+}
+
+/* Force the inner elements to stay contained within 980px */
+.cart-header, .item-list, .cart-footer {
+    width: 100%;
+    max-width: 980px;
+}
+
+/* =========================================
+   4. Cart/Invoice Styling 
+========================================= */
+a {
+    color: var(--primary-blue);
+    text-decoration: none;
+    font-size: 14px;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.cart-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.cart-header h1 {
+    font-size: 40px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin-bottom: 20px;
+}
+
+.btn-primary {
+    background-color: var(--primary-blue);
+    color: white;
+    border: none;
+    border-radius: 980px;
+    padding: 12px 24px;
+    font-size: 17px;
+    font-weight: 400;
+    cursor: pointer;
+    width: 100%;
+    max-width: 300px;
+    transition: background-color 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-hover);
+}
+
+.item-list {
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    padding: 40px 0;
+}
+
+.cart-item {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 40px;
+    padding-bottom: 40px;
+    border-bottom: 1px solid var(--border-color);
+    width: 100%;
+}
+
+.cart-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.cart-item.upsell-item {
+    padding-left: 200px;
+    margin-top: -20px;
+}
+
+.upsell-title {
+    font-size: 16px; 
+    margin: 0 0 4px 0;
+}
+
+.upsell-desc {
+    font-size: 14px; 
+    color: var(--text-gray); 
+    margin: 0;
+}
+
+.item-image {
+    width: 180px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 12px;
+    margin-right: 40px;
+    flex-shrink: 0;
+    background-color: #f5f5f7;
+}
+
+.item-details {
+    flex-grow: 1;
+}
+
+.item-title {
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0 0 10px 0;
+}
+
+.item-actions {
+    text-align: right;
+    min-width: 120px;
+}
+
+.item-qty select {
+    font-size: 17px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    margin-bottom: 10px;
+}
+
+.item-price-val {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.sparkle {
+    color: #f59e0b;
+    margin-right: 8px;
+}
+
+/* =========================================
+   Apple Style Footer Section (CSS ONLY)
+========================================= */
+
+/* Hide the left side info to match Apple's clean, right-aligned summary */
+.footer-left {
+    display: none; 
+}
+
+/* Push the summary to the right and create space for the bottom text */
+.cart-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 40px;
+    margin-top: 20px;
+    position: relative; /* Needed to inject the text at the bottom */
+    padding-bottom: 80px; /* Give room for the injected text */
+}
+
+.footer-right {
+    width: 100%;
+    max-width: 750px; /* Constrains it like Apple's summary */
+    margin-right: 100px;
+}
+
+/* Style the individual rows */
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 16px;
+    margin-bottom: 12px;
+    color: var(--text-dark);
+}
+
+/* Inject the Apple-style divider line exactly under the tax row */
+.summary-row:nth-child(2) {
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 20px;
+}
+
+/* Format the main Total row */
+.summary-row.total {
+    font-size: 24px;
+    font-weight: 600;
+    border-top: none; /* Remove old border */
+    padding-top: 0;
+    margin-top: 0;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.total-amount {
+    font-size: 24px;
+}
+
+/* Finance & VAT info positioning */
+.finance-info {
+    text-align: right;
+    font-size: 12px;
+    color: var(--text-gray);
+    margin-bottom: 30px;
+    line-height: 1.8;
+}
+
+.finance-info a {
+    color: #0071e3; /* Apple bright blue */
+    font-size: 14px;
+}
+
+/* Align the button container to the right */
+.footer-cta {
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Morph your existing pill button into the Apple rectangle shape */
+.footer-cta .btn-primary {
+    background-color: #0071e3;
+    border-radius: 8px; /* Slightly rounded rectangle */
+    padding: 16px 24px;
+    max-width: 320px; /* Match Apple's button width */
+}
+
+.footer-cta .btn-primary:hover {
+    background-color: #0077ED;
+}
+
+/* MAGIC TRICK: Inject the bottom help text using CSS since we can't touch HTML */
+.cart-footer::after {
+    content: "ต้องการความช่วยเหลือเพิ่มเติม แชท หรือโทร 1800-01-9209";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    border-top: 1px solid var(--border-color);
+    padding-top: 20px;
+    font-size: 14px;
+    color: var(--text-dark);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .cart-item {
+        flex-direction: column;
+    }
+    .cart-item.upsell-item {
+        padding-left: 0;
+        margin-top: 20px;
+    }
+    .item-image {
+        margin-bottom: 20px;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 16/9;
+    }
+    .item-actions {
+        text-align: left;
+        margin-top: 20px;
+    }
+    .cart-footer {
+        flex-direction: column;
+        width: 100%;
+    }
+    .footer-right {
+        margin-top: 40px;
+        max-width: 100%;
+    }
+}

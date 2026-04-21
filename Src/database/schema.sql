@@ -189,3 +189,18 @@ CREATE INDEX idx_carelog_detail       ON CareLog(BookingDetailID);
 CREATE INDEX idx_attendance_staff     ON Attendance(StaffID, WorkDate);
 CREATE INDEX idx_bookingservice_book  ON BookingService(BookingID);
 CREATE INDEX idx_inventoryusage_bkdet ON InventoryUsage(BookingDetailID);
+
+-- ── 14. AUDIT TRAIL ───────────────────────────────────────────
+CREATE TABLE AuditTrail (
+    AuditID       SERIAL PRIMARY KEY,
+    StaffID       INT          REFERENCES Staff(StaffID) ON DELETE SET NULL,
+    StaffName     VARCHAR(255), -- เก็บชื่อไว้เผื่อ Staff ถูกลบ
+    ActionType    VARCHAR(50)  NOT NULL, -- 'CREATE', 'UPDATE', 'DELETE', 'PAYMENT'
+    TableAffected VARCHAR(50),
+    RecordID      INT,
+    Description   TEXT,
+    Timestamp     TIMESTAMP    NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_audit_staff ON AuditTrail(StaffID);
+CREATE INDEX idx_audit_time  ON AuditTrail(Timestamp);

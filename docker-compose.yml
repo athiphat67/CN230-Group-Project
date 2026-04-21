@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # 1. DATABASE SERVICE (PostgreSQL)
+  # ==========================================
+  db:
+    image: postgres:15-alpine
+    container_name: cn230-db
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "5432:5432"
+    volumes:
+      # เก็บข้อมูลไว้ในเครื่องเรา กันข้อมูลหายตอนปิด Container
+      - pgdata:/var/lib/postgresql/data
+      # ทริคเด็ด: ก๊อปปี้ไฟล์ SQL ไปไว้ในโฟลเดอร์นี้ Docker จะรันไฟล์เหล่านี้อัตโนมัติเมื่อสร้าง DB ครั้งแรก!
+      - ./Src/database:/docker-entrypoint-initdb.d 
+
+  # ==========================================
+  # 2. BACKEND SERVICE (Flask API)
+  # ==========================================
+  backend:
+    build: 
+      context: ./Src/backend  # ชี้ไปที่โฟลเดอร์ backend
+    container_name: cn230-backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "5000:5000"           # ให้ Backend รันที่พอร์ต 5000
+    depends_on:
+      - db                    # รอให้ Database สร้างเสร็จก่อนค่อยรัน Backend
+
+  # ==========================================
+  # 3. FRONTEND SERVICE (Flask Web)
+  # ==========================================
+  frontend:
+    build: 
+      context: ./Src/frontend # ชี้ไปที่โฟลเดอร์ frontend
+    container_name: cn230-frontend
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"           # ให้ Frontend รันที่พอร์ต 8080 (ให้ผู้ใช้เข้าหน้านี้)
+    depends_on:
+      - backend               # รอให้ Backend พร้อมก่อนค่อยรัน Frontend
+
+# กำหนด Volume สำหรับเก็บข้อมูล Database
+volumes:
+  pgdata:

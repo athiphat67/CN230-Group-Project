@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bookings — Purrfect Stay</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Serif+Display:ital@0;1&family=Syne:wght@600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages/Bookings.css">
+</head>
+<body>
+
+<aside id="sidebar-root"></aside>
+
+<main class="main">
+  <div id="topbar-root"></div>
+
+  <div class="content">
+
+    <!-- ── STAT CARDS ── -->
+    <div class="bk-stats-row">
+      <div class="bk-stat blue">
+        <div class="bk-stat-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        </div>
+        <div class="bk-stat-body">
+          <div class="bk-stat-label">Check-ins วันนี้</div>
+          <div class="bk-stat-value">12</div>
+          <div class="bk-stat-sub">↑ +4 จากเมื่อวาน</div>
+        </div>
+        <div class="bk-stat-ring"></div>
+      </div>
+
+      <div class="bk-stat teal">
+        <div class="bk-stat-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        </div>
+        <div class="bk-stat-body">
+          <div class="bk-stat-label">กำลังเข้าพัก</div>
+          <div class="bk-stat-value">42</div>
+          <div class="bk-stat-sub">Occupancy 84%</div>
+        </div>
+        <div class="bk-stat-ring"></div>
+      </div>
+
+      <div class="bk-stat amber">
+        <div class="bk-stat-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        </div>
+        <div class="bk-stat-body">
+          <div class="bk-stat-label">รอ Check-out</div>
+          <div class="bk-stat-value">8</div>
+          <div class="bk-stat-sub">กำหนดออกวันนี้</div>
+        </div>
+        <div class="bk-stat-ring"></div>
+      </div>
+
+      <div class="bk-stat coral">
+        <div class="bk-stat-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+        </div>
+        <div class="bk-stat-body">
+          <div class="bk-stat-label">ยกเลิกสัปดาห์นี้</div>
+          <div class="bk-stat-value">1</div>
+          <div class="bk-stat-sub">↓ ลดจากสัปดาห์ก่อน</div>
+        </div>
+        <div class="bk-stat-ring"></div>
+      </div>
+    </div>
+
+    <!-- ── BOOKING TABLE CARD ── -->
+    <div class="bk-card">
+
+      <!-- Header Row -->
+      <div class="bk-card-header">
+        <div class="bk-filter-tabs" id="filter-tabs">
+          <button class="bk-tab active" data-filter="all" onclick="filterBookings('all', this)">
+            ทั้งหมด <span class="bk-tab-count" id="count-all">24</span>
+          </button>
+          <button class="bk-tab" data-filter="PENDING" onclick="filterBookings('PENDING', this)">
+            รอยืนยัน <span class="bk-tab-count" id="count-PENDING">3</span>
+          </button>
+          <button class="bk-tab" data-filter="CONFIRMED" onclick="filterBookings('CONFIRMED', this)">
+            Confirmed <span class="bk-tab-count" id="count-CONFIRMED">4</span>
+          </button>
+          <button class="bk-tab" data-filter="CHECKED_IN" onclick="filterBookings('CHECKED_IN', this)">
+            Active Stay <span class="bk-tab-count" id="count-CHECKED_IN">12</span>
+          </button>
+          <button class="bk-tab" data-filter="CHECKED_OUT" onclick="filterBookings('CHECKED_OUT', this)">
+            Checked Out <span class="bk-tab-count" id="count-CHECKED_OUT">4</span>
+          </button>
+          <button class="bk-tab" data-filter="CANCELLED" onclick="filterBookings('CANCELLED', this)">
+            ยกเลิก <span class="bk-tab-count" id="count-CANCELLED">1</span>
+          </button>
+        </div>
+
+        <div class="bk-tools">
+          <div class="bk-date-range">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            <input class="bk-date-input" type="date" value="2025-04-01" id="date-from">
+            <span>—</span>
+            <input class="bk-date-input" type="date" value="2025-04-30" id="date-to">
+          </div>
+          <div class="bk-search-wrap">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input class="bk-search" type="text" placeholder="ค้นหาชื่อสัตว์เลี้ยง หรือเจ้าของ..." oninput="searchBookings(this.value)">
+          </div>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="bk-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>สัตว์เลี้ยง / เจ้าของ</th>
+              <th>ห้องพัก</th>
+              <th>Check-in</th>
+              <th>Check-out</th>
+              <th>Add-ons</th>
+              <th>สถานะ</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="bookings-tbody"></tbody>
+        </table>
+        <div class="bk-empty" id="bk-empty" style="display:none">
+          <div class="bk-empty-icon">🐾</div>
+          <p>ไม่พบการจองที่ตรงกัน</p>
+        </div>
+      </div>
+
+      <div class="bk-table-footer">
+        <span id="bk-showing">แสดง 24 รายการ</span>
+        <div class="bk-pagination">
+          <button class="bk-page-btn" disabled>‹</button>
+          <button class="bk-page-btn active">1</button>
+          <button class="bk-page-btn">2</button>
+          <button class="bk-page-btn">3</button>
+          <button class="bk-page-btn">›</button>
+        </div>
+      </div>
+
+    </div><!-- /.bk-card -->
+  </div><!-- /.content -->
+</main>
+
+<!-- ══════════════════════════════════════════
+     MODAL: NEW BOOKING
+══════════════════════════════════════════ -->
+<div class="bk-modal-overlay" id="modal-new-booking">
+  <div class="bk-modal">
+    <div class="bk-modal-header">
+      <div>
+        <div class="bk-modal-title">สร้างการจองใหม่</div>
+        <div class="bk-modal-sub">กรอกข้อมูลด้านล่างเพื่อสร้างการจอง</div>
+      </div>
+      <button class="bk-modal-close" onclick="closeModal('modal-new-booking')">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="bk-modal-body">
+      <div class="bk-form-section">
+        <div class="bk-form-section-title">ข้อมูลเจ้าของ</div>
+        <div class="bk-form-row">
+          <div class="bk-form-group">
+            <label class="bk-label">ชื่อเจ้าของ <span class="req">*</span></label>
+            <input class="bk-input" type="text" placeholder="ค้นหาหรือกรอกชื่อ..." id="nb-owner">
+          </div>
+          <div class="bk-form-group">
+            <label class="bk-label">เบอร์โทร <span class="req">*</span></label>
+            <input class="bk-input" type="text" placeholder="0XX-XXX-XXXX" id="nb-phone">
+          </div>
+        </div>
+      </div>
+
+      <div class="bk-form-section">
+        <div class="bk-form-section-title">ข้อมูลสัตว์เลี้ยง</div>
+        <div class="bk-form-row">
+          <div class="bk-form-group">
+            <label class="bk-label">ชื่อสัตว์เลี้ยง <span class="req">*</span></label>
+            <input class="bk-input" type="text" placeholder="ชื่อน้อง..." id="nb-pet-name">
+          </div>
+          <div class="bk-form-group">
+            <label class="bk-label">สายพันธุ์</label>
+            <input class="bk-input" type="text" placeholder="เช่น Scottish Fold, Golden Retriever" id="nb-breed">
+          </div>
+        </div>
+        <div class="bk-form-row">
+          <div class="bk-form-group">
+            <label class="bk-label">ประเภท</label>
+            <select class="bk-select" id="nb-pet-type">
+              <option value="cat">🐱 แมว</option>
+              <option value="dog">🐶 สุนัข</option>
+              <option value="other">🐾 อื่นๆ</option>
+            </select>
+          </div>
+          <div class="bk-form-group">
+            <label class="bk-label">น้ำหนัก (kg)</label>
+            <input class="bk-input" type="number" placeholder="0.0" id="nb-weight" step="0.1" min="0">
+          </div>
+        </div>
+      </div>
+
+      <div class="bk-form-section">
+        <div class="bk-form-section-title">ห้องพักและวันที่</div>
+        <div class="bk-form-row">
+          <div class="bk-form-group">
+            <label class="bk-label">ประเภทห้อง <span class="req">*</span></label>
+            <select class="bk-select" id="nb-room-type">
+              <option value="">-- เลือกประเภทห้อง --</option>
+              <option value="standard_fan">Standard (Fan) — 350 ฿/คืน</option>
+              <option value="standard_ac">Standard (AC) — 500 ฿/คืน</option>
+              <option value="deluxe">Deluxe Suite — 800 ฿/คืน</option>
+              <option value="vip">VIP Penthouse — 1,200 ฿/คืน</option>
+            </select>
+          </div>
+          <div class="bk-form-group">
+            <label class="bk-label">หมายเลขห้อง <span class="req">*</span></label>
+            <select class="bk-select" id="nb-room-no">
+              <option value="">-- เลือกห้อง --</option>
+              <option>A02</option><option>A04</option><option>A05</option>
+              <option>B01</option><option>B03</option><option>B04</option>
+              <option>V-01</option><option>V-03</option><option>V-06</option>
+            </select>
+          </div>
+        </div>
+        <div class="bk-form-row">
+          <div class="bk-form-group">
+            <label class="bk-label">Check-in <span class="req">*</span></label>
+            <input class="bk-input" type="date" id="nb-checkin">
+          </div>
+          <div class="bk-form-group">
+            <label class="bk-label">Check-out <span class="req">*</span></label>
+            <input class="bk-input" type="date" id="nb-checkout">
+          </div>
+        </div>
+      </div>
+
+      <div class="bk-form-section">
+        <div class="bk-form-section-title">Add-on Services (ไม่บังคับ)</div>
+        <div class="bk-addons-grid">
+          <label class="bk-addon-item">
+            <input type="checkbox" value="bathing"> <span class="bk-addon-icon">🛁</span> อาบน้ำ (200฿)
+          </label>
+          <label class="bk-addon-item">
+            <input type="checkbox" value="grooming"> <span class="bk-addon-icon">✂️</span> ตัดขน (350฿)
+          </label>
+          <label class="bk-addon-item">
+            <input type="checkbox" value="massage"> <span class="bk-addon-icon">💆</span> นวด (250฿)
+          </label>
+          <label class="bk-addon-item">
+            <input type="checkbox" value="vet_check"> <span class="bk-addon-icon">🩺</span> ตรวจสุขภาพ (400฿)
+          </label>
+          <label class="bk-addon-item">
+            <input type="checkbox" value="photo"> <span class="bk-addon-icon">📸</span> ถ่ายรูป (150฿)
+          </label>
+          <label class="bk-addon-item">
+            <input type="checkbox" value="training"> <span class="bk-addon-icon">🎓</span> ฝึกสัตว์เลี้ยง (500฿)
+          </label>
+        </div>
+      </div>
+
+      <div class="bk-form-section">
+        <div class="bk-form-section-title">หมายเหตุพิเศษ</div>
+        <textarea class="bk-textarea" placeholder="แพ้อาหาร, ต้องการยา, คำแนะนำพิเศษ..." rows="3" id="nb-notes"></textarea>
+      </div>
+
+      <div class="bk-price-preview" id="price-preview" style="display:none">
+        <div class="bk-price-row"><span>ค่าห้อง</span><span id="pp-room">-</span></div>
+        <div class="bk-price-row"><span>Add-ons</span><span id="pp-addons">-</span></div>
+        <div class="bk-price-row total"><span>รวมทั้งหมด (ประมาณ)</span><span id="pp-total">-</span></div>
+      </div>
+    </div>
+    <div class="bk-modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-new-booking')">ยกเลิก</button>
+      <button class="btn-primary" onclick="saveNewBooking()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+        ยืนยันการจอง
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MODAL: CONFIRM CHECK-IN
+══════════════════════════════════════════ -->
+<div class="bk-modal-overlay" id="modal-checkin">
+  <div class="bk-modal bk-modal-sm">
+    <div class="bk-modal-header">
+      <div>
+        <div class="bk-modal-title">ยืนยัน Check-in</div>
+        <div class="bk-modal-sub" id="ci-subtitle">บิ๊กบอย — ห้อง V-02</div>
+      </div>
+      <button class="bk-modal-close" onclick="closeModal('modal-checkin')">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="bk-modal-body">
+      <div class="bk-confirm-box green">
+        <div class="bk-confirm-icon">
+          <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <div>
+          <p class="bk-confirm-title">พร้อม Check-in</p>
+          <p class="bk-confirm-desc">ตรวจสอบข้อมูลและวัคซีนเรียบร้อยแล้ว กด Check-in เพื่อเปลี่ยนสถานะห้องเป็น "กำลังเข้าพัก"</p>
+        </div>
+      </div>
+      <div class="bk-checkin-info" id="ci-info">
+        <!-- populated by JS -->
+      </div>
+    </div>
+    <div class="bk-modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-checkin')">ยกเลิก</button>
+      <button class="btn-primary" id="ci-confirm-btn" onclick="confirmCheckin()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
+        Check-in ทันที
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MODAL: CONFIRM CHECK-OUT
+══════════════════════════════════════════ -->
+<div class="bk-modal-overlay" id="modal-checkout">
+  <div class="bk-modal bk-modal-sm">
+    <div class="bk-modal-header">
+      <div>
+        <div class="bk-modal-title">ดำเนินการ Check-out</div>
+        <div class="bk-modal-sub" id="co-subtitle">มะม่วง — ห้อง A01</div>
+      </div>
+      <button class="bk-modal-close" onclick="closeModal('modal-checkout')">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="bk-modal-body">
+      <div class="bk-price-preview visible" id="co-summary">
+        <!-- populated by JS -->
+      </div>
+      <div class="bk-form-group" style="margin-top:16px">
+        <label class="bk-label">วิธีชำระเงิน</label>
+        <div class="bk-payment-opts" id="co-payment">
+          <label class="bk-payment-opt">
+            <input type="radio" name="payment" value="cash" checked> 💵 เงินสด
+          </label>
+          <label class="bk-payment-opt">
+            <input type="radio" name="payment" value="qr"> 📱 QR PromptPay
+          </label>
+          <label class="bk-payment-opt">
+            <input type="radio" name="payment" value="card"> 💳 บัตรเครดิต
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="bk-modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-checkout')">ยกเลิก</button>
+      <button class="btn-primary" id="co-confirm-btn" onclick="confirmCheckout()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        Check-out &amp; ออกใบเสร็จ
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MODAL: BOOKING DETAIL
+══════════════════════════════════════════ -->
+<div class="bk-modal-overlay" id="modal-detail">
+  <div class="bk-modal">
+    <div class="bk-modal-header">
+      <div>
+        <div class="bk-modal-title">รายละเอียดการจอง</div>
+        <div class="bk-modal-sub" id="det-subtitle">Booking #BK-0001</div>
+      </div>
+      <button class="bk-modal-close" onclick="closeModal('modal-detail')">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="bk-modal-body" id="det-body">
+      <!-- populated by JS -->
+    </div>
+    <div class="bk-modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-detail')">ปิด</button>
+      <button class="btn-primary" id="det-action-btn">ดำเนินการ</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     JS
+══════════════════════════════════════════ -->
+<script src="js/components/sidebar.js"></script>
+<script src="js/components/navbar.js"></script>
+<script src="js/pages/Bookings.js"></script>
+<script>
+  const currentUser = { name: 'สมชาย มั่นคง', role: 'Administrator' };
+
+  Sidebar.render({ activePage: 'bookings', user: currentUser });
+
+  Navbar.render({
+    title: 'Bookings',
+    breadcrumb: 'Admin › การจอง (Bookings)',
+    actionsHTML: `
+      <button class="btn-primary" onclick="openBookingModal()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path d="M12 4v16m8-8H4"/>
+        </svg>
+        New Booking
+      </button>
+    `,
+  });
+</script>
+
+</body>
+</html>

@@ -39,3 +39,16 @@ def token_required(f):
         return f(current_user, *args, **kwargs)
     return decorated
 
+def admin_required(f):
+    @wraps(f)
+    def decorated(current_user, *args, **kwargs):
+        # ตรวจสอบ Role จาก Payload ใน Token
+        if current_user.get('role') not in ['ADMIN', 'OWNER']:
+            return jsonify({
+                "error": True,
+                "code": 403,
+                "message": "Forbidden",
+                "detail": "สิทธิ์การใช้งานไม่เพียงพอ (เฉพาะ Admin เท่านั้น)"
+            }), 403
+        return f(current_user, *args, **kwargs)
+    return decorated

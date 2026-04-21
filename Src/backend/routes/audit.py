@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify, current_app
 import psycopg2
 import psycopg2.extras
 from datetime import datetime, timedelta
+from utils import token_required, admin_required
 
 audit_bp = Blueprint('audit', __name__)
 
@@ -14,6 +15,8 @@ def get_thai_time():
 
 # --- 1. ดึงประวัติ Audit Logs พร้อมตัวกรอง ---
 @audit_bp.route('', methods=['GET'])
+@token_required
+@admin_required
 def get_audit_logs():
     try:
         # รับ Parameter ตัวกรองจาก Frontend

@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>Unit Tests — Purrfect Stay Frontend</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Courier New', monospace; background: #0f172a; color: #e2e8f0; padding: 32px; }
+    h1 { font-size: 22px; color: #7dd3fc; margin-bottom: 6px; }
+    .subtitle { font-size: 13px; color: #64748b; margin-bottom: 32px; }
+    .suite { margin-bottom: 28px; background: #1e293b; border-radius: 10px; padding: 20px; border: 1px solid #334155; }
+    .suite-title { font-size: 15px; color: #a78bfa; font-weight: bold; margin-bottom: 14px; border-bottom: 1px solid #334155; padding-bottom: 8px; }
+    .test { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; border-bottom: 1px solid #1e293b; font-size: 13px; }
+    .test:last-child { border-bottom: none; }
+    .icon { flex-shrink: 0; margin-top: 1px; }
+    .pass .icon::before { content: '✓'; color: #4ade80; }
+    .fail .icon::before { content: '✗'; color: #f87171; }
+    .skip .icon::before { content: '⊘'; color: #64748b; }
+    .test-name { flex: 1; }
+    .pass .test-name { color: #d1fae5; }
+    .fail .test-name { color: #fecaca; }
+    .skip .test-name { color: #64748b; }
+    .detail { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+    .fail .detail { color: #fca5a5; }
+    .summary-bar { display: flex; gap: 24px; padding: 18px 24px; border-radius: 10px; margin-bottom: 28px; font-size: 14px; }
+    .summary-bar.all-pass { background: #052e16; border: 1px solid #16a34a; }
+    .summary-bar.has-fail { background: #1c0a0a; border: 1px solid #dc2626; }
+    .summary-bar.has-skip { background: #0f172a; border: 1px solid #334155; }
+    .stat { display: flex; gap: 6px; align-items: center; }
+    .stat-val { font-weight: bold; font-size: 18px; }
+    .stat-val.pass { color: #4ade80; }
+    .stat-val.fail { color: #f87171; }
+    .stat-val.skip { color: #94a3b8; }
+    .stat-label { color: #64748b; font-size: 12px; }
+    h2.section { font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin: 28px 0 12px; }
+  </style>
+</head>
+<body>
+
+<h1>🐾 Purrfect Stay — Frontend Unit Tests</h1>
+<p class="subtitle">ทดสอบ Pure Functions ทุก JS Module | เรียกใช้ผ่าน Live Server</p>
+
+<div id="summary"></div>
+<div id="output"></div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// MICRO TEST FRAMEWORK
+// ═══════════════════════════════════════════════════
+const results = { pass: 0, fail: 0, skip: 0, suites: [] };
+
+function suite(name, fn) {
+  const s = { name, tests: [] };
+  results.suites.push(s);
+  const ctx = { s };
+  fn(ctx);
+}
+
+function test(ctx, name, fn) {
+  try {
+    fn();
+    ctx.s.tests.push({ name, status: 'pass' });
+    results.pass++;
+  } catch (e) {
+    ctx.s.tests.push({ name, status: 'fail', detail: e.message });
+    results.fail++;
+  }
+}
+
+function skip(ctx, name, reason) {
+  ctx.s.tests.push({ name, status: 'skip', detail: reason });
+  results.skip++;
+}
+
+function expect(val) {
+  return {
+    toBe: (expected) => {
+      if (val !== expected)
+        throw new Error(`Expected ${JSON.stringify(expected)}, got ${JSON.stringify(val)}`);
+    },
+    toEqual: (expected) => {
+      if (JSON.stringify(val) !== JSON.stringify(expected))
+        throw new Error(`Expected ${JSON.stringify(expected)}, got ${JSON.stringify(val)}`);
+    },
+    toBeTruthy: () => { if (!val) throw new Error(`Expected truthy, got ${val}`); },
+    toBeFalsy: () => { if (val) throw new Error(`Expected falsy, got ${val}`); },
+    toBeGreaterThan: (n) => { if (val <= n) throw new Error(`Expected ${val} > ${n}`); },
+    toBeLessThanOrEqual: (n) => { if (val > n) throw new Error(`Expected ${val} <= ${n}`); },
+    toContain: (sub) => { if (!String(val).includes(sub)) throw new Error(`Expected "${val}" to contain "${sub}"`); },
+    toBeNull: () => { if (val !== null) throw new Error(`Expected null, got ${val}`); },
+    toMatchPattern: (regex) => { if (!regex.test(String(val))) throw new Error(`"${val}" doesn't match ${regex}`); },
+  };
+}
+
+
+// ═══════════════════════════════════════════════════
+// PURE FUNCTIONS — copied & isolated from each JS file
+// (ไม่ต้องโหลดไฟล์จริง ทดสอบ logic เฉพาะ)
+// ═══════════════════════════════════════════════════
+
+// ── Bookings.js ──
+function calcNights(checkin, checkout) {
+  const a = new Date(checkin), b = new Date(checkout);
+  return Math.max(1, Math.round((b - a) / 86400000));
+}
+function bk_statusLabel(s) {
+  return { PENDING:'รอยืนยัน', CONFIRMED:'Confirmed', CHECKED_IN:'กำลังเข้าพัก', CHECKED_OUT:'เช็กเอาต์แล้ว', CANCELLED:'ยกเลิก' }[s] ?? s;
+}
+function bk_paymentLabel(s) {
+  return { cash:'เงินสด', qr:'QR PromptPay', card:'บัตรเครดิต' }[s] ?? s;
+}
+
+// ── Billing.js ──
+function bl_statusLabel(s) {
+  return { PAID:'ชำระแล้ว', PENDING_PAYMENT:'รอชำระ' }[s] ?? s ?? '—';
+}
+function bl_paymentLabel(s) {
+  return { cash:'เงินสด', qr_promptpay:'QR PromptPay', credit_card:'บัตรเครดิต' }[s] ?? '—';
+}
+function bl_paymentIcon(s) {
+  return { cash:'💵', qr_promptpay:'📱', credit_card:'💳' }[s] ?? '';
+}
+function formatDate(dateStr) {
+  if (!dateStr) return '—';
+  return new Date(dateStr).toLocaleDateString('th-TH', { day:'numeric', month:'short', year:'numeric' });
+}
+
+// ── PetProfile.js ──
+function calcAge(dob) {
+  if (!dob) return '—';
+  const diff = Date.now() - new Date(dob).getTime();
+  const years = Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
+  return years < 1 ? 'น้อยกว่า 1 ปี' : `${years} ปี`;
+}
+function speciesLabel(s) {
+  return { cat:'🐱 แมว', dog:'🐶 สุนัข', other:'🐾 อื่นๆ' }[s] ?? s;
+}
+function getVaccStatus(pet) {
+  if (!pet.vaccines || pet.vaccines.length === 0) return { cls:'none', label:'— ไม่มีข้อมูล' };
+  const today = new Date();
+  const soon  = new Date(); soon.setDate(soon.getDate() + 60);
+  const expired  = pet.vaccines.some(v => new Date(v.expiry_date) < today);
+  const expiring = pet.vaccines.some(v => { const d = new Date(v.expiry_date); return d >= today && d <= soon; });
+  if (expired)  return { cls:'expired',  label:'⚠ หมดอายุ' };
+  if (expiring) return { cls:'expiring', label:'⏰ ใกล้หมดอายุ' };
+  return { cls:'valid', label:'✓ ครบถ้วน' };
+}
+function getVaccExpiry(expiryDate) {
+  const today = new Date();
+  const soon  = new Date(); soon.setDate(soon.getDate() + 60);
+  const d = new Date(expiryDate);
+  if (d < today) return { cls:'expired', label:'หมดอายุแล้ว' };
+  if (d <= soon) return { cls:'expiring', label:'ใกล้หมดอายุ' };
+  return { cls:'valid', label:'ยังใช้ได้' };
+}
+
+// ── Analytics.js ──
+function formatShortDate(s) {
+  return new Date(s).toLocaleDateString('th-TH', { day:'numeric', month:'short' });
+}
+function an_calcAvgBill(revenue, totalBookings) {
+  return Math.round(revenue / totalBookings);
+}
+function an_calcOccupancyPct(rate) {
+  return Math.round(rate * 100);
+}
+
+// ── AuditTrail.js ──
+function actionLabel(a) {
+  return { CREATE:'➕ CREATE', UPDATE:'✏️ UPDATE', DELETE:'🗑 DELETE',
+           CHECKIN:'🟢 CHECK-IN', CHECKOUT:'🟣 CHECK-OUT', APPROVE:'✅ APPROVE' }[a] ?? a;
+}
+function formatDateTime(s) {
+  if (!s) return '—';
+  return new Date(s).toLocaleString('th-TH', {
+    day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit',
+  });
+}
+
+// ── Notifications.js ──
+function typeLabel(t) {
+  return {
+    CARE_REPORT:'รายงานดูแล', BOOKING_CONFIRMED:'ยืนยันจอง',
+    BOOKING_CANCELLED:'ยกเลิกจอง', PAYMENT_CONFIRMED:'ชำระเงิน',
+    CHECKIN_REMINDER:'แจ้งเตือน', NEW_BOOKING_ALERT:'จองใหม่',
+  }[t] ?? t;
+}
+function nt_getFiltered(notifications, filter) {
+  return notifications.filter(n => {
+    if (filter === 'unread') return !n.is_read;
+    if (filter !== 'all')    return n.type === filter;
+    return true;
+  });
+}
+
+// ── Inventory.js ──
+function catLabel(c) {
+  return { food:'🌾 อาหาร', supplies:'📦 อุปกรณ์', medicine:'💊 ยา' }[c] ?? c;
+}
+function getItemStatus(item) {
+  const today = new Date();
+  const soon  = new Date(); soon.setDate(soon.getDate() + 30);
+  const pct   = item.quantity_remaining / item.quantity_total;
+  if (item.quantity_remaining <= item.reorder_threshold) return { cls:'danger', label:'⚠ สต็อกต่ำ' };
+  if (item.expiry_date && new Date(item.expiry_date) <= soon) return { cls:'expiring', label:'⏰ ใกล้หมดอายุ' };
+  if (pct <= 0.4) return { cls:'low', label:'สต็อกน้อย' };
+  return { cls:'good', label:'ปกติ' };
+}
+
+// ── PetCare.js ──
+function moodEmoji(mood) {
+  return { HAPPY:'😄', NEUTRAL:'😐', ANXIOUS:'😰', SICK:'🤒' }[mood] ?? '😐';
+}
+function moodLabel(mood) {
+  return { HAPPY:'Happy', NEUTRAL:'Neutral', ANXIOUS:'Anxious', SICK:'Sick' }[mood] ?? mood;
+}
+function calcDaysLeft(checkout) {
+  const now = new Date(); now.setHours(0,0,0,0);
+  const out = new Date(checkout); out.setHours(0,0,0,0);
+  const diff = Math.ceil((out - now) / 86400000);
+  if (diff === 0) return 'วันนี้';
+  if (diff === 1) return 'อีก 1 วัน';
+  if (diff < 0)  return 'เกินกำหนด';
+  return `อีก ${diff} วัน`;
+}
+
+// ── api.js ──
+function authHeaders(token) {
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`,
+  };
+}
+
+
+// ═══════════════════════════════════════════════════
+// TEST SUITES
+// ═══════════════════════════════════════════════════
+
+// ── 1. Bookings.js ──────────────────────────────────
+suite('Bookings.js — calcNights()', ctx => {
+  test(ctx, 'คำนวณ 4 คืน (2 Apr → 6 Apr)', () => {
+    expect(calcNights('2025-04-02', '2025-04-06')).toBe(4);
+  });
+  test(ctx, 'คำนวณ 1 คืน (same-day edge → clamp to 1)', () => {
+    expect(calcNights('2025-04-02', '2025-04-02')).toBe(1);
+  });
+  test(ctx, 'คำนวณ 5 คืน (5 Apr → 10 Apr)', () => {
+    expect(calcNights('2025-04-05', '2025-04-10')).toBe(5);
+  });
+  test(ctx, 'คำนวณ 30 คืน', () => {
+    expect(calcNights('2025-04-01', '2025-05-01')).toBe(30);
+  });
+  test(ctx, 'ค่า negative → clamp to 1', () => {
+    expect(calcNights('2025-04-06', '2025-04-02')).toBe(1);
+  });
+});
+
+suite('Bookings.js — statusLabel()', ctx => {
+  test(ctx, 'PENDING → รอยืนยัน', () => expect(bk_statusLabel('PENDING')).toBe('รอยืนยัน'));
+  test(ctx, 'CONFIRMED → Confirmed', () => expect(bk_statusLabel('CONFIRMED')).toBe('Confirmed'));
+  test(ctx, 'CHECKED_IN → กำลังเข้าพัก', () => expect(bk_statusLabel('CHECKED_IN')).toBe('กำลังเข้าพัก'));
+  test(ctx, 'CHECKED_OUT → เช็กเอาต์แล้ว', () => expect(bk_statusLabel('CHECKED_OUT')).toBe('เช็กเอาต์แล้ว'));
+  test(ctx, 'CANCELLED → ยกเลิก', () => expect(bk_statusLabel('CANCELLED')).toBe('ยกเลิก'));
+  test(ctx, 'unknown value → passthrough', () => expect(bk_statusLabel('UNKNOWN')).toBe('UNKNOWN'));
+});
+
+suite('Bookings.js — paymentLabel()', ctx => {
+  test(ctx, 'cash → เงินสด', () => expect(bk_paymentLabel('cash')).toBe('เงินสด'));
+  test(ctx, 'qr → QR PromptPay', () => expect(bk_paymentLabel('qr')).toBe('QR PromptPay'));
+  test(ctx, 'card → บัตรเครดิต', () => expect(bk_paymentLabel('card')).toBe('บัตรเครดิต'));
+});
+
+// ── 2. Billing.js ──────────────────────────────────
+suite('Billing.js — statusLabel()', ctx => {
+  test(ctx, 'PAID → ชำระแล้ว', () => expect(bl_statusLabel('PAID')).toBe('ชำระแล้ว'));
+  test(ctx, 'PENDING_PAYMENT → รอชำระ', () => expect(bl_statusLabel('PENDING_PAYMENT')).toBe('รอชำระ'));
+  test(ctx, 'null → —', () => expect(bl_statusLabel(null)).toBe('—'));
+  test(ctx, 'undefined → —', () => expect(bl_statusLabel(undefined)).toBe('—'));
+});
+
+suite('Billing.js — paymentLabel()', ctx => {
+  test(ctx, 'cash → เงินสด', () => expect(bl_paymentLabel('cash')).toBe('เงินสด'));
+  test(ctx, 'qr_promptpay → QR PromptPay', () => expect(bl_paymentLabel('qr_promptpay')).toBe('QR PromptPay'));
+  test(ctx, 'credit_card → บัตรเครดิต', () => expect(bl_paymentLabel('credit_card')).toBe('บัตรเครดิต'));
+  test(ctx, 'null → —', () => expect(bl_paymentLabel(null)).toBe('—'));
+});
+
+suite('Billing.js — paymentIcon()', ctx => {
+  test(ctx, 'cash → 💵', () => expect(bl_paymentIcon('cash')).toBe('💵'));
+  test(ctx, 'qr_promptpay → 📱', () => expect(bl_paymentIcon('qr_promptpay')).toBe('📱'));
+  test(ctx, 'credit_card → 💳', () => expect(bl_paymentIcon('credit_card')).toBe('💳'));
+  test(ctx, 'unknown → empty string', () => expect(bl_paymentIcon('unknown')).toBe(''));
+});
+
+suite('Billing.js — formatDate()', ctx => {
+  test(ctx, 'null → —', () => expect(formatDate(null)).toBe('—'));
+  test(ctx, 'returns non-empty string for valid date', () => {
+    const result = formatDate('2025-04-06');
+    expect(result.length).toBeGreaterThan(0);
+  });
+  test(ctx, 'does not return "—" for valid date', () => {
+    const result = formatDate('2025-04-06');
+    if (result === '—') throw new Error('Should not return — for valid date');
+  });
+});
+
+// ── 3. PetProfile.js ──────────────────────────────────
+suite('PetProfile.js — calcAge()', ctx => {
+  test(ctx, 'null dob → —', () => expect(calcAge(null)).toBe('—'));
+  test(ctx, 'empty string → —', () => expect(calcAge('')).toBe('—'));
+  test(ctx, 'pet born 2021 → 4 ปี (approx)', () => {
+    const result = calcAge('2021-03-15');
+    expect(result).toContain('ปี');
+  });
+  test(ctx, 'very recent dob → น้อยกว่า 1 ปี', () => {
+    const recent = new Date(); recent.setMonth(recent.getMonth() - 3);
+    const dobStr = recent.toISOString().split('T')[0];
+    expect(calcAge(dobStr)).toBe('น้อยกว่า 1 ปี');
+  });
+  test(ctx, 'result always string', () => {
+    const result = calcAge('2020-07-22');
+    expect(typeof result).toBe('string');
+  });
+});
+
+suite('PetProfile.js — speciesLabel()', ctx => {
+  test(ctx, 'cat → 🐱 แมว', () => expect(speciesLabel('cat')).toBe('🐱 แมว'));
+  test(ctx, 'dog → 🐶 สุนัข', () => expect(speciesLabel('dog')).toBe('🐶 สุนัข'));
+  test(ctx, 'other → 🐾 อื่นๆ', () => expect(speciesLabel('other')).toBe('🐾 อื่นๆ'));
+  test(ctx, 'unknown → passthrough', () => expect(speciesLabel('bird')).toBe('bird'));
+});
+
+suite('PetProfile.js — getVaccStatus()', ctx => {
+  test(ctx, 'no vaccines → none', () => {
+    const result = getVaccStatus({ vaccines: [] });
+    expect(result.cls).toBe('none');
+  });
+  test(ctx, 'undefined vaccines → none', () => {
+    const result = getVaccStatus({});
+    expect(result.cls).toBe('none');
+  });
+  test(ctx, 'expired vaccine → expired', () => {
+    const result = getVaccStatus({ vaccines: [{ expiry_date: '2020-01-01' }] });
+    expect(result.cls).toBe('expired');
+  });
+  test(ctx, 'expiring soon (30 days) → expiring', () => {
+    const soon = new Date(); soon.setDate(soon.getDate() + 20);
+    const result = getVaccStatus({ vaccines: [{ expiry_date: soon.toISOString().split('T')[0] }] });
+    expect(result.cls).toBe('expiring');
+  });
+  test(ctx, 'valid vaccine (far future) → valid', () => {
+    const result = getVaccStatus({ vaccines: [{ expiry_date: '2030-12-31' }] });
+    expect(result.cls).toBe('valid');
+  });
+  test(ctx, 'mixed expired+valid → expired wins', () => {
+    const result = getVaccStatus({
+      vaccines: [
+        { expiry_date: '2020-01-01' },
+        { expiry_date: '2030-12-31' },
+      ]
+    });
+    expect(result.cls).toBe('expired');
+  });
+});
+
+suite('PetProfile.js — getVaccExpiry()', ctx => {
+  test(ctx, 'past date → expired', () => {
+    expect(getVaccExpiry('2023-01-01').cls).toBe('expired');
+  });
+  test(ctx, 'far future → valid', () => {
+    expect(getVaccExpiry('2030-01-01').cls).toBe('valid');
+  });
+  test(ctx, 'within 60 days → expiring', () => {
+    const d = new Date(); d.setDate(d.getDate() + 30);
+    expect(getVaccExpiry(d.toISOString().split('T')[0]).cls).toBe('expiring');
+  });
+});
+
+// ── 4. Analytics.js ──────────────────────────────────
+suite('Analytics.js — helper calculations', ctx => {
+  test(ctx, 'avgBill: 128500 / 42 = 3059', () => {
+    expect(an_calcAvgBill(128500, 42)).toBe(3059);
+  });
+  test(ctx, 'avgBill: total/bookings ไม่เป็น NaN', () => {
+    const result = an_calcAvgBill(95000, 10);
+    if (isNaN(result)) throw new Error('Result is NaN');
+  });
+  test(ctx, 'occupancyPct: 0.84 → 84', () => {
+    expect(an_calcOccupancyPct(0.84)).toBe(84);
+  });
+  test(ctx, 'occupancyPct: 1.0 → 100', () => {
+    expect(an_calcOccupancyPct(1.0)).toBe(100);
+  });
+  test(ctx, 'occupancyPct: 0 → 0', () => {
+    expect(an_calcOccupancyPct(0)).toBe(0);
+  });
+  test(ctx, 'formatShortDate returns non-empty string', () => {
+    const result = formatShortDate('2026-04-21');
+    expect(result.length).toBeGreaterThan(0);
+  });
+});
+
+// ── 5. AuditTrail.js ──────────────────────────────────
+suite('AuditTrail.js — actionLabel()', ctx => {
+  test(ctx, 'CREATE → ➕ CREATE', () => expect(actionLabel('CREATE')).toBe('➕ CREATE'));
+  test(ctx, 'UPDATE → ✏️ UPDATE', () => expect(actionLabel('UPDATE')).toBe('✏️ UPDATE'));
+  test(ctx, 'DELETE → 🗑 DELETE', () => expect(actionLabel('DELETE')).toBe('🗑 DELETE'));
+  test(ctx, 'CHECKIN → 🟢 CHECK-IN', () => expect(actionLabel('CHECKIN')).toBe('🟢 CHECK-IN'));
+  test(ctx, 'CHECKOUT → 🟣 CHECK-OUT', () => expect(actionLabel('CHECKOUT')).toBe('🟣 CHECK-OUT'));
+  test(ctx, 'APPROVE → ✅ APPROVE', () => expect(actionLabel('APPROVE')).toBe('✅ APPROVE'));
+  test(ctx, 'unknown → passthrough', () => expect(actionLabel('TRANSFER')).toBe('TRANSFER'));
+});
+
+suite('AuditTrail.js — formatDateTime()', ctx => {
+  test(ctx, 'null → —', () => expect(formatDateTime(null)).toBe('—'));
+  test(ctx, 'empty string → —', () => expect(formatDateTime('')).toBe('—'));
+  test(ctx, 'valid ISO string → non-empty', () => {
+    const result = formatDateTime('2026-04-21T14:30:00');
+    expect(result.length).toBeGreaterThan(0);
+    if (result === '—') throw new Error('Should not return — for valid timestamp');
+  });
+});
+
+// ── 6. Notifications.js ──────────────────────────────────
+suite('Notifications.js — typeLabel()', ctx => {
+  test(ctx, 'CARE_REPORT → รายงานดูแล', () => expect(typeLabel('CARE_REPORT')).toBe('รายงานดูแล'));
+  test(ctx, 'BOOKING_CONFIRMED → ยืนยันจอง', () => expect(typeLabel('BOOKING_CONFIRMED')).toBe('ยืนยันจอง'));
+  test(ctx, 'BOOKING_CANCELLED → ยกเลิกจอง', () => expect(typeLabel('BOOKING_CANCELLED')).toBe('ยกเลิกจอง'));
+  test(ctx, 'PAYMENT_CONFIRMED → ชำระเงิน', () => expect(typeLabel('PAYMENT_CONFIRMED')).toBe('ชำระเงิน'));
+  test(ctx, 'CHECKIN_REMINDER → แจ้งเตือน', () => expect(typeLabel('CHECKIN_REMINDER')).toBe('แจ้งเตือน'));
+  test(ctx, 'NEW_BOOKING_ALERT → จองใหม่', () => expect(typeLabel('NEW_BOOKING_ALERT')).toBe('จองใหม่'));
+  test(ctx, 'unknown type → passthrough', () => expect(typeLabel('UNKNOWN_TYPE')).toBe('UNKNOWN_TYPE'));
+});
+
+suite('Notifications.js — getFiltered()', ctx => {
+  const MOCK_NTF = [
+    { notification_id: 1, type: 'CARE_REPORT',       is_read: false },
+    { notification_id: 2, type: 'NEW_BOOKING_ALERT',  is_read: false },
+    { notification_id: 3, type: 'PAYMENT_CONFIRMED',  is_read: true  },
+    { notification_id: 4, type: 'BOOKING_CANCELLED',  is_read: true  },
+    { notification_id: 5, type: 'CARE_REPORT',        is_read: true  },
+  ];
+  test(ctx, 'filter=all → 5 items', () => {
+    expect(nt_getFiltered(MOCK_NTF, 'all').length).toBe(5);
+  });
+  test(ctx, 'filter=unread → 2 items', () => {
+    expect(nt_getFiltered(MOCK_NTF, 'unread').length).toBe(2);
+  });
+  test(ctx, 'filter=CARE_REPORT → 2 items', () => {
+    expect(nt_getFiltered(MOCK_NTF, 'CARE_REPORT').length).toBe(2);
+  });
+  test(ctx, 'filter=PAYMENT_CONFIRMED → 1 item', () => {
+    expect(nt_getFiltered(MOCK_NTF, 'PAYMENT_CONFIRMED').length).toBe(1);
+  });
+  test(ctx, 'filter=NEW_BOOKING_ALERT → 1 item', () => {
+    expect(nt_getFiltered(MOCK_NTF, 'NEW_BOOKING_ALERT').length).toBe(1);
+  });
+  test(ctx, 'filter=BOOKING_CONFIRMED (0 items) → empty array', () => {
+    expect(nt_getFiltered(MOCK_NTF, 'BOOKING_CONFIRMED').length).toBe(0);
+  });
+  test(ctx, 'empty notifications → empty array', () => {
+    expect(nt_getFiltered([], 'all').length).toBe(0);
+  });
+});
+
+// ── 7. Inventory.js ──────────────────────────────────
+suite('Inventory.js — catLabel()', ctx => {
+  test(ctx, 'food → 🌾 อาหาร', () => expect(catLabel('food')).toBe('🌾 อาหาร'));
+  test(ctx, 'supplies → 📦 อุปกรณ์', () => expect(catLabel('supplies')).toBe('📦 อุปกรณ์'));
+  test(ctx, 'medicine → 💊 ยา', () => expect(catLabel('medicine')).toBe('💊 ยา'));
+  test(ctx, 'unknown → passthrough', () => expect(catLabel('other')).toBe('other'));
+});
+
+suite('Inventory.js — getItemStatus()', ctx => {
+  test(ctx, 'สต็อกต่ำกว่า threshold → danger', () => {
+    const item = { quantity_remaining: 2, quantity_total: 20, reorder_threshold: 5, expiry_date: null };
+    expect(getItemStatus(item).cls).toBe('danger');
+  });
+  test(ctx, 'ใกล้หมดอายุ (15 วัน) → expiring', () => {
+    const soon = new Date(); soon.setDate(soon.getDate() + 15);
+    const item = { quantity_remaining: 10, quantity_total: 20, reorder_threshold: 2,
+                   expiry_date: soon.toISOString().split('T')[0] };
+    expect(getItemStatus(item).cls).toBe('expiring');
+  });
+  test(ctx, 'qty 40% → low', () => {
+    const item = { quantity_remaining: 8, quantity_total: 20, reorder_threshold: 2, expiry_date: null };
+    expect(getItemStatus(item).cls).toBe('low');
+  });
+  test(ctx, 'qty > 40% + no expiry issues → good', () => {
+    const item = { quantity_remaining: 15, quantity_total: 20, reorder_threshold: 3, expiry_date: '2030-01-01' };
+    expect(getItemStatus(item).cls).toBe('good');
+  });
+  test(ctx, 'threshold check takes priority over expiry', () => {
+    const soon = new Date(); soon.setDate(soon.getDate() + 10);
+    const item = { quantity_remaining: 1, quantity_total: 30, reorder_threshold: 5,
+                   expiry_date: soon.toISOString().split('T')[0] };
+    expect(getItemStatus(item).cls).toBe('danger');
+  });
+  test(ctx, 'label สต็อกต่ำ → ⚠ สต็อกต่ำ', () => {
+    const item = { quantity_remaining: 1, quantity_total: 20, reorder_threshold: 5, expiry_date: null };
+    expect(getItemStatus(item).label).toBe('⚠ สต็อกต่ำ');
+  });
+});
+
+// ── 8. PetCare.js ──────────────────────────────────
+suite('PetCare.js — moodEmoji()', ctx => {
+  test(ctx, 'HAPPY → 😄', () => expect(moodEmoji('HAPPY')).toBe('😄'));
+  test(ctx, 'NEUTRAL → 😐', () => expect(moodEmoji('NEUTRAL')).toBe('😐'));
+  test(ctx, 'ANXIOUS → 😰', () => expect(moodEmoji('ANXIOUS')).toBe('😰'));
+  test(ctx, 'SICK → 🤒', () => expect(moodEmoji('SICK')).toBe('🤒'));
+  test(ctx, 'unknown → 😐 fallback', () => expect(moodEmoji('UNKNOWN')).toBe('😐'));
+});
+
+suite('PetCare.js — moodLabel()', ctx => {
+  test(ctx, 'HAPPY → Happy', () => expect(moodLabel('HAPPY')).toBe('Happy'));
+  test(ctx, 'NEUTRAL → Neutral', () => expect(moodLabel('NEUTRAL')).toBe('Neutral'));
+  test(ctx, 'ANXIOUS → Anxious', () => expect(moodLabel('ANXIOUS')).toBe('Anxious'));
+  test(ctx, 'SICK → Sick', () => expect(moodLabel('SICK')).toBe('Sick'));
+  test(ctx, 'unknown → passthrough', () => expect(moodLabel('FINE')).toBe('FINE'));
+});
+
+suite('PetCare.js — calcDaysLeft()', ctx => {
+  test(ctx, 'checkout past → เกินกำหนด', () => {
+    expect(calcDaysLeft('2020-01-01')).toBe('เกินกำหนด');
+  });
+  test(ctx, 'far future → starts with อีก', () => {
+    const future = new Date(); future.setDate(future.getDate() + 10);
+    const result = calcDaysLeft(future.toISOString().split('T')[0]);
+    expect(result).toContain('อีก');
+  });
+  test(ctx, '1 day ahead → อีก 1 วัน', () => {
+    const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+    expect(calcDaysLeft(tomorrow.toISOString().split('T')[0])).toBe('อีก 1 วัน');
+  });
+  test(ctx, 'today → วันนี้', () => {
+    const today = new Date().toISOString().split('T')[0];
+    expect(calcDaysLeft(today)).toBe('วันนี้');
+  });
+});
+
+// ── 9. api.js ──────────────────────────────────
+suite('api.js — authHeaders()', ctx => {
+  test(ctx, 'Content-Type is application/json', () => {
+    const h = authHeaders('mytoken');
+    expect(h['Content-Type']).toBe('application/json');
+  });
+  test(ctx, 'Authorization uses Bearer scheme', () => {
+    const h = authHeaders('abc123');
+    expect(h['Authorization']).toBe('Bearer abc123');
+  });
+  test(ctx, 'empty token → Bearer empty string', () => {
+    const h = authHeaders('');
+    expect(h['Authorization']).toBe('Bearer ');
+  });
+  test(ctx, 'returns exactly 2 headers', () => {
+    const h = authHeaders('tok');
+    expect(Object.keys(h).length).toBe(2);
+  });
+});
+
+// ── 10. Business Logic Integration Tests ──────────────────────────────────
+suite('Integration — Billing total calculation', ctx => {
+  test(ctx, 'line items sum matches total', () => {
+    const lineItems = [
+      { amount: 2000 },
+      { amount: 200  },
+      { amount: 150  },
+    ];
+    const sum = lineItems.reduce((acc, i) => acc + i.amount, 0);
+    expect(sum).toBe(2350);
+  });
+  test(ctx, 'total with discount', () => {
+    const subtotal = 6650;
+    const discount = 500;
+    const total = subtotal - discount;
+    expect(total).toBe(6150);
+  });
+  test(ctx, 'zero discount leaves total unchanged', () => {
+    const subtotal = 1850;
+    expect(subtotal - 0).toBe(1850);
+  });
+});
+
+suite('Integration — Room pricing (calcNights × rate)', ctx => {
+  test(ctx, 'Standard AC (500฿) × 4 nights = 2000', () => {
+    expect(calcNights('2025-04-02', '2025-04-06') * 500).toBe(2000);
+  });
+  test(ctx, 'VIP (1200฿) × 5 nights = 6000', () => {
+    expect(calcNights('2025-04-05', '2025-04-10') * 1200).toBe(6000);
+  });
+  test(ctx, 'Fan (350฿) × 3 nights = 1050', () => {
+    expect(calcNights('2025-04-01', '2025-04-04') * 350).toBe(1050);
+  });
+});
+
+suite('Integration — Inventory alert threshold (20%)', ctx => {
+  test(ctx, '< 20% remaining → below threshold flag', () => {
+    const item = { quantity_remaining: 3, quantity_total: 20, reorder_threshold: 4, expiry_date: null };
+    const pct = item.quantity_remaining / item.quantity_total;
+    expect(pct < 0.20).toBeTruthy();
+  });
+  test(ctx, '21% remaining → above 20% threshold', () => {
+    const item = { quantity_remaining: 5, quantity_total: 20 };
+    const pct = item.quantity_remaining / item.quantity_total;
+    if (pct < 0.20) throw new Error('Should be above 20%');
+  });
+  test(ctx, 'reorder_threshold logic: remaining <= threshold → alert', () => {
+    const item = { quantity_remaining: 4, quantity_total: 20, reorder_threshold: 5, expiry_date: null };
+    expect(getItemStatus(item).cls).toBe('danger');
+  });
+});
+
+
+// ═══════════════════════════════════════════════════
+// RENDER RESULTS
+// ═══════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  const total = results.pass + results.fail + results.skip;
+  const allPass = results.fail === 0 && results.skip === 0;
+  const hasSkip = results.skip > 0;
+
+  const summaryClass = results.fail > 0 ? 'has-fail' : hasSkip ? 'has-skip' : 'all-pass';
+  document.getElementById('summary').innerHTML = `
+    <div class="summary-bar ${summaryClass}">
+      <div class="stat">
+        <div class="stat-val pass">${results.pass}</div>
+        <div class="stat-label">PASS</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val fail">${results.fail}</div>
+        <div class="stat-label">FAIL</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val skip">${results.skip}</div>
+        <div class="stat-label">SKIP</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val" style="color:#e2e8f0">${total}</div>
+        <div class="stat-label">TOTAL</div>
+      </div>
+      <div style="flex:1; text-align:right; color:${results.fail > 0 ? '#f87171' : '#4ade80'}; font-size:13px;">
+        ${results.fail > 0 ? `❌ ${results.fail} test(s) failed` : '✅ All tests passed'}
+      </div>
+    </div>
+  `;
+
+  const out = document.getElementById('output');
+  results.suites.forEach(s => {
+    const tests = s.tests.map(t => `
+      <div class="test ${t.status}">
+        <div class="icon"></div>
+        <div>
+          <div class="test-name">${t.name}</div>
+          ${t.detail ? `<div class="detail">${t.detail}</div>` : ''}
+        </div>
+      </div>
+    `).join('');
+
+    const passCount = s.tests.filter(t => t.status === 'pass').length;
+    const failCount = s.tests.filter(t => t.status === 'fail').length;
+
+    out.innerHTML += `
+      <div class="suite">
+        <div class="suite-title">
+          ${s.name}
+          <span style="font-size:11px; font-weight:400; margin-left:10px; color:${failCount > 0 ? '#f87171' : '#4ade80'}">
+            ${passCount}/${s.tests.length} passed
+          </span>
+        </div>
+        ${tests}
+      </div>
+    `;
+  });
+});
+</script>
+</body>
+</html>

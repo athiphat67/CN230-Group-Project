@@ -72,4 +72,4 @@ app.register_blueprint(attendance_bp, url_prefix='/api/attendance')
 app.register_blueprint(leave_bp, url_prefix='/api/leave')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)

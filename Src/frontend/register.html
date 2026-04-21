@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>สมัครใช้งาน — Purrfect Stay</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Serif+Display:ital@0;1&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy:   #0f172a;
+      --blue:   #3b82f6;
+      --teal:   #0d9488;
+      --green:  #16a34a;
+      --text-1: #0f172a;
+      --text-2: #475569;
+      --text-3: #94a3b8;
+      --border: #e2e8f0;
+      --red:    #ef4444;
+    }
+    body { font-family: 'DM Sans', sans-serif; min-height: 100vh; display: flex; background: #f8fafc; }
+
+    /* ── LEFT PANEL ── */
+    .panel-left {
+      width: 420px; min-height: 100vh; flex-shrink: 0;
+      background: linear-gradient(160deg, #0f172a 0%, #1e3a5f 60%, #134e4a 100%);
+      position: relative; display: flex; flex-direction: column;
+      justify-content: space-between; padding: 48px; overflow: hidden;
+    }
+    .panel-left::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(circle at 70% 20%, rgba(13,148,136,.3) 0%, transparent 50%),
+                  radial-gradient(circle at 20% 80%, rgba(59,130,246,.2) 0%, transparent 50%);
+    }
+    .panel-dots {
+      position: absolute; inset: 0; opacity: .06;
+      background-image: radial-gradient(rgba(255,255,255,.8) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+    .panel-brand { position: relative; z-index: 1; display: flex; align-items: center; gap: 12px; }
+    .panel-brand-icon {
+      width: 42px; height: 42px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--blue), var(--teal));
+      display: flex; align-items: center; justify-content: center; font-size: 20px;
+    }
+    .panel-brand-name { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; color: white; }
+    .panel-brand-sub  { font-size: 11px; color: rgba(148,163,184,.7); margin-top: 1px; letter-spacing: .5px; text-transform: uppercase; }
+    .panel-content { position: relative; z-index: 1; }
+    .panel-title { font-family: 'DM Serif Display', serif; font-size: 36px; line-height: 1.15; color: white; margin-bottom: 16px; }
+    .panel-title em { font-style: italic; color: #5eead4; }
+    .panel-sub { font-size: 14px; color: rgba(148,163,184,.75); line-height: 1.6; margin-bottom: 32px; }
+    .panel-steps { display: flex; flex-direction: column; gap: 10px; }
+    .panel-step {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 16px; background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.08); border-radius: 12px;
+    }
+    .step-num {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: rgba(59,130,246,.3); border: 1.5px solid rgba(59,130,246,.5);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: #93c5fd; flex-shrink: 0;
+    }
+    .step-text { font-size: 13px; color: rgba(255,255,255,.8); font-weight: 500; }
+    .panel-footer { position: relative; z-index: 1; }
+    .panel-footer-text { font-size: 12px; color: rgba(148,163,184,.4); }
+
+    /* ── RIGHT PANEL ── */
+    .panel-right { flex: 1; display: flex; align-items: flex-start; justify-content: center; padding: 48px 64px; overflow-y: auto; }
+    .form-box { width: 100%; max-width: 520px; animation: fadeUp .5s ease both; }
+
+    /* Progress Steps */
+    .progress-steps {
+      display: flex; align-items: center; margin-bottom: 36px; gap: 0;
+    }
+    .prog-step {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12.5px; font-weight: 600; color: var(--text-3);
+    }
+    .prog-step.active { color: var(--blue); }
+    .prog-step.done   { color: var(--green); }
+    .prog-num {
+      width: 28px; height: 28px; border-radius: 50%;
+      border: 2px solid var(--border); background: white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: var(--text-3); flex-shrink: 0; transition: all .3s;
+    }
+    .prog-step.active .prog-num { border-color: var(--blue); color: var(--blue); background: #EFF6FF; }
+    .prog-step.done   .prog-num { border-color: var(--green); background: var(--green); color: white; }
+    .prog-line { flex: 1; height: 2px; background: var(--border); margin: 0 8px; transition: background .3s; }
+    .prog-line.done { background: var(--green); }
+
+    .form-header { margin-bottom: 28px; }
+    .form-title { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 700; color: var(--text-1); margin-bottom: 4px; }
+    .form-sub   { font-size: 14px; color: var(--text-2); }
+
+    .form-step { display: none; }
+    .form-step.active { display: block; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-group { margin-bottom: 18px; }
+    .form-label { display: block; font-size: 13px; font-weight: 600; color: var(--text-2); margin-bottom: 7px; }
+    .form-input-wrap { position: relative; }
+    .form-input-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--text-3); width: 17px; height: 17px; pointer-events: none; }
+    .form-input {
+      width: 100%; padding: 12px 12px 12px 40px;
+      border: 1.5px solid var(--border); border-radius: 11px;
+      font-family: 'DM Sans', sans-serif; font-size: 14px;
+      color: var(--text-1); background: white; outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .form-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(59,130,246,.1); }
+    .form-input.error { border-color: var(--red); }
+    .form-input-plain { padding-left: 14px; }
+    .form-select {
+      width: 100%; padding: 12px 14px;
+      border: 1.5px solid var(--border); border-radius: 11px;
+      font-family: 'DM Sans', sans-serif; font-size: 14px;
+      color: var(--text-1); background: white; outline: none;
+      transition: border-color .2s; cursor: pointer;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2394a3b8' stroke-width='2' viewBox='0 0 24 24'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 12px center;
+    }
+    .form-select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(59,130,246,.1); }
+
+    .form-hint { font-size: 12px; color: var(--text-3); margin-top: 5px; }
+    .form-error { display:none; align-items:center; gap:5px; font-size:12px; color:var(--red); margin-top:5px; }
+    .form-error.show { display:flex; }
+
+    /* Role cards */
+    .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .role-card { position: relative; }
+    .role-card input { position: absolute; opacity: 0; pointer-events: none; }
+    .role-card-label {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px; border: 2px solid var(--border);
+      border-radius: 12px; cursor: pointer; transition: all .2s;
+    }
+    .role-card-label:hover { border-color: var(--blue); }
+    .role-card input:checked ~ .role-card-label { border-color: var(--blue); background: #EFF6FF; }
+    .role-icon { font-size: 22px; }
+    .role-name { font-weight: 600; font-size: 13.5px; color: var(--text-1); }
+    .role-desc { font-size: 11.5px; color: var(--text-3); margin-top: 1px; }
+
+    /* Password strength */
+    .strength-bar {
+      display: flex; gap: 4px; margin-top: 8px;
+    }
+    .strength-seg { flex: 1; height: 3px; border-radius: 20px; background: var(--border); transition: background .3s; }
+    .strength-seg.fill0 { background: var(--red); }
+    .strength-seg.fill1 { background: #f59e0b; }
+    .strength-seg.fill2 { background: var(--teal); }
+    .strength-seg.fill3 { background: var(--green); }
+    .strength-label { font-size: 11.5px; color: var(--text-3); margin-top: 5px; }
+
+    /* Terms */
+    .terms-box {
+      padding: 16px; background: #F8FAFC; border-radius: 12px;
+      border: 1px solid var(--border); margin-bottom: 18px; font-size: 13px; color: var(--text-2); line-height: 1.6;
+    }
+    .link { color: var(--blue); text-decoration: none; font-weight: 500; }
+    .link:hover { color: #2563eb; }
+    .checkbox-wrap { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; margin-bottom: 14px; }
+    .checkbox-wrap input { margin-top: 2px; accent-color: var(--blue); width: 15px; height: 15px; flex-shrink: 0; }
+    .checkbox-label { font-size: 13.5px; color: var(--text-2); line-height: 1.5; }
+
+    /* Summary card */
+    .summary-card {
+      background: #F8FAFC; border: 1.5px solid var(--border);
+      border-radius: 16px; padding: 20px; margin-bottom: 20px;
+    }
+    .summary-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--text-3); margin-bottom: 14px; }
+    .summary-row { display: flex; justify-content: space-between; font-size: 13.5px; padding: 7px 0; border-bottom: 1px solid var(--border); }
+    .summary-row:last-child { border-bottom: none; }
+    .summary-label { color: var(--text-3); }
+    .summary-val   { font-weight: 600; color: var(--text-1); }
+
+    /* Buttons */
+    .btn-row { display: flex; gap: 12px; }
+    .btn-back {
+      padding: 13px 20px; border-radius: 12px; border: 1.5px solid var(--border);
+      background: white; color: var(--text-2); font-family: 'DM Sans', sans-serif;
+      font-size: 14px; font-weight: 500; cursor: pointer; transition: all .2s;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .btn-back:hover { border-color: var(--navy); color: var(--navy); }
+    .btn-next {
+      flex: 1; padding: 13px 20px; border-radius: 12px; border: none;
+      background: linear-gradient(135deg, var(--navy) 0%, #1e293b 100%);
+      color: white; font-family: 'DM Sans', sans-serif;
+      font-size: 14px; font-weight: 600; cursor: pointer; transition: all .25s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      box-shadow: 0 4px 16px rgba(15,23,42,.2);
+    }
+    .btn-next:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(15,23,42,.28); }
+    .btn-next:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+    .btn-next.green { background: linear-gradient(135deg, var(--green), #15803d); box-shadow: 0 4px 16px rgba(22,163,74,.3); }
+    .btn-next.green:hover { box-shadow: 0 6px 24px rgba(22,163,74,.35); }
+
+    .form-footer { text-align: center; margin-top: 24px; font-size: 13.5px; color: var(--text-3); }
+
+    /* Password toggle */
+    .password-toggle {
+      position: absolute; right: 13px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; color: var(--text-3); transition: color .15s;
+    }
+    .password-toggle:hover { color: var(--text-2); }
+
+    /* Success overlay */
+    .success-overlay {
+      display: none; position: fixed; inset: 0; z-index: 999;
+      background: rgba(15,23,42,.6); backdrop-filter: blur(6px);
+      align-items: center; justify-content: center;
+    }
+    .success-overlay.show { display: flex; }
+    .success-card {
+      background: white; border-radius: 24px; padding: 48px; text-align: center;
+      max-width: 400px; width: 90%; box-shadow: 0 32px 80px rgba(0,0,0,.2);
+      animation: fadeUp .5s ease both;
+    }
+    .success-icon { font-size: 56px; margin-bottom: 16px; }
+    .success-title { font-family: 'DM Serif Display', serif; font-size: 28px; color: var(--navy); margin-bottom: 8px; }
+    .success-sub { font-size: 14px; color: var(--text-2); line-height: 1.6; margin-bottom: 28px; }
+    .btn-go { display:inline-flex; align-items:center; gap:8px; padding:13px 28px; border-radius:12px; border:none; background:linear-gradient(135deg,var(--navy),#1e293b); color:white; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:600; cursor:pointer; text-decoration:none; transition:all .2s; }
+    .btn-go:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(15,23,42,.25); }
+
+    @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+    @media (max-width: 900px) { .panel-left { display:none; } .panel-right { padding: 40px 24px; } .form-row { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<div class="panel-left">
+  <div class="panel-dots"></div>
+  <div class="panel-brand">
+    <div class="panel-brand-icon">🐾</div>
+    <div>
+      <div class="panel-brand-name">Purrfect Stay</div>
+      <div class="panel-brand-sub">Admin Portal</div>
+    </div>
+  </div>
+  <div class="panel-content">
+    <h2 class="panel-title">เริ่มต้น<br><em>บริหารจัดการ</em><br>โรงแรมสัตว์เลี้ยง</h2>
+    <p class="panel-sub">สมัครใช้งานฟรี สร้างบัญชี Admin Panel สำหรับทีมงานของคุณ รองรับหลาย Role</p>
+    <div class="panel-steps">
+      <div class="panel-step">
+        <div class="step-num">1</div>
+        <div class="step-text">ข้อมูลส่วนตัวและบัญชีผู้ใช้</div>
+      </div>
+      <div class="panel-step">
+        <div class="step-num">2</div>
+        <div class="step-text">เลือก Role และรหัสผ่าน</div>
+      </div>
+      <div class="panel-step">
+        <div class="step-num">3</div>
+        <div class="step-text">ยืนยันและเสร็จสิ้น</div>
+      </div>
+    </div>
+  </div>
+  <div class="panel-footer">
+    <div class="panel-footer-text">© 2026 Purrfect Stay — Secure Registration</div>
+  </div>
+</div>
+
+<div class="panel-right">
+  <div class="form-box">
+
+    <!-- Progress -->
+    <div class="progress-steps">
+      <div class="prog-step active" id="prog1">
+        <div class="prog-num" id="pnum1">1</div>
+        <span>บัญชีผู้ใช้</span>
+      </div>
+      <div class="prog-line" id="pline1"></div>
+      <div class="prog-step" id="prog2">
+        <div class="prog-num" id="pnum2">2</div>
+        <span>Role & รหัสผ่าน</span>
+      </div>
+      <div class="prog-line" id="pline2"></div>
+      <div class="prog-step" id="prog3">
+        <div class="prog-num" id="pnum3">3</div>
+        <span>ยืนยัน</span>
+      </div>
+    </div>
+
+    <!-- STEP 1: Basic Info -->
+    <div class="form-step active" id="step1">
+      <div class="form-header">
+        <h1 class="form-title">สมัครใช้งาน</h1>
+        <p class="form-sub">กรอกข้อมูลส่วนตัวเพื่อสร้างบัญชีผู้ใช้</p>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="fname">ชื่อ <span style="color:var(--red)">*</span></label>
+          <div class="form-input-wrap">
+            <svg class="form-input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            <input type="text" id="fname" class="form-input" placeholder="สมชาย">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="lname">นามสกุล <span style="color:var(--red)">*</span></label>
+          <div class="form-input-wrap">
+            <svg class="form-input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            <input type="text" id="lname" class="form-input" placeholder="มั่นคง">
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="username">Username <span style="color:var(--red)">*</span></label>
+        <div class="form-input-wrap">
+          <svg class="form-input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <input type="text" id="username" class="form-input" placeholder="somchai123">
+        </div>
+        <div class="form-hint">ตัวอักษรและตัวเลขเท่านั้น ไม่มีช่องว่าง</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="email">อีเมล <span style="color:var(--red)">*</span></label>
+        <div class="form-input-wrap">
+          <svg class="form-input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <input type="email" id="email" class="form-input" placeholder="somchai@purrfect.com">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="phone">เบอร์โทรศัพท์</label>
+        <div class="form-input-wrap">
+          <svg class="form-input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8 19.79 19.79 0 01.1 1.18 2 2 0 012.11 0H5.07c.96 0 1.77.7 1.91 1.64a12.3 12.3 0 00.67 2.68 2 2 0 01-.45 2.11L6 7.09a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.86.23 1.76.38 2.68.67.95.14 1.65.96 1.65 1.91z"/></svg>
+          <input type="tel" id="phone" class="form-input" placeholder="081-234-5678">
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn-next" onclick="goStep(2)">
+          ต่อไป
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14m-7-7l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- STEP 2: Role & Password -->
+    <div class="form-step" id="step2">
+      <div class="form-header">
+        <h1 class="form-title">Role & รหัสผ่าน</h1>
+        <p class="form-sub">เลือก Role ของคุณและตั้งรหัสผ่านให้ปลอดภัย</p>
+      </div>
+      <div class="form-group">
+        <label class="form-label">เลือก Role <span style="color:var(--red)">*</span></label>
+        <div class="role-grid">
+          <div class="role-card">
+            <input type="radio" name="role" id="role-admin" value="ADMIN" checked>
+            <label class="role-card-label" for="role-admin">
+              <div class="role-icon">👑</div>
+              <div>
+                <div class="role-name">ADMIN</div>
+                <div class="role-desc">เข้าถึงได้ทุกส่วน</div>
+              </div>
+            </label>
+          </div>
+          <div class="role-card">
+            <input type="radio" name="role" id="role-staff" value="STAFF">
+            <label class="role-card-label" for="role-staff">
+              <div class="role-icon">🧑‍💼</div>
+              <div>
+                <div class="role-name">STAFF</div>
+                <div class="role-desc">สิทธิ์การดูแลสัตว์เลี้ยง</div>
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="hire-date">วันที่เริ่มงาน</label>
+        <div class="form-input-wrap">
+          <svg class="form-input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          <input type="date" id="hire-date" class="form-input" value="2026-04-21">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="password">รหัสผ่าน <span style="color:var(--red)">*</span></label>
+        <div class="form-input-wrap">
+          <svg class="form-input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          <input type="password" id="password" class="form-input" placeholder="อย่างน้อย 8 ตัวอักษร" oninput="checkStrength(this.value)">
+          <button type="button" class="password-toggle" onclick="togglePwd('password', this)" tabindex="-1">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <div class="strength-bar">
+          <div class="strength-seg" id="s1"></div>
+          <div class="strength-seg" id="s2"></div>
+          <div class="strength-seg" id="s3"></div>
+          <div class="strength-seg" id="s4"></div>
+        </div>
+        <div class="strength-label" id="strength-label">กรอกรหัสผ่านเพื่อดูความปลอดภัย</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="confirm-pw">ยืนยันรหัสผ่าน <span style="color:var(--red)">*</span></label>
+        <div class="form-input-wrap">
+          <svg class="form-input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <input type="password" id="confirm-pw" class="form-input" placeholder="กรอกรหัสผ่านอีกครั้ง">
+        </div>
+        <div class="form-error" id="err-pw">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+          รหัสผ่านไม่ตรงกัน
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn-back" onclick="goStep(1)">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 12H5m7 7l-7-7 7-7"/></svg>
+          ย้อนกลับ
+        </button>
+        <button class="btn-next" onclick="goStep(3)">
+          ต่อไป
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14m-7-7l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- STEP 3: Confirm -->
+    <div class="form-step" id="step3">
+      <div class="form-header">
+        <h1 class="form-title">ยืนยันข้อมูล</h1>
+        <p class="form-sub">ตรวจสอบข้อมูลให้ครบถ้วนก่อนสมัคร</p>
+      </div>
+      <div class="summary-card">
+        <div class="summary-title">ข้อมูลบัญชีผู้ใช้</div>
+        <div class="summary-row">
+          <span class="summary-label">ชื่อ-นามสกุล</span>
+          <span class="summary-val" id="sum-name">—</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">Username</span>
+          <span class="summary-val" id="sum-user">—</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">Email</span>
+          <span class="summary-val" id="sum-email">—</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">Role</span>
+          <span class="summary-val" id="sum-role">—</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">รหัสผ่าน</span>
+          <span class="summary-val">••••••••</span>
+        </div>
+      </div>
+      <div class="terms-box">
+        โดยการสมัครใช้งาน คุณตกลงที่จะปฏิบัติตาม <a href="#" class="link">นโยบายการใช้งาน</a> และ
+        <a href="#" class="link">นโยบายความเป็นส่วนตัว</a> ของ Purrfect Stay ระบบนี้ใช้สำหรับ Staff ภายในเท่านั้น
+      </div>
+      <label class="checkbox-wrap">
+        <input type="checkbox" id="agree-terms">
+        <span class="checkbox-label">ฉันอ่านและยอมรับเงื่อนไขการใช้งานเรียบร้อยแล้ว</span>
+      </label>
+      <div class="btn-row">
+        <button class="btn-back" onclick="goStep(2)">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 12H5m7 7l-7-7 7-7"/></svg>
+          ย้อนกลับ
+        </button>
+        <button class="btn-next green" onclick="handleRegister()">
+          🎉 สมัครใช้งาน
+        </button>
+      </div>
+    </div>
+
+    <div class="form-footer">
+      มีบัญชีอยู่แล้ว? <a href="login.html" class="link">เข้าสู่ระบบ</a>
+      &nbsp;·&nbsp; <a href="index.html" class="link">กลับหน้าหลัก</a>
+    </div>
+  </div>
+</div>
+
+<!-- SUCCESS OVERLAY -->
+<div class="success-overlay" id="success-overlay">
+  <div class="success-card">
+    <div class="success-icon">🎊</div>
+    <h2 class="success-title">สมัครสำเร็จ!</h2>
+    <p class="success-sub">ยินดีต้อนรับสู่ Purrfect Stay Admin Portal บัญชีของคุณพร้อมใช้งานแล้ว</p>
+    <a href="login.html" class="btn-go">เข้าสู่ระบบเลย →</a>
+  </div>
+</div>
+
+<script>
+  let currentStep = 1;
+
+  function goStep(n) {
+    if (n > currentStep && !validate(currentStep)) return;
+
+    // Update summary on step 3
+    if (n === 3) fillSummary();
+
+    document.getElementById(`step${currentStep}`).classList.remove('active');
+    document.getElementById(`step${n}`).classList.add('active');
+
+    // Update progress
+    for (let i = 1; i <= 3; i++) {
+      const prog = document.getElementById(`prog${i}`);
+      const pnum = document.getElementById(`pnum${i}`);
+      prog.classList.remove('active', 'done');
+      if (i < n) { prog.classList.add('done'); pnum.innerHTML = '✓'; }
+      else if (i === n) { prog.classList.add('active'); pnum.textContent = i; }
+      else { pnum.textContent = i; }
+    }
+    for (let i = 1; i <= 2; i++) {
+      const line = document.getElementById(`pline${i}`);
+      line.classList.toggle('done', i < n);
+    }
+    currentStep = n;
+    window.scrollTo(0, 0);
+  }
+
+  function validate(step) {
+    if (step === 1) {
+      const fname   = document.getElementById('fname').value.trim();
+      const lname   = document.getElementById('lname').value.trim();
+      const username = document.getElementById('username').value.trim();
+      const email   = document.getElementById('email').value.trim();
+      if (!fname || !lname || !username || !email) {
+        alert('กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน');
+        return false;
+      }
+      if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+        alert('Username ต้องเป็นตัวอักษรและตัวเลขเท่านั้น');
+        return false;
+      }
+    }
+    if (step === 2) {
+      const pw  = document.getElementById('password').value;
+      const cpw = document.getElementById('confirm-pw').value;
+      if (!pw || pw.length < 8) { alert('รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร'); return false; }
+      if (pw !== cpw) {
+        document.getElementById('err-pw').classList.add('show');
+        return false;
+      }
+      document.getElementById('err-pw').classList.remove('show');
+    }
+    return true;
+  }
+
+  function fillSummary() {
+    const fname = document.getElementById('fname').value.trim();
+    const lname = document.getElementById('lname').value.trim();
+    const role  = document.querySelector('input[name="role"]:checked')?.value ?? 'STAFF';
+    document.getElementById('sum-name').textContent  = `${fname} ${lname}`;
+    document.getElementById('sum-user').textContent  = document.getElementById('username').value.trim();
+    document.getElementById('sum-email').textContent = document.getElementById('email').value.trim();
+    document.getElementById('sum-role').textContent  = role === 'ADMIN' ? '👑 ADMIN' : '🧑‍💼 STAFF';
+  }
+
+  function checkStrength(pw) {
+    let score = 0;
+    if (pw.length >= 8)  score++;
+    if (/[A-Z]/.test(pw)) score++;
+    if (/[0-9]/.test(pw)) score++;
+    if (/[^A-Za-z0-9]/.test(pw)) score++;
+    const segs = [document.getElementById('s1'),document.getElementById('s2'),document.getElementById('s3'),document.getElementById('s4')];
+    const labels = ['—','ง่ายมาก','ปานกลาง','ค่อนข้างดี','ปลอดภัยมาก'];
+    segs.forEach((s, i) => {
+      s.className = 'strength-seg';
+      if (i < score) s.classList.add(`fill${score - 1}`);
+    });
+    document.getElementById('strength-label').textContent = pw ? labels[score] : 'กรอกรหัสผ่านเพื่อดูความปลอดภัย';
+  }
+
+  function togglePwd(id, btn) {
+    const input = document.getElementById(id);
+    const isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+    btn.innerHTML = isPassword
+      ? `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
+      : `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+  }
+
+  async function handleRegister() {
+    if (!document.getElementById('agree-terms').checked) {
+      alert('กรุณายอมรับเงื่อนไขการใช้งานก่อน');
+      return;
+    }
+    const btn = document.querySelector('#step3 .btn-next.green');
+    btn.disabled = true;
+    btn.textContent = '⏳ กำลังสร้างบัญชี...';
+    await new Promise(r => setTimeout(r, 1500));
+    document.getElementById('success-overlay').classList.add('show');
+  }
+</script>
+</body>
+</html>

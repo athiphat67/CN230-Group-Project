@@ -90,14 +90,45 @@ const Sidebar = {
         `).join('')}
       </nav>
       <div class="sidebar-footer">
-        <div class="user-card">
-          <div class="user-avatar">${initial}</div>
-          <div class="user-info">
-            <div class="user-name">${user.name || 'Admin'}</div>
-            <div class="user-role">${user.role || 'Staff'}</div>
+        <div class="user-widget">
+          <div class="user-main" style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+            <div class="user-avatar">${initial}</div>
+            <div class="user-details" style="min-width: 0;">
+              <div class="user-name" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                ${user.name || 'Admin'}
+              </div>
+              <div class="user-role">${user.role || 'Staff'}</div>
+            </div>
           </div>
+          <button class="logout-action" onclick="handleLogout()" title="ออกจากระบบ">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+            </svg>
+          </button>
         </div>
       </div>
     `;
   }
 };
+
+async function handleLogout() {
+  if (!confirm('คุณต้องการออกจากระบบใช่หรือไม่?')) return;
+
+  try {
+    // 1. ยิง API ไปที่ Backend (ใช้ API Service ที่มีอยู่แล้วใน api.js)
+    if (window.API && window.API.auth) {
+      await window.API.auth.logout();
+    }
+  } catch (err) {
+    console.error('Logout API Error:', err);
+  } finally {
+    // 2. ไม่ว่าจะยิง API สำเร็จหรือไม่ ต้องล้างข้อมูลในเครื่องออกเสมอเพื่อความปลอดภัย
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('first_name');
+    localStorage.removeItem('staff_id');
+    localStorage.removeItem('role');
+
+    // 3. ดีดกลับไปหน้า Login
+    window.location.href = 'login.html';
+  }
+}

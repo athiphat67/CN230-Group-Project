@@ -572,15 +572,53 @@
   }
 
   async function handleRegister() {
+    // 1. ตรวจสอบการยอมรับเงื่อนไข
     if (!document.getElementById('agree-terms').checked) {
       alert('กรุณายอมรับเงื่อนไขการใช้งานก่อน');
       return;
     }
+
     const btn = document.querySelector('#step3 .btn-next.green');
-    btn.disabled = true;
-    btn.textContent = '⏳ กำลังสร้างบัญชี...';
-    await new Promise(r => setTimeout(r, 1500));
-    document.getElementById('success-overlay').classList.add('show');
+    
+    // 2. รวบรวมข้อมูลจากทุก Step
+    const staffData = {
+      first_name:     document.getElementById('fname').value.trim(),
+      last_name:      document.getElementById('lname').value.trim(),
+      staff_username: document.getElementById('username').value.trim(),
+      staff_email:    document.getElementById('email').value.trim(),
+      phone_number:   document.getElementById('phone').value.trim(),
+      role:           document.querySelector('input[name="role"]:checked').value,
+      hire_date:      document.getElementById('hire-date').value,
+      password:       document.getElementById('password').value
+    };
+
+    try {
+      btn.disabled = true;
+      btn.textContent = '⏳ กำลังสร้างบัญชี...';
+
+      // 3. ยิง API ไปที่ Backend (เส้นทางสำหรับเพิ่ม Staff)
+      const response = await fetch('http://127.0.0.1:5000/api/staff', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(staffData)
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // 4. แสดง Overlay เมื่อสมัครสำเร็จ
+        document.getElementById('success-overlay').classList.add('show');
+      } else {
+        alert('เกิดข้อผิดพลาด: ' + (data.message || 'ไม่สามารถสมัครสมาชิกได้'));
+        btn.disabled = false;
+        btn.textContent = '🎉 สมัครใช้งาน';
+      }
+    } catch (error) {
+      console.error('Registration Error:', error);
+      alert('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้');
+      btn.disabled = false;
+      btn.textContent = '🎉 สมัครใช้งาน';
+    }
   }
 </script>
 </body>

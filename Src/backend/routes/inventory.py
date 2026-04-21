@@ -1,110 +1,85 @@
 from flask import Blueprint, request, jsonify, current_app
 import psycopg2
 import psycopg2.extras
+from utils import token_required
 
 inventory_bp = Blueprint('inventory', __name__)
 
 def get_db_connection():
     return psycopg2.connect(current_app.config['SQLALCHEMY_DATABASE_URI'])
 
-# --- 1. API ดูรายการคลังสินค้าทั้งหมด ---
+# --- 1. ดูรายการสินค้าทั้งหมด (FR6.1, 6.4) ---
 @inventory_bp.route('/items', methods=['GET'])
-def get_inventory_items():
+@token_required
+def get_inventory_items(current_user):
     try:
         conn = get_db_connection()
-        cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        
+        # ดึงข้อมูลพร้อมประเมินสถานะสต็อก (Low Stock / Out of Stock)
         query = """
-            SELECT ItemID, ItemName, Category, QuantityInStock, UnitPrice, LowStockThreshold, IsChargeable,
-                   CASE
-                       WHEN QuantityInStock = 0 THEN 'OUT_OF_STOCK'
-                       WHEN QuantityInStock <= LowStockThreshold THEN 'LOW_STOCK'
+            SELECT itemid, itemname, category, quantityinstock, unitprice, lowstockthreshold, ischargeable, expiry_date,
+                   CASE 
+                       WHEN quantityinstock <= 0 THEN 'OUT_OF_STOCK'
+                       WHEN quantityinstock <= lowstockthreshold THEN 'LOW_STOCK'
                        ELSE 'IN_STOCK'
-                   END AS StockStatus
-            FROM InventoryItem
-            ORDER BY Category, ItemName
+                   END AS stock_status
+            FROM inventoryitem
+            ORDER BY category, itemname
         """
         cur.execute(query)
         items = cur.fetchall()
-
         cur.close()
         conn.close()
-        return jsonify({"status": "success", "total_items": len(items), "data": items}), 200
-
+        return jsonify({"status": "success", "data": items}), 200
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return jsonify({"error": True, "message": str(e)}), 500
 
-# --- 2. API เบิกของ / บันทึกบริการระหว่างเข้าพัก ---
+# --- 2. บันทึกการใช้งาน/บริการ (Smart Usage) ---
 @inventory_bp.route('/usage', methods=['POST'])
-def record_smart_usage():
-    conn = None
+@token_required
+def record_usage(current_user):
+    conn = get_db_connection()
+    cur = conn.cursor()
     try:
-        data              = request.get_json()
-        booking_detail_id = data.get('booking_detail_id') # [FIX] เปลี่ยนจาก booking_id เป็น detail_id
-        item_id           = data.get('item_id')
-        qty               = data.get('quantity_used', 1)
+        data = request.get_json()
+        item_id = data.get('item_id')
+        qty = data.get('quantity', 1)
+        booking_detail_id = data.get('booking_detail_id') # ต้องใช้เพื่อผูกกับสัตว์เลี้ยงในห้องนั้น
 
-        if not all([booking_detail_id, item_id]) or qty <= 0:
-            return jsonify({"status": "error", "message": "กรุณาส่ง booking_detail_id, item_id และ quantity_used (> 0)"}), 400
-
-        conn = get_db_connection()
-        cur  = conn.cursor()
-
-        # 1. หา BookingID ต้นทาง เพื่อเอาไปเช็กสถานะและคิดเงิน
-        cur.execute("SELECT BookingID FROM BookingDetail WHERE BookingDetailID = %s", (booking_detail_id,))
-        b_row = cur.fetchone()
-        if not b_row:
-            conn.close()
-            return jsonify({"status": "error", "message": "ไม่พบสัตว์เลี้ยงในห้องพักนี้"}), 404
-        actual_booking_id = b_row[0]
-
-        # 2. ตรวจสอบว่า Booking ยัง ACTIVE อยู่
-        cur.execute("SELECT Status FROM Booking WHERE BookingID = %s", (actual_booking_id,))
-        booking_row = cur.fetchone()
-        if booking_row[0] != 'ACTIVE':
-            conn.close()
-            return jsonify({"status": "error", "message": f"ไม่สามารถเบิกของได้ เพราะการจองมีสถานะ '{booking_row[0]}' (ต้องเป็น ACTIVE)"}), 400
-
-        # 3. ดึงข้อมูลสินค้า (ตรวจสอบ IsChargeable)
-        cur.execute("SELECT ItemName, Category, UnitPrice, QuantityInStock, IsChargeable FROM InventoryItem WHERE ItemID = %s", (item_id,))
+        # 1. เช็กสต็อกและข้อมูลสินค้า
+        cur.execute("SELECT itemname, quantityinstock, unitprice, ischargeable, category FROM inventoryitem WHERE itemid = %s", (item_id,))
         item = cur.fetchone()
-        if not item:
-            conn.close()
-            return jsonify({"status": "error", "message": "ไม่พบสินค้านี้ในระบบ"}), 404
+        if not item: return jsonify({"error": True, "message": "ไม่พบสินค้า"}), 404
+        
+        name, stock, price, is_chargeable, category = item
 
-        name, category, price, stock, is_chargeable = item[0], item[1], item[2], item[3], item[4]
+        # 2. ถ้าเป็นสินค้า (ไม่ใช่ Service) ต้องเช็กว่าของพอไหม
+        if category != 'SERVICE' and stock < qty:
+            return jsonify({"error": True, "message": f"สินค้า '{name}' ไม่พอในสต็อก"}), 400
 
-        # 4. บันทึกประวัติการใช้งาน
+        # 3. บันทึกประวัติการใช้งาน
         cur.execute("""
-            INSERT INTO InventoryUsage (BookingDetailID, ItemID, QuantityUsed)
-            VALUES (%s, %s, %s)
-        """, (booking_detail_id, item_id, qty))
+            INSERT INTO inventoryusage (bookingdetailid, itemid, quantityused, staffid)
+            VALUES (%s, %s, %s, %s)
+        """, (booking_detail_id, item_id, qty, current_user['staff_id']))
 
-        message = ""
-        # 5. หักสต็อก (หมวดของใช้และอาหาร)
-        if category in ('SUPPLY', 'FOOD'):
-            if stock < qty:
-                conn.rollback()
-                conn.close()
-                return jsonify({"status": "error", "message": f"สต็อก '{name}' ไม่พอ (เหลือ {stock} ชิ้น)"}), 400
+        # 4. ตัดสต็อก
+        if category != 'SERVICE':
+            cur.execute("UPDATE inventoryitem SET quantityinstock = quantityinstock - %s WHERE itemid = %s", (qty, item_id))
 
-            cur.execute("UPDATE InventoryItem SET QuantityInStock = QuantityInStock - %s WHERE ItemID = %s", (qty, item_id))
-            message += f"เบิก '{name}' {qty} ชิ้น (เหลือ {stock - qty}) "
-
-        # 6. บวกเงินในบิล ถ้าเป็น SERVICE หรือของที่ต้องคิดเงินเพิ่ม
-        if category == 'SERVICE' or is_chargeable:
+        # 5. ถ้าต้องคิดเงิน -> ไปอัปเดตยอดใน Invoice ของการจองนั้นๆ
+        if is_chargeable:
             added_cost = float(price) * qty
-            cur.execute("UPDATE Invoice SET ServiceTotal = ServiceTotal + %s WHERE BookingID = %s", (added_cost, actual_booking_id))
-            message += f"| คิดเงินลงบิลเพิ่ม {added_cost:.2f} บาท"
-        else:
-            message += "| (ฟรี ไม่คิดเงินเพิ่ม)"
+            cur.execute("""
+                UPDATE invoice SET servicetotal = servicetotal + %s 
+                WHERE bookingid = (SELECT bookingid FROM bookingdetail WHERE bookingdetailid = %s)
+            """, (added_cost, booking_detail_id))
 
         conn.commit()
-        cur.close()
-        conn.close()
-
-        return jsonify({"status": "success", "message": message.strip()}), 201
-
+        return jsonify({"status": "success", "message": f"บันทึกการใช้ {name} เรียบร้อย"}), 201
     except Exception as e:
-        if conn: conn.rollback()
-        return jsonify({"status": "error", "message": str(e)}), 500
+        conn.rollback()
+        return jsonify({"error": True, "message": str(e)}), 500
+    finally:
+        conn.close()

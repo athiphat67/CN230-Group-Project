@@ -78,18 +78,27 @@ def get_all_staff():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-# --- 3. Update (U): อัปเดตข้อมูล (เช่น เปลี่ยนตำแหน่ง หรือสถานะเข้าเวร) ---
+# --- 3. Update (U): อัปเดตข้อมูล (เช่น เปลี่ยนตำแหน่ง หรือข้อมูลพื้นฐาน) ---
 @staff_bp.route('/<int:staff_id>', methods=['PUT'])
 def update_staff(staff_id):
     try:
         data = request.get_json()
+        first_name = data.get('first_name')
+        last_name = data.get('last_name')
         role = data.get('role')
-        is_on_duty = data.get('is_on_duty')
+        email = data.get('staff_email')
+        phone = data.get('phone_number')
 
         conn = get_db_connection()
         cur = conn.cursor()
-        query = "UPDATE Staff SET Role = %s, IsOnDuty = %s WHERE StaffID = %s"
-        cur.execute(query, (role, is_on_duty, staff_id))
+        
+        # 🟢 อัปเดตข้อมูลทั้งหมดที่ส่งมาจากหน้า Edit
+        query = """
+            UPDATE staff 
+            SET firstname = %s, lastname = %s, role = %s, staffemail = %s, phonenumber = %s 
+            WHERE staffid = %s
+        """
+        cur.execute(query, (first_name, last_name, role, email, phone, staff_id))
         conn.commit()
         cur.close()
         conn.close()

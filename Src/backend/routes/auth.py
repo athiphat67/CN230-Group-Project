@@ -1,6 +1,8 @@
 from flask import Blueprint, request, jsonify, current_app
 import psycopg2
 import bcrypt # เพิ่ม import bcrypt เข้ามา
+import jwt
+import datetime
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -10,34 +12,41 @@ def get_db_connection():
 @auth_bp.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
-    username = data.get('username')
-    password = data.get('password') # ตรงนี้รับมาเป็นคำว่า 'password123' แบบตรงๆ
+    username = data.get('staff_username') # เปลี่ยนมารับ staff_username ตามสเปค
+    password = data.get('password') 
 
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute('SELECT StaffID, PasswordHash, Role FROM Staff WHERE StaffUsername = %s', (username,))
+    # ดึงข้อมูลที่จำเป็นมาทำ Token
+    cur.execute('SELECT staffid, passwordhash, role, firstname, lastname FROM staff WHERE staffusername = %s', (username,))
     user = cur.fetchone()
     cur.close()
     conn.close()
 
-    # ตรวจสอบว่าพบ User ไหม
     if user:
-        # ดึง Hash จากฐานข้อมูลมาแปลงเป็น bytes
         stored_hash = user[1].encode('utf-8')
-        # แปลงรหัสผ่านที่รับมาจากหน้าเว็บให้เป็น bytes
         input_password = password.encode('utf-8')
         
-        # ใช้ฟังก์ชัน checkpw() ของ bcrypt ตรวจสอบว่ารหัสผ่านตรงกับ Hash หรือไม่
         if bcrypt.checkpw(input_password, stored_hash):
+            # สร้าง JWT 
+            secret_key = current_app.config.get('SECRET_KEY', 'purrfect-super-secret-key')
+            payload = {
+                'staff_id': user[0],
+                'role': user[2],
+                'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=12)
+            }
+            token = jwt.encode(payload, secret_key, algorithm="HS256")
+
+            # ส่งกลับในโครงสร้างใหม่
             return jsonify({
-                "status": "success", 
-                "message": "Login successful!",
+                "access_token": token,
                 "staff_id": user[0],
+                "first_name": user[3],
+                "last_name": user[4],
                 "role": user[2]
             }), 200
             
-    # ถ้าหาไม่เจอ หรือเช็ก bcrypt แล้วไม่ผ่าน ให้เด้งกลับไปที่นี่
-    return jsonify({"status": "error", "message": "Invalid username or password"}), 401
+    return jsonify({"error": True, "code": 401, "message": "Login failed", "detail": "Invalid username or password"}), 401
 
 # -------------------------------------------------------------
 # 3. [ใหม่] API สำหรับลูกค้า Login

@@ -52,15 +52,25 @@ async function applyFilters() {
   const to     = document.getElementById('filter-to').value;
   const q      = document.getElementById('filter-search').value.toLowerCase();
 
-  // TODO: ส่งไป API แทน
-  // const res = await window.API.audit.getAll({ staff_id: staff, action_type: action, start_date: from, end_date: to });
-  // filteredLogs = res.ok ? res.data : [];
+  // 🟢 1. ดึงข้อมูลจาก API แทน Mock Data
+  const params = {};
+  if (staff) params.staff_id = staff;
+  if (action) params.action_type = action;
+  if (from) params.start_date = from;
+  if (to) params.end_date = to;
 
+  const res = await window.API.audit.getAll(params);
+  
+  if (res.ok) {
+    // 🟢 2. เอาข้อมูลจาก DB มาเก็บไว้เพื่อใช้กรองคำค้นหา (Search Text) ต่อ
+    AUDIT_LOGS = res.data.data || []; 
+  } else {
+    AUDIT_LOGS = [];
+    console.error("โหลด Audit Log ไม่สำเร็จ");
+  }
+
+  // 🟢 3. กรองด้วย Search Text ฝั่ง Client-side (ค้นหาจากคำอธิบาย / ชื่อคน)
   filteredLogs = AUDIT_LOGS.filter(log => {
-    if (staff  && String(log.staff_id) !== staff)  return false;
-    if (action && log.action_type !== action)       return false;
-    if (from   && log.timestamp < from)             return false;
-    if (to     && log.timestamp > to + 'T23:59:59') return false;
     if (q && !log.staff_name.toLowerCase().includes(q) &&
              !log.description.toLowerCase().includes(q) &&
              !log.record_id.toLowerCase().includes(q))  return false;
@@ -69,7 +79,14 @@ async function applyFilters() {
 
   currentPage = 1;
   renderTable();
+  renderStats(); // อัปเดตตัวเลขสถิติบนการ์ดด้านบนด้วย
 }
+
+/* ── INIT ── */
+document.addEventListener('DOMContentLoaded', async () => {
+  // เมื่อเปิดหน้ามาปุ๊บ ให้ดึงข้อมูลทั้งหมดก่อน
+  await applyFilters();
+});
 
 /* ── TABLE ── */
 function renderTable() {

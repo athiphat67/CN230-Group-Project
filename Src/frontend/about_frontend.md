@@ -1,370 +1,354 @@
 # Frontend API Requirements — Purrfect Stay Admin Panel
-> อัปเดตล่าสุด: [21 Apr 2026]  
-> Frontend Lead: บิ๊ก (Chotiwit)  
+> อัปเดตล่าสุด: [23:30 น. 21 Apr 2026]  
+> Frontend Lead: บิ๊ก  
 > Base URL: `http://127.0.0.1:5000/api`
 
 ---
 
 ## Legend
-🟡 รอ backend · 🟢 พร้อมใช้แล้ว · ✅ เชื่อมแล้ว
+🟡 รอ backend · 🟢 พร้อมใช้แล้ว · ✅ เชื่อมแล้ว · ⚠️ ทำบางส่วน · ❌ ยังไม่ได้ทำ
+
+---
+
+## สถานะหน้าทั้งหมด (Module Coverage)
+
+| หน้า | FR | ไฟล์ | Mock Data | พร้อม Connect API | หมายเหตุ |
+|---|---|---|---|---|---|
+| Dashboard | — | `dashboard.html` | ⚠️ (เก่า) | 🟡 | ใช้ CSS/JS แยก ไม่ใช้ sidebar.js |
+| Bookings | FR3 | `Bookings.html` | ✅ | 🟡 | |
+| Pet Care | FR4 | `PetCare.html` | ✅ | 🟡 | |
+| Billing | FR5 | `Billing.html` | ✅ | 🟡 | |
+| **Pet Profiles** | **FR2** | **`PetProfile.html`** | **✅ NEW** | **🟡** | |
+| Staff Management | FR1 | `StaffManagement.html` | ✅ | 🟡 | |
+| Inventory | FR6 | `Inventory.html` | ✅ | 🟡 | |
+| Analytics | FR6 | `Analytics.html` | ✅ | 🟡 | |
+| **Notifications** | **FR7** | **`Notifications.html`** | **✅ NEW** | **🟡** | |
+| Audit Trail | FR1.11 | `AuditTrail.html` | ✅ | 🟡 | |
+| **Unit Tests** | — | **`unit-tests.html`** | **✅ NEW** | — | 106 tests |
+
+---
+
+## 🔍 Audit ตาม Proposal Report (FR1–FR7)
+
+### FR1 — User & Access Management
+
+| FR | คำอธิบาย (จาก Proposal) | สถานะ Frontend | ไฟล์ที่เกี่ยวข้อง |
+|---|---|---|---|
+| FR1.1 | OTP registration สำหรับ pet owner | ✅ Mock OTP flow (6 หลัก: 123456) | `register.html`, `forgot-password.html` |
+| FR1.2 | Role-based auth → dashboard ตาม role | ✅ Demo login 2 accounts | `login.html` → `dashboard.html` |
+| FR1.3 | Manager สร้าง/แก้ไข/deactivate staff | ✅ CRUD modal ครบ | `StaffManagement.html/.js` |
+| FR1.4 | บันทึกเวลาเข้า-ออก (clock-in/out) | ✅ Attendance tab (mock) | `StaffManagement.html/.js` |
+| FR1.5 | Audit Trail (ADMIN only) | ✅ ครบ + pagination | `AuditTrail.html/.js` |
+| FR1.x | FR3.6.1: บันทึกว่าใครยกเลิก booking | ⚠️ ไม่มี `cancelled_by` field ใน mock | `Bookings.js` |
+
+---
+
+### FR2 — Pet Profile Management
+
+| FR | คำอธิบาย (จาก Proposal) | สถานะ Frontend | ไฟล์ที่เกี่ยวข้อง |
+|---|---|---|---|
+| FR2.1 | สร้าง/แก้ไข pet profile (ชื่อ, species, breed, dob, weight) | ✅ ครบ | `PetProfile.html/.js` |
+| FR2.2 | บันทึกประวัติวัคซีน + แนบ PDF cert | ⚠️ บันทึกได้ แต่ **ยังไม่มี PDF upload** | `PetProfile.js` → `openAddVaccine()` |
+| FR2.3 | Medical notes, allergies, behavior notes | ✅ ครบ ทั้ง view + edit | `PetProfile.js` |
+| FR2.4 | Meal Plan สำหรับแต่ละ pet | ⚠️ **ดูได้ แต่ยังไม่มี UI สร้าง/แก้ไข** meal plan | `PetProfile.js` → `openViewPet()` |
+
+**งานที่ต้องทำเพิ่ม (FR2):**
+- [ ] PDF upload input ใน vaccine modal (FR2.2)
+- [ ] Modal/tab สำหรับ edit meal plan (FR2.4) → endpoint: `POST /api/pets/{id}/meal-plans`
+
+---
+
+### FR3 — Booking & Front Desk Management
+
+| FR | คำอธิบาย (จาก Proposal) | สถานะ Frontend | ไฟล์ที่เกี่ยวข้อง |
+|---|---|---|---|
+| FR3.1 | แสดง real-time room availability | ✅ (mock dropdown) | `Bookings.html/.js` |
+| FR3.1.1 | เลือกประเภทห้อง | ✅ select ครบ 4 ประเภท | `modal-new-booking` |
+| FR3.2 | คำนวณราคาห้องอัตโนมัติ | ⚠️ price_room ใน mock แต่ยังไม่คำนวณ real-time จาก selection | `saveNewBooking()` |
+| FR3.3 | Add-on services ตอน booking + ระหว่างพัก | ✅ checkbox grid | `Bookings.html` |
+| FR3.4 | Check-in / Check-out → อัปเดต status | ✅ `confirmCheckin()`, `confirmCheckout()` | `Bookings.js` |
+| FR3.5 | Admin เพิ่ม/แก้ไขห้อง (room management) | ❌ **ไม่มี UI สำหรับ room management** | — |
+| FR3.6 | ยกเลิก booking ก่อน check-in | ✅ `cancelBooking()` | `Bookings.js` |
+| FR3.6.1 | บันทึกว่าใครยกเลิก เมื่อไร | ❌ **ไม่มี cancelled_by / cancelled_at ใน mock** | `Bookings.js` |
+
+**งานที่ต้องทำเพิ่ม (FR3):**
+- [ ] Room Management page (FR3.5) — `GET/PATCH /api/rooms/{room_id}`
+- [ ] เพิ่ม `cancelled_by` + `cancelled_at` ใน mock data และ cancel API call (FR3.6.1)
+- [ ] คำนวณ price_room แบบ real-time ใน new booking form
+
+---
+
+### FR4 — Pet Care & Monitoring
+
+| FR | คำอธิบาย (จาก Proposal) | สถานะ Frontend | ไฟล์ที่เกี่ยวข้อง |
+|---|---|---|---|
+| FR4.1 | บันทึก Daily Report (อาหาร, ขับถ่าย, อารมณ์, รูป) | ✅ ครบทุก field | `PetCare.html/.js` |
+| FR4.2 | Auto-notify owner หลัง submit report | ⚠️ **ทำใน frontend (TODO comment) — backend ต้อง trigger** | `PetCare.js` → `submitReport()` |
+| FR4.3 | Reminder 1 วันก่อน check-in | ✅ มีใน Notifications mock (CHECKIN_REMINDER) | `Notifications.js` |
+
+---
+
+### FR5 — Billing & Payment Management
+
+| FR | คำอธิบาย (จาก Proposal) | สถานะ Frontend | ไฟล์ที่เกี่ยวข้อง |
+|---|---|---|---|
+| FR5.1 | รวมยอด + ออก Invoice | ✅ `openDetail()` แสดง line items ครบ | `Billing.js` |
+| FR5.2 | รับชำระหลายวิธี (cash, QR, card) | ✅ radio buttons + `confirmPayment()` | `Billing.js` |
+| FR5.3 | ออกใบเสร็จ printable / PDF | ⚠️ **`printInvoice()` เป็น stub → TODO** | `Billing.js` |
+
+**งานที่ต้องทำเพิ่ม (FR5):**
+- [ ] Implement `printInvoice()` → window.print() หรือ PDF generation
+
+---
+
+### FR6 — Inventory & Analytics Management
+
+| FR | คำอธิบาย (จาก Proposal) | สถานะ Frontend | ไฟล์ที่เกี่ยวข้อง |
+|---|---|---|---|
+| FR6.1 | หักสต็อกอัตโนมัติจากการใช้งาน | ❌ **ยังไม่มี — ปัจจุบัน manual เท่านั้น** | `Inventory.js` |
+| FR6.1.1 | Alert เมื่อสต็อก < 20% | ✅ `getAlerts()` + alert banner | `Inventory.js` |
+| FR6.3 | Management Dashboard (revenue, occupancy, addons) | ✅ Charts + KPI cards | `Analytics.html/.js` |
+
+**งานที่ต้องทำเพิ่ม (FR6):**
+- [ ] หน้า/ฟังก์ชัน deduct stock เมื่อใช้อาหาร/อุปกรณ์ (FR6.1)
+
+---
+
+### FR7 — Notification Management
+
+| FR | คำอธิบาย (จาก Proposal) | สถานะ Frontend | ไฟล์ที่เกี่ยวข้อง |
+|---|---|---|---|
+| FR7.1 | Notify owner เมื่อ booking status เปลี่ยน | ✅ mock notifications ครบทุก type | `Notifications.html/.js` |
+| FR7.2 | Notify receptionist เมื่อมี booking ใหม่ | ✅ `NEW_BOOKING_ALERT` ใน mock | `Notifications.js` |
+
+---
+
+## ⚠️ Dashboard — ปัญหาที่ต้องแก้
+
+`dashboard.html` ใช้ **โครงสร้างเก่า** — ยังไม่ migrate มาใช้ `sidebar.js` / `navbar.js` ร่วมกับหน้าอื่น:
+
+| จุดที่ต้องแก้ | รายละเอียด |
+|---|---|
+| ใช้ CSS แยก (`dashboard.css`) | หน้าอื่นใช้ `main.css` + `components.css` |
+| Sidebar hardcode ใน HTML | หน้าอื่นใช้ `Sidebar.render()` จาก `sidebar.js` |
+| ไม่มี `id="sidebar-root"` / `id="topbar-root"` | ไม่ compatible กับ shared components |
+| `dashboard.js` ยัง stub มาก | ไม่ได้ใช้ `window.API` เลย |
+
+**แนะนำ:** Refactor `dashboard.html` ให้ใช้ pattern เดียวกับหน้าอื่น
+
+---
+
+## สรุป งานที่ยังขาด (ตาม FR Priority)
+
+| Priority | งาน | FR | ความยาก |
+|---|---|---|---|
+| 🔴 HIGH | Room Management UI | FR3.5 | Medium |
+| 🔴 HIGH | Refactor dashboard.html → shared components | — | Easy |
+| 🟡 MED | PDF upload สำหรับ vaccine cert | FR2.2 | Easy |
+| 🟡 MED | Meal Plan edit UI | FR2.4 | Medium |
+| 🟡 MED | printInvoice() → PDF/print | FR5.3 | Easy |
+| 🟡 MED | cancelled_by tracking | FR3.6.1 | Easy |
+| 🟢 LOW | Auto stock deduction | FR6.1 | Hard |
+| 🟢 LOW | Real-time price calculation ใน new booking | FR3.2 | Easy |
+
+---
+
+## โครงสร้างไฟล์ที่ถูกต้อง
+
+```
+purrfect-stay/
+├── index.html
+├── login.html
+├── register.html
+├── forgot-password.html
+├── dashboard.html              ← ⚠️ ต้อง refactor
+├── Bookings.html
+├── PetCare.html
+├── PetProfile.html             ← FR2 (NEW)
+├── Billing.html
+├── StaffManagement.html
+├── Inventory.html
+├── Analytics.html
+├── Notifications.html          ← FR7 (NEW)
+├── AuditTrail.html
+├── unit-tests.html             ← NEW (106 tests)
+│
+├── css/
+│   ├── main.css
+│   ├── components.css
+│   └── pages/
+│       ├── Bookings.css
+│       ├── PetCare.css
+│       ├── PetProfile.css      ← FR2 (NEW)
+│       ├── Billing.css
+│       ├── StaffManagement.css
+│       ├── Inventory.css
+│       ├── Analytics.css
+│       ├── Notifications.css   ← FR7 (NEW)
+│       └── AuditTrail.css
+│
+└── js/
+    ├── components/
+    │   ├── sidebar.js          ← UPDATED (Pet Profiles + Notifications)
+    │   └── navbar.js
+    ├── services/
+    │   └── api.js
+    └── pages/
+        ├── Bookings.js
+        ├── PetCare.js
+        ├── PetProfile.js       ← FR2 (NEW)
+        ├── Billing.js
+        ├── StaffManagement.js
+        ├── Inventory.js
+        ├── Analytics.js
+        ├── Notifications.js    ← FR7 (NEW)
+        └── AuditTrail.js
+```
+
+> ⚠️ **หมายเหตุ:** ไฟล์ CSS/JS ใน /mnt/project ถูกจัดเก็บที่ root level แต่ HTML อ้างอิงผ่าน `css/pages/` และ `js/pages/` — ต้องจัดโฟลเดอร์ก่อน deploy (ดู SETUP_GUIDE.md)
 
 ---
 
 ## FR1 — User & Access Management (Staff)
 
 ### 1.1 Login
-- **Method:** POST
-- **Endpoint:** `/api/auth/login`
+- **Method:** POST · **Endpoint:** `/api/auth/login`
 - **Request Body:**
   ```json
-  {
-    "staff_username": "somchai",
-    "password": "••••••••"
-  }
+  { "staff_username": "somchai", "password": "••••••••" }
   ```
 - **Response:**
   ```json
-  {
-    "access_token": "eyJ...",
-    "staff_id": 1,
-    "first_name": "สมชาย",
-    "last_name": "มั่นคง",
-    "role": "ADMIN"
-  }
+  { "access_token": "eyJ...", "staff_id": 1, "first_name": "สมชาย", "last_name": "มั่นคง", "role": "ADMIN" }
   ```
-- **สถานะ:** 🟡 รอ backend  
-- **หมายเหตุ:** Token ใช้เป็น Bearer Auth ใน header ทุก request ต่อไป
+- **สถานะ:** 🟡 รอ backend · Token ใช้เป็น Bearer Auth ทุก request
 
 ---
 
 ### 1.2 Logout
-- **Method:** POST
-- **Endpoint:** `/api/auth/logout`
-- **Request:** ไม่มี body (ใช้ token จาก header)
+- **Method:** POST · **Endpoint:** `/api/auth/logout`
 - **Response:** `{ "message": "Logged out successfully" }`
 - **สถานะ:** 🟡 รอ backend
 
 ---
 
 ### 1.3 Get All Staff
-- **Method:** GET
-- **Endpoint:** `/api/staff`
-- **Response:**
-  ```json
-  [
-    {
-      "staff_id": 1,
-      "first_name": "สมชาย",
-      "last_name": "มั่นคง",
-      "role": "ADMIN",
-      "is_on_duty": true,
-      "phone_number": "081-111-0001",
-      "staff_email": "somchai@purrfect.com",
-      "hire_date": "2022-01-10",
-      "is_active": true
-    }
-  ]
-  ```
+- **Method:** GET · **Endpoint:** `/api/staff`
 - **สถานะ:** 🟡 รอ backend
 
 ---
 
 ### 1.4 Create Staff
-- **Method:** POST
-- **Endpoint:** `/api/staff`
-- **Request Body:**
-  ```json
-  {
-    "staff_username": "staff_xxx",
-    "password": "••••••••",
-    "first_name": "...",
-    "last_name": "...",
-    "role": "STAFF",
-    "phone_number": "0XX-XXX-XXXX",
-    "staff_email": "xxx@purrfect.com",
-    "hire_date": "2026-04-21"
-  }
-  ```
-- **Response:** Staff object ที่เพิ่งสร้าง
+- **Method:** POST · **Endpoint:** `/api/staff`
 - **สถานะ:** 🟡 รอ backend
 
 ---
 
 ### 1.5 Update Staff
-- **Method:** PUT
-- **Endpoint:** `/api/staff/{staff_id}`
-- **Request Body:** fields ที่เปลี่ยน (partial)
-  ```json
-  {
-    "phone_number": "081-999-8888",
-    "role": "ADMIN"
-  }
-  ```
+- **Method:** PUT · **Endpoint:** `/api/staff/{staff_id}`
 - **สถานะ:** 🟡 รอ backend
 
 ---
 
 ### 1.6 Deactivate Staff
-- **Method:** PATCH
-- **Endpoint:** `/api/staff/{staff_id}/deactivate`
-- **Request:** ไม่มี body
-- **Response:** `{ "message": "Staff deactivated" }`
-- **สถานะ:** 🟡 รอ backend  
-- **หมายเหตุ:** ต้องการคอลัมน์ `is_active` ใน Staff table
+- **Method:** PATCH · **Endpoint:** `/api/staff/{staff_id}/deactivate`
+- **สถานะ:** 🟡 รอ backend
 
 ---
 
 ### 1.7 Clock-In / Clock-Out
-- **Method:** POST
-- **Endpoint:** `/api/attendance/clock`
-- **Request Body:**
-  ```json
-  {
-    "staff_id": 3,
-    "action": "CLOCK_IN"
-  }
-  ```
-  `action` enum: `"CLOCK_IN"` | `"CLOCK_OUT"`
-- **Response:**
-  ```json
-  {
-    "attendance_id": 42,
-    "staff_id": 3,
-    "action": "CLOCK_IN",
-    "timestamp": "2026-04-21T09:00:00"
-  }
-  ```
+- **Method:** POST · **Endpoint:** `/api/attendance/clock`
+- **Request Body:** `{ "staff_id": 3, "action": "CLOCK_IN" }`
 - **สถานะ:** 🟡 รอ backend
 
 ---
 
 ### 1.8 Get Attendance Records
-- **Method:** GET
-- **Endpoint:** `/api/attendance`
-- **Query Params:** `?start_date=2025-04-01&end_date=2025-04-07&staff_id=3` (optional)
-- **Response:**
-  ```json
-  [
-    {
-      "staff_id": 3,
-      "first_name": "นริน",
-      "work_date": "2025-04-01",
-      "clock_in": "08:55",
-      "clock_out": "18:05",
-      "status": "ONTIME",
-      "remark": null
-    }
-  ]
-  ```
-  `status` enum: `"ONTIME"` | `"LATE"` | `"ABSENT"`
+- **Method:** GET · **Endpoint:** `/api/attendance`
+- **Query Params:** `?start_date=2025-04-01&end_date=2025-04-07&staff_id=3`
 - **สถานะ:** 🟡 รอ backend
 
 ---
 
 ### 1.9 Get Leave Requests
-- **Method:** GET
-- **Endpoint:** `/api/leave`
-- **Query Params:** `?status=PENDING` (optional)
-- **Response:**
-  ```json
-  [
-    {
-      "leave_id": 1,
-      "staff_id": 4,
-      "first_name": "แพร",
-      "last_name": "งามพร้อม",
-      "leave_type": "ลากิจ",
-      "start_date": "2025-04-15",
-      "end_date": "2025-04-16",
-      "reason": "ย้ายบ้านใหม่",
-      "status": "PENDING",
-      "approved_by": null
-    }
-  ]
-  ```
-  `status` enum: `"PENDING"` | `"APPROVED"` | `"REJECTED"`
+- **Method:** GET · **Endpoint:** `/api/leave`
+- **Query Params:** `?status=PENDING`
 - **สถานะ:** 🟡 รอ backend
 
 ---
 
 ### 1.10 Approve / Reject Leave
-- **Method:** PATCH
-- **Endpoint:** `/api/leave/{leave_id}`
-- **Request Body:**
-  ```json
-  {
-    "status": "APPROVED",
-    "approved_by": 1
-  }
-  ```
+- **Method:** PATCH · **Endpoint:** `/api/leave/{leave_id}`
 - **สถานะ:** 🟡 รอ backend
 
 ---
 
 ### 1.11 Get Audit Trail
-- **Method:** GET
-- **Endpoint:** `/api/audit`
+- **Method:** GET · **Endpoint:** `/api/audit`
 - **Query Params:** `?staff_id=1&action_type=DELETE&start_date=2026-04-01&end_date=2026-04-30`
 - **Response:**
   ```json
-  [
-    {
-      "audit_id": 5,
-      "staff_id": 1,
-      "staff_name": "สมชาย มั่นคง",
-      "action_type": "DELETE",
-      "table_affected": "Invoice",
-      "record_id": 23,
-      "description": "ลบ Invoice #INV-0023 ของการจอง BK-0004",
-      "timestamp": "2026-04-21T14:30:00"
-    }
-  ]
+  [{
+    "audit_id": 5, "staff_id": 1, "staff_name": "สมชาย มั่นคง",
+    "action_type": "DELETE", "table_affected": "Invoice",
+    "record_id": 23, "description": "ลบ Invoice #INV-0023 ของการจอง BK-0004",
+    "timestamp": "2026-04-21T14:30:00"
+  }]
   ```
   `action_type` enum: `"CREATE"` | `"UPDATE"` | `"DELETE"` | `"CHECKIN"` | `"CHECKOUT"` | `"APPROVE"`
-- **สถานะ:** 🟡 รอ backend  
-- **หมายเหตุ:** เข้าถึงได้เฉพาะ ADMIN / OWNER เท่านั้น
+- **สถานะ:** 🟡 รอ backend · เข้าถึงได้เฉพาะ ADMIN/OWNER
 
 ---
 
 ## FR2 — Pet Profile Management
 
 ### 2.1 Get All Pets
-- **Method:** GET
-- **Endpoint:** `/api/pets`
-- **Query Params:** `?owner_id=5` (optional)
-- **Response:**
-  ```json
-  [
-    {
-      "pet_id": 1,
-      "owner_id": 5,
-      "owner_name": "อาพิญา ศ.",
-      "name": "มะม่วง",
-      "species": "cat",
-      "breed": "Scottish Fold",
-      "sex": "F",
-      "dob": "2021-03-15",
-      "weight_kg": 4.2,
-      "coat_color": "น้ำตาล-ขาว",
-      "photo_url": null,
-      "medical_notes": "แพ้ไก่",
-      "allergies": "ไก่",
-      "behavior_notes": "ขี้อาย ต้องใช้เวลาทำความรู้จัก"
-    }
-  ]
-  ```
+- **Method:** GET · **Endpoint:** `/api/pets`
+- **Query Params:** `?owner_id=5&species=cat` (optional)
 - **สถานะ:** 🟡 รอ backend
 
 ---
 
 ### 2.2 Get Pet by ID
-- **Method:** GET
-- **Endpoint:** `/api/pets/{pet_id}`
-- **Response:** Pet object เดี่ยว
+- **Method:** GET · **Endpoint:** `/api/pets/{pet_id}`
 - **สถานะ:** 🟡 รอ backend
 
 ---
 
 ### 2.3 Create Pet Profile
-- **Method:** POST
-- **Endpoint:** `/api/pets`
-- **Request Body:**
-  ```json
-  {
-    "owner_id": 5,
-    "name": "มะม่วง",
-    "species": "cat",
-    "breed": "Scottish Fold",
-    "sex": "F",
-    "dob": "2021-03-15",
-    "weight_kg": 4.2,
-    "coat_color": "น้ำตาล-ขาว",
-    "medical_notes": "แพ้ไก่",
-    "allergies": "ไก่",
-    "behavior_notes": ""
-  }
-  ```
+- **Method:** POST · **Endpoint:** `/api/pets`
 - **สถานะ:** 🟡 รอ backend
 
 ---
 
 ### 2.4 Update Pet Profile
-- **Method:** PUT
-- **Endpoint:** `/api/pets/{pet_id}`
-- **Request Body:** fields ที่เปลี่ยน
+- **Method:** PUT · **Endpoint:** `/api/pets/{pet_id}`
 - **สถานะ:** 🟡 รอ backend
 
 ---
 
 ### 2.5 Get Vaccination History
-- **Method:** GET
-- **Endpoint:** `/api/pets/{pet_id}/vaccines`
-- **Response:**
-  ```json
-  [
-    {
-      "vaccine_id": 1,
-      "pet_id": 1,
-      "vaccine_name": "FVRCP",
-      "administered_date": "2025-01-10",
-      "expiry_date": "2026-01-10",
-      "vet_clinic": "คลินิกสัตวแพทย์สุขสันต์",
-      "cert_url": null
-    }
-  ]
-  ```
+- **Method:** GET · **Endpoint:** `/api/pets/{pet_id}/vaccines`
 - **สถานะ:** 🟡 รอ backend
 
 ---
 
 ### 2.6 Add Vaccine Record
-- **Method:** POST
-- **Endpoint:** `/api/pets/{pet_id}/vaccines`
-- **Request Body:**
-  ```json
-  {
-    "vaccine_name": "FVRCP",
-    "administered_date": "2025-01-10",
-    "expiry_date": "2026-01-10",
-    "vet_clinic": "คลินิกสัตวแพทย์สุขสันต์"
-  }
-  ```
+- **Method:** POST · **Endpoint:** `/api/pets/{pet_id}/vaccines`
+- **หมายเหตุ:** ⚠️ Frontend ยังไม่รองรับ PDF cert upload — ต้องเพิ่ม multipart/form-data
 - **สถานะ:** 🟡 รอ backend
 
 ---
 
 ### 2.7 Get Meal Plans for Pet
-- **Method:** GET
-- **Endpoint:** `/api/pets/{pet_id}/meal-plans`
-- **Response:**
-  ```json
-  [
-    {
-      "meal_plan_id": 1,
-      "pet_id": 1,
-      "meal_period": "MORNING",
-      "food_type": "Royal Canin Kitten",
-      "quantity_grams": 80,
-      "notes": "ผสมน้ำอุ่นนิดหน่อย"
-    }
-  ]
-  ```
-  `meal_period` enum: `"MORNING"` | `"MIDDAY"` | `"EVENING"`
+- **Method:** GET · **Endpoint:** `/api/pets/{pet_id}/meal-plans`
 - **สถานะ:** 🟡 รอ backend
 
 ---
 
 ### 2.8 Save Meal Plan
-- **Method:** POST
-- **Endpoint:** `/api/pets/{pet_id}/meal-plans`
-- **Request Body:**
-  ```json
-  [
-    { "meal_period": "MORNING",  "food_type": "Royal Canin Kitten", "quantity_grams": 80, "notes": "" },
-    { "meal_period": "MIDDAY",   "food_type": "Royal Canin Kitten", "quantity_grams": 60, "notes": "" },
-    { "meal_period": "EVENING",  "food_type": "Royal Canin Kitten", "quantity_grams": 80, "notes": "" }
-  ]
-  ```
+- **Method:** POST · **Endpoint:** `/api/pets/{pet_id}/meal-plans`
+- **หมายเหตุ:** ⚠️ Frontend ยังไม่มี UI สำหรับ create/edit meal plan
 - **สถานะ:** 🟡 รอ backend
 
 ---
@@ -372,250 +356,45 @@
 ## FR3 — Booking & Front Desk Management
 
 ### 3.1 Get All Bookings
-- **Method:** GET
-- **Endpoint:** `/api/bookings`
-- **Query Params:**
-  ```
-  ?status=CHECKED_IN        (optional: PENDING|CONFIRMED|CHECKED_IN|CHECKED_OUT|CANCELLED)
-  &start_date=2025-04-01    (optional)
-  &end_date=2025-04-30      (optional)
-  &pet_name=มะม่วง          (optional, search)
-  &owner_name=อาพิญา        (optional, search)
-  ```
-- **Response:**
-  ```json
-  [
-    {
-      "booking_id": "BK-0001",
-      "pet_id": 1,
-      "pet_name": "มะม่วง",
-      "pet_species": "cat",
-      "breed": "Scottish Fold",
-      "owner_id": 5,
-      "owner_name": "อาพิญา ศ.",
-      "owner_phone": "081-234-5678",
-      "room_id": 1,
-      "room_number": "A01",
-      "room_type": "Standard (AC)",
-      "checkin_date": "2025-04-02",
-      "checkout_date": "2025-04-06",
-      "status": "CHECKED_IN",
-      "addons": ["อาบน้ำ", "ถ่ายรูป"],
-      "notes": "แพ้ไก่",
-      "price_room": 2000,
-      "price_addons": 350,
-      "created_at": "2025-04-01T10:30:00"
-    }
-  ]
-  ```
-  `status` enum: `"PENDING"` | `"CONFIRMED"` | `"CHECKED_IN"` | `"CHECKED_OUT"` | `"CANCELLED"`
+- **Method:** GET · **Endpoint:** `/api/bookings`
+- **Query Params:** `?status=CHECKED_IN&start_date=...&end_date=...&pet_name=...&owner_name=...`
 - **สถานะ:** 🟡 รอ backend
 
 ---
 
-### 3.2 Get Booking by ID
-- **Method:** GET
-- **Endpoint:** `/api/bookings/{booking_id}`
-- **Response:** Booking object เดี่ยว (เหมือนด้านบน + invoice_id ถ้ามี)
-- **สถานะ:** 🟡 รอ backend
-
----
-
-### 3.3 Create Booking
-- **Method:** POST
-- **Endpoint:** `/api/bookings`
-- **Request Body:**
-  ```json
-  {
-    "pet_id": 1,
-    "owner_id": 5,
-    "room_id": 1,
-    "checkin_date": "2025-04-02",
-    "checkout_date": "2025-04-06",
-    "addons": ["bathing", "photo"],
-    "notes": "แพ้ไก่ ห้ามให้อาหารที่มีส่วนผสมของไก่"
-  }
-  ```
-- **Response:** Booking object ที่สร้างใหม่ พร้อม `booking_id`
-- **สถานะ:** 🟡 รอ backend  
-- **หมายเหตุ:** ราคาต้องถูก lock ณ เวลาสร้าง booking
-
----
-
-### 3.4 Check-In
-- **Method:** PATCH
-- **Endpoint:** `/api/bookings/{booking_id}/checkin`
-- **Request:** ไม่มี body  
-  (หรือ `{ "checked_in_by": 1 }` ถ้าต้องการ log staff ที่ทำ)
-- **Response:**
-  ```json
-  {
-    "booking_id": "BK-0001",
-    "status": "CHECKED_IN",
-    "checked_in_at": "2026-04-21T09:15:00"
-  }
-  ```
-- **สถานะ:** 🟡 รอ backend
-
----
-
-### 3.5 Check-Out
-- **Method:** PATCH
-- **Endpoint:** `/api/bookings/{booking_id}/checkout`
-- **Request Body:**
-  ```json
-  {
-    "payment_method": "cash",
-    "checked_out_by": 1
-  }
-  ```
-  `payment_method` enum: `"cash"` | `"qr_promptpay"` | `"credit_card"`
-- **Response:**
-  ```json
-  {
-    "booking_id": "BK-0001",
-    "status": "CHECKED_OUT",
-    "invoice_id": "INV-0023",
-    "total_amount": 2350,
-    "checked_out_at": "2026-04-21T12:00:00"
-  }
-  ```
-- **สถานะ:** 🟡 รอ backend
-
----
-
-### 3.6 Cancel Booking
-- **Method:** PATCH
-- **Endpoint:** `/api/bookings/{booking_id}/cancel`
-- **Request Body:**
-  ```json
-  {
-    "cancelled_by": 1,
-    "cancel_reason": "เจ้าของป่วย"
-  }
-  ```
-- **Response:** `{ "booking_id": "...", "status": "CANCELLED" }`
-- **สถานะ:** 🟡 รอ backend
-
----
-
-### 3.7 Add Add-on Service to Active Booking
-- **Method:** POST
-- **Endpoint:** `/api/bookings/{booking_id}/addons`
-- **Request Body:**
-  ```json
-  {
-    "service_type": "grooming",
-    "scheduled_date": "2025-04-04",
-    "notes": ""
-  }
-  ```
-- **สถานะ:** 🟡 รอ backend
-
----
-
-### 3.8 Get Room Availability
-- **Method:** GET
-- **Endpoint:** `/api/rooms/availability`
-- **Query Params:** `?checkin_date=2025-04-05&checkout_date=2025-04-10`
-- **Response:**
-  ```json
-  [
-    {
-      "room_id": 3,
-      "room_number": "A02",
-      "room_type": "Standard (AC)",
-      "capacity": "small-medium",
-      "price_per_night": 500,
-      "is_available": true,
-      "status": "AVAILABLE"
-    }
-  ]
-  ```
-  `status` enum: `"AVAILABLE"` | `"OCCUPIED"` | `"CLEANING"` | `"MAINTENANCE"`
-- **สถานะ:** 🟡 รอ backend
-
----
-
-### 3.9 Get All Rooms
-- **Method:** GET
-- **Endpoint:** `/api/rooms`
-- **Response:** array of room objects (เหมือน availability แต่ไม่มี date filter)
-- **สถานะ:** 🟡 รอ backend
-
----
-
-### 3.10 Update Room Status (Admin only)
-- **Method:** PATCH
-- **Endpoint:** `/api/rooms/{room_id}`
-- **Request Body:**
-  ```json
-  {
-    "status": "CLEANING",
-    "price_per_night": 550
-  }
-  ```
-- **สถานะ:** 🟡 รอ backend
+### 3.2 – 3.10 (Booking Actions)
+- Create Booking: `POST /api/bookings`
+- Check-In: `PATCH /api/bookings/{id}/checkin`
+- Check-Out: `PATCH /api/bookings/{id}/checkout`
+- Cancel: `PATCH /api/bookings/{id}/cancel`
+  - ⚠️ ต้องเพิ่ม `cancelled_by` + `cancelled_at` (FR3.6.1)
+- Add Add-on: `POST /api/bookings/{id}/addons`
+- Room Availability: `GET /api/rooms/availability`
+- All Rooms: `GET /api/rooms`
+- Update Room: `PATCH /api/rooms/{room_id}` ← ❌ ไม่มี UI ฝั่ง frontend
+- **สถานะทั้งหมด:** 🟡 รอ backend
 
 ---
 
 ## FR4 — Pet Care & Daily Monitoring
 
 ### 4.1 Get Daily Care Reports
-- **Method:** GET
-- **Endpoint:** `/api/care-reports`
+- **Method:** GET · **Endpoint:** `/api/care-reports`
 - **Query Params:** `?booking_id=BK-0001&date=2025-04-03`
-- **Response:**
-  ```json
-  [
-    {
-      "report_id": 1,
-      "booking_id": "BK-0001",
-      "pet_id": 1,
-      "pet_name": "มะม่วง",
-      "report_date": "2025-04-03",
-      "food_intake": "กินหมด 80g",
-      "bowel_activity": "ปกติ",
-      "mood": "HAPPY",
-      "behavior_notes": "วิ่งเล่น ร้องขอกอด",
-      "photo_urls": [],
-      "reported_by": 3,
-      "caretaker_name": "นริน พรหมดี",
-      "created_at": "2025-04-03T18:00:00"
-    }
-  ]
-  ```
-  `mood` enum: `"HAPPY"` | `"NEUTRAL"` | `"ANXIOUS"` | `"SICK"`
 - **สถานะ:** 🟡 รอ backend
 
 ---
 
 ### 4.2 Create Daily Care Report
-- **Method:** POST
-- **Endpoint:** `/api/care-reports`
-- **Request Body:**
-  ```json
-  {
-    "booking_id": "BK-0001",
-    "report_date": "2025-04-03",
-    "food_intake": "กินหมด 80g",
-    "bowel_activity": "ปกติ",
-    "mood": "HAPPY",
-    "behavior_notes": "วิ่งเล่น ร้องขอกอด",
-    "reported_by": 3
-  }
-  ```
-- **Response:** Report object ที่สร้างใหม่
-- **สถานะ:** 🟡 รอ backend  
-- **หมายเหตุ:** Backend ต้อง trigger notification ไป owner หลัง save
+- **Method:** POST · **Endpoint:** `/api/care-reports`
+- **หมายเหตุ:** Backend ต้อง trigger notification ไป owner หลัง save (FR4.2) — frontend มี TODO comment แล้ว
+- **สถานะ:** 🟡 รอ backend
 
 ---
 
 ### 4.3 Upload Care Report Photos
-- **Method:** POST
-- **Endpoint:** `/api/care-reports/{report_id}/photos`
+- **Method:** POST · **Endpoint:** `/api/care-reports/{report_id}/photos`
 - **Request:** `multipart/form-data` with field `photos[]`
-- **Response:** `{ "report_id": 1, "photo_urls": ["..."] }`
 - **สถานะ:** 🟡 รอ backend
 
 ---
@@ -623,234 +402,51 @@
 ## FR5 — Billing & Payment Management
 
 ### 5.1 Get Invoices
-- **Method:** GET
-- **Endpoint:** `/api/billing`
-- **Query Params:** `?status=PAID&booking_id=BK-0001`
-  `status` enum: `"PENDING_PAYMENT"` | `"PAID"`
-- **Response:**
-  ```json
-  [
-    {
-      "invoice_id": "INV-0023",
-      "booking_id": "BK-0001",
-      "pet_name": "มะม่วง",
-      "owner_name": "อาพิญา ศ.",
-      "issue_date": "2025-04-06",
-      "line_items": [
-        { "description": "ค่าห้อง A01 (Standard AC) × 4 คืน", "amount": 2000 },
-        { "description": "อาบน้ำ",  "amount": 200 },
-        { "description": "ถ่ายรูป", "amount": 150 }
-      ],
-      "subtotal": 2350,
-      "discount": 0,
-      "total_amount": 2350,
-      "payment_status": "PAID",
-      "payment_method": "cash",
-      "paid_at": "2025-04-06T12:30:00"
-    }
-  ]
-  ```
+- **Method:** GET · **Endpoint:** `/api/billing`
 - **สถานะ:** 🟡 รอ backend
 
----
-
-### 5.2 Get Invoice by ID
-- **Method:** GET
-- **Endpoint:** `/api/billing/{invoice_id}`
-- **Response:** Invoice object เดี่ยว (เหมือนด้านบน)
-- **สถานะ:** 🟡 รอ backend
-
----
-
-### 5.3 Generate Invoice (pre-checkout preview)
-- **Method:** POST
-- **Endpoint:** `/api/billing/preview`
-- **Request Body:**
-  ```json
-  { "booking_id": "BK-0001" }
-  ```
-- **Response:** Invoice object (ยังไม่บันทึก ใช้แค่แสดงผลก่อน checkout)
-- **สถานะ:** 🟡 รอ backend
-
----
-
-### 5.4 Record Payment (mark as PAID)
-- **Method:** PATCH
-- **Endpoint:** `/api/billing/{invoice_id}/pay`
-- **Request Body:**
-  ```json
-  {
-    "payment_method": "qr_promptpay",
-    "received_by": 1
-  }
-  ```
-- **Response:** Invoice object พร้อม `payment_status: "PAID"` และ `paid_at`
-- **สถานะ:** 🟡 รอ backend
+### 5.2 – 5.4
+- Get by ID: `GET /api/billing/{invoice_id}`
+- Preview: `POST /api/billing/preview`
+- Record Payment: `PATCH /api/billing/{invoice_id}/pay`
+- ⚠️ `printInvoice()` ใน `Billing.js` ยังเป็น stub — ต้อง implement PDF/print
+- **สถานะทั้งหมด:** 🟡 รอ backend
 
 ---
 
 ## FR6 — Inventory & Analytics Management
 
-### 6.1 Get All Inventory Items
-- **Method:** GET
-- **Endpoint:** `/api/inventory`
-- **Query Params:** `?category=food` (optional)
-  `category` enum: `"food"` | `"supplies"` | `"medicine"`
-- **Response:**
-  ```json
-  [
-    {
-      "item_id": 1,
-      "name": "Royal Canin Kitten",
-      "category": "food",
-      "unit": "กิโลกรัม",
-      "quantity_remaining": 8.5,
-      "quantity_total": 20,
-      "reorder_threshold": 4,
-      "expiry_date": "2026-06-30",
-      "low_stock": false,
-      "near_expiry": false,
-      "last_updated": "2026-04-20T08:00:00"
-    }
-  ]
-  ```
-- **สถานะ:** 🟡 รอ backend
-
----
-
-### 6.2 Add Inventory Item
-- **Method:** POST
-- **Endpoint:** `/api/inventory`
-- **Request Body:**
-  ```json
-  {
-    "name": "Royal Canin Kitten",
-    "category": "food",
-    "unit": "กิโลกรัม",
-    "quantity_remaining": 20,
-    "quantity_total": 20,
-    "reorder_threshold": 4,
-    "expiry_date": "2026-06-30"
-  }
-  ```
-- **สถานะ:** 🟡 รอ backend
-
----
-
-### 6.3 Update Inventory (restock / adjust)
-- **Method:** PATCH
-- **Endpoint:** `/api/inventory/{item_id}`
-- **Request Body:**
-  ```json
-  {
-    "quantity_remaining": 18.5,
-    "expiry_date": "2026-06-30"
-  }
-  ```
-- **สถานะ:** 🟡 รอ backend
-
----
-
-### 6.4 Get Low-Stock / Near-Expiry Alerts
-- **Method:** GET
-- **Endpoint:** `/api/inventory/alerts`
-- **Response:**
-  ```json
-  {
-    "low_stock": [
-      { "item_id": 3, "name": "Cat Litter", "quantity_remaining": 2, "reorder_threshold": 5 }
-    ],
-    "near_expiry": [
-      { "item_id": 7, "name": "Flea Treatment", "expiry_date": "2026-05-01" }
-    ]
-  }
-  ```
-- **สถานะ:** 🟡 รอ backend
-
----
-
-### 6.5 Get Dashboard Summary (Analytics)
-- **Method:** GET
-- **Endpoint:** `/api/analytics/dashboard`
-- **Query Params:** `?start_date=2026-04-01&end_date=2026-04-30`
-- **Response:**
-  ```json
-  {
-    "period": { "start": "2026-04-01", "end": "2026-04-30" },
-    "revenue": {
-      "total": 128500,
-      "room": 95000,
-      "addons": 33500
-    },
-    "bookings": {
-      "total": 42,
-      "checked_in": 12,
-      "checked_out": 28,
-      "cancelled": 2
-    },
-    "occupancy_rate": 0.84,
-    "top_addons": [
-      { "service": "อาบน้ำ", "count": 18, "revenue": 3600 },
-      { "service": "ตัดขน", "count": 12, "revenue": 4200 }
-    ],
-    "daily_revenue": [
-      { "date": "2026-04-01", "amount": 4200 }
-    ]
-  }
-  ```
-- **สถานะ:** 🟡 รอ backend  
-- **หมายเหตุ:** เข้าถึงได้เฉพาะ ADMIN / OWNER
+### 6.1 – 6.5
+- Get All Items: `GET /api/inventory`
+- Add Item: `POST /api/inventory`
+- Update Item: `PATCH /api/inventory/{item_id}`
+- Alerts: `GET /api/inventory/alerts`
+- Dashboard Summary: `GET /api/analytics/dashboard`
+- ❌ ยังไม่มี endpoint/UI สำหรับ **auto deduct stock** (FR6.1)
+- **สถานะทั้งหมด:** 🟡 รอ backend
 
 ---
 
 ## FR7 — Notification Management
 
-### 7.1 Get Notifications (for current staff/owner)
-- **Method:** GET
-- **Endpoint:** `/api/notifications`
+### 7.1 Get Notifications
+- **Method:** GET · **Endpoint:** `/api/notifications`
 - **Query Params:** `?is_read=false` (optional)
-- **Response:**
-  ```json
-  [
-    {
-      "notification_id": 1,
-      "recipient_type": "owner",
-      "recipient_id": 5,
-      "type": "CARE_REPORT",
-      "title": "รายงานดูแลรายวัน — มะม่วง",
-      "body": "นริน พรหมดี ได้อัปเดตรายงานดูแลน้องมะม่วงประจำวันที่ 3 เม.ย. แล้ว",
-      "booking_id": "BK-0001",
-      "is_read": false,
-      "sent_at": "2025-04-03T18:05:00"
-    }
-  ]
-  ```
-  `type` enum: `"BOOKING_CONFIRMED"` | `"BOOKING_CANCELLED"` | `"CHECKIN_REMINDER"` | `"CARE_REPORT"` | `"PAYMENT_CONFIRMED"` | `"NEW_BOOKING_ALERT"`
 - **สถานะ:** 🟡 รอ backend
-
----
 
 ### 7.2 Mark Notification as Read
-- **Method:** PATCH
-- **Endpoint:** `/api/notifications/{notification_id}/read`
-- **Request:** ไม่มี body
-- **Response:** `{ "notification_id": 1, "is_read": true }`
+- **Method:** PATCH · **Endpoint:** `/api/notifications/{notification_id}/read`
 - **สถานะ:** 🟡 รอ backend
-
----
 
 ### 7.3 Mark All as Read
-- **Method:** PATCH
-- **Endpoint:** `/api/notifications/read-all`
-- **Request:** ไม่มี body
+- **Method:** PATCH · **Endpoint:** `/api/notifications/read-all`
 - **สถานะ:** 🟡 รอ backend
 
 ---
 
-## Customer / Pet Owner APIs (ถ้าจะทำในอนาคต)
+## Customer / Pet Owner APIs (Phase 2)
 
-> ตาม Assumption 1.3 ของ Proposal: Phase แรกเป็น **Internal Staff เท่านั้น**  
-> ส่วนนี้เป็น API ที่อาจต้องเพิ่มในอนาคตสำหรับ Customer Portal
+> ตาม Assumption 4.1.3 ของ Proposal: Phase แรกเป็น **Internal Staff เท่านั้น**
 
 | Endpoint | Method | Description |
 |---|---|---|
@@ -861,7 +457,7 @@
 
 ---
 
-## Error Response Format (ทุก endpoint)
+## Error Response Format
 
 ```json
 {
@@ -872,15 +468,7 @@
 }
 ```
 
-HTTP Status Codes ที่ใช้:
-- `200` OK
-- `201` Created
-- `400` Bad Request (validation error)
-- `401` Unauthorized (token หมดอายุหรือไม่มี)
-- `403` Forbidden (role ไม่มีสิทธิ์)
-- `404` Not Found
-- `409` Conflict (เช่น ห้องถูกจองแล้ว)
-- `500` Internal Server Error
+HTTP Status: `200` OK · `201` Created · `400` Bad Request · `401` Unauthorized · `403` Forbidden · `404` Not Found · `409` Conflict · `500` Internal Server Error
 
 ---
 
@@ -889,23 +477,3 @@ HTTP Status Codes ที่ใช้:
 ```
 Authorization: Bearer <access_token>
 ```
-
----
-
-## หน้าที่มีอยู่แล้ว
-
-| หน้า | ไฟล์ | สถานะ |
-|---|---|---|
-| Dashboard | `dashboard.html` | ✅ UI พร้อม (mock data) |
-| Staff Management | `StaffManagement.html` | ✅ UI พร้อม (mock data) |
-| Bookings | `Bookings.html` | ✅ UI พร้อม (mock data) |
-
-## หน้าที่ต้องทำต่อ
-
-| หน้า | โมดูล | Priority |
-|---|---|---|
-| `Billing.html` | FR5 | HIGH |
-| `PetCare.html` | FR4 | HIGH |
-| `Inventory.html` | FR6 | MEDIUM |
-| `Analytics.html` | FR6 dashboard | MEDIUM |
-| `AuditTrail.html` | FR1.11 | LOW |

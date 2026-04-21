@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pet Profiles — Purrfect Stay</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Serif+Display:ital@0;1&family=Syne:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages/PetProfile.css">
+</head>
+<body>
+
+<aside id="sidebar-root"></aside>
+<main class="main">
+  <div id="topbar-root"></div>
+  <div class="content">
+
+    <!-- STAT CARDS -->
+    <div class="pp-stats-row">
+      <div class="pp-stat rose">
+        <div class="pp-stat-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+        </div>
+        <div class="pp-stat-body">
+          <div class="pp-stat-label">สัตว์เลี้ยงทั้งหมด</div>
+          <div class="pp-stat-value" id="stat-total">—</div>
+          <div class="pp-stat-sub">ลงทะเบียนในระบบ</div>
+        </div>
+        <div class="pp-stat-ring"></div>
+      </div>
+      <div class="pp-stat pink">
+        <div class="pp-stat-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+        </div>
+        <div class="pp-stat-body">
+          <div class="pp-stat-label">แมว</div>
+          <div class="pp-stat-value" id="stat-cats">—</div>
+          <div class="pp-stat-sub">Cats 🐱</div>
+        </div>
+        <div class="pp-stat-ring"></div>
+      </div>
+      <div class="pp-stat teal">
+        <div class="pp-stat-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        </div>
+        <div class="pp-stat-body">
+          <div class="pp-stat-label">สุนัข</div>
+          <div class="pp-stat-value" id="stat-dogs">—</div>
+          <div class="pp-stat-sub">Dogs 🐶</div>
+        </div>
+        <div class="pp-stat-ring"></div>
+      </div>
+      <div class="pp-stat amber">
+        <div class="pp-stat-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        </div>
+        <div class="pp-stat-body">
+          <div class="pp-stat-label">ต้องดูแลพิเศษ</div>
+          <div class="pp-stat-value" id="stat-alert">—</div>
+          <div class="pp-stat-sub">มีแพ้ / ประวัติสุขภาพ</div>
+        </div>
+        <div class="pp-stat-ring"></div>
+      </div>
+    </div>
+
+    <!-- TABLE CARD -->
+    <div class="pp-card">
+      <div class="pp-card-header">
+        <div class="pp-filter-tabs">
+          <button class="pp-tab active" onclick="filterPets('all', this)">
+            ทั้งหมด <span class="pp-tab-count" id="count-all">—</span>
+          </button>
+          <button class="pp-tab" onclick="filterPets('cat', this)">
+            🐱 แมว <span class="pp-tab-count" id="count-cat">—</span>
+          </button>
+          <button class="pp-tab" onclick="filterPets('dog', this)">
+            🐶 สุนัข <span class="pp-tab-count" id="count-dog">—</span>
+          </button>
+        </div>
+        <div class="pp-tools">
+          <div class="pp-search-wrap">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input class="pp-search" type="text" placeholder="ค้นหาชื่อสัตว์เลี้ยง, เจ้าของ, สายพันธุ์..." oninput="searchPets(this.value)">
+          </div>
+        </div>
+      </div>
+
+      <div class="pp-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>สัตว์เลี้ยง</th>
+              <th>เจ้าของ</th>
+              <th>ประเภท</th>
+              <th>เพศ / อายุ</th>
+              <th>น้ำหนัก</th>
+              <th>วัคซีน</th>
+              <th>แจ้งเตือน</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="pets-tbody"></tbody>
+        </table>
+        <div class="pp-empty" id="pp-empty" style="display:none">
+          <div class="pp-empty-icon">🐾</div>
+          <p>ไม่พบโปรไฟล์สัตว์เลี้ยงที่ตรงกัน</p>
+        </div>
+      </div>
+
+      <div class="pp-table-footer">
+        <span id="pp-showing">—</span>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- ══════════════════════════════
+     MODAL: VIEW PET FULL PROFILE
+══════════════════════════════ -->
+<div class="pp-modal-overlay" id="modal-view-pet">
+  <div class="pp-modal">
+    <div class="pp-modal-header">
+      <div>
+        <div class="pp-modal-title">โปรไฟล์สัตว์เลี้ยง</div>
+        <div class="pp-modal-sub" id="view-pet-subtitle">—</div>
+      </div>
+      <button class="pp-modal-close" onclick="closeModal('modal-view-pet')">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="pp-modal-body" id="view-pet-body"></div>
+    <div class="pp-modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-view-pet')">ปิด</button>
+      <button class="btn-primary" onclick="openEditFromView()">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+        แก้ไขโปรไฟล์
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════
+     MODAL: ADD / EDIT PET
+══════════════════════════════ -->
+<div class="pp-modal-overlay" id="modal-pet">
+  <div class="pp-modal">
+    <div class="pp-modal-header">
+      <div>
+        <div class="pp-modal-title" id="pet-modal-title">เพิ่มสัตว์เลี้ยงใหม่</div>
+        <div class="pp-modal-sub">กรอกข้อมูลโปรไฟล์สัตว์เลี้ยง</div>
+      </div>
+      <button class="pp-modal-close" onclick="closeModal('modal-pet')">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="pp-modal-body">
+      <!-- Tab nav -->
+      <div class="pp-modal-tabs">
+        <button class="pp-modal-tab active" data-tab="basic" onclick="switchModalTab('basic')">🐾 ข้อมูลพื้นฐาน</button>
+        <button class="pp-modal-tab" data-tab="health" onclick="switchModalTab('health')">🏥 สุขภาพ</button>
+        <button class="pp-modal-tab" data-tab="owner" onclick="switchModalTab('owner')">👤 เจ้าของ</button>
+      </div>
+
+      <!-- Tab: Basic Info -->
+      <div class="pp-tab-content active" id="tab-basic">
+        <div class="pp-form-section">
+          <div class="pp-form-section-title">ข้อมูลพื้นฐาน</div>
+          <div class="pp-form-row">
+            <div class="pp-form-group">
+              <label class="pp-label">ชื่อน้อง <span class="req">*</span></label>
+              <input class="pp-input" type="text" placeholder="เช่น มะม่วง, โดนัท" id="pet-name">
+            </div>
+            <div class="pp-form-group">
+              <label class="pp-label">ประเภท <span class="req">*</span></label>
+              <select class="pp-select" id="pet-species">
+                <option value="cat">🐱 แมว</option>
+                <option value="dog">🐶 สุนัข</option>
+                <option value="other">🐾 อื่นๆ</option>
+              </select>
+            </div>
+          </div>
+          <div class="pp-form-row">
+            <div class="pp-form-group">
+              <label class="pp-label">สายพันธุ์ <span class="req">*</span></label>
+              <input class="pp-input" type="text" placeholder="เช่น Scottish Fold, Golden Retriever" id="pet-breed">
+            </div>
+            <div class="pp-form-group">
+              <label class="pp-label">เพศ</label>
+              <select class="pp-select" id="pet-sex">
+                <option value="F">♀️ เมีย</option>
+                <option value="M">♂️ ผู้</option>
+              </select>
+            </div>
+          </div>
+          <div class="pp-form-row">
+            <div class="pp-form-group">
+              <label class="pp-label">วันเกิด</label>
+              <input class="pp-input" type="date" id="pet-dob">
+            </div>
+            <div class="pp-form-group">
+              <label class="pp-label">น้ำหนัก (kg)</label>
+              <input class="pp-input" type="number" placeholder="0.0" step="0.1" min="0" id="pet-weight">
+            </div>
+          </div>
+          <div class="pp-form-row full">
+            <div class="pp-form-group">
+              <label class="pp-label">สีขน</label>
+              <input class="pp-input" type="text" placeholder="เช่น น้ำตาล-ขาว, ขาวครีม" id="pet-coat">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Health -->
+      <div class="pp-tab-content" id="tab-health">
+        <div class="pp-form-section">
+          <div class="pp-form-section-title">ข้อมูลสุขภาพและพฤติกรรม</div>
+          <div class="pp-form-row full">
+            <div class="pp-form-group">
+              <label class="pp-label">สิ่งที่แพ้ (Allergies)</label>
+              <input class="pp-input" type="text" placeholder="เช่น ไก่, ซีฟู้ด, ยางพารา (ถ้าไม่มี ให้เว้นว่าง)" id="pet-allergies">
+            </div>
+          </div>
+          <div class="pp-form-row full">
+            <div class="pp-form-group">
+              <label class="pp-label">ประวัติสุขภาพ / โรคประจำตัว</label>
+              <textarea class="pp-textarea" placeholder="เช่น มีปัญหาข้อสะโพก ตาน้ำไหลเรื้อรัง..." rows="3" id="pet-medical"></textarea>
+            </div>
+          </div>
+          <div class="pp-form-row full">
+            <div class="pp-form-group">
+              <label class="pp-label">หมายเหตุพฤติกรรม</label>
+              <textarea class="pp-textarea" placeholder="เช่น ขี้อาย ต้องใช้เวลาทำความรู้จัก ชอบซ่อนตัว..." rows="3" id="pet-behavior"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Owner -->
+      <div class="pp-tab-content" id="tab-owner">
+        <div class="pp-form-section">
+          <div class="pp-form-section-title">ข้อมูลเจ้าของ</div>
+          <div class="pp-form-row">
+            <div class="pp-form-group">
+              <label class="pp-label">ชื่อเจ้าของ <span class="req">*</span></label>
+              <input class="pp-input" type="text" placeholder="ชื่อ-นามสกุล" id="pet-owner">
+            </div>
+            <div class="pp-form-group">
+              <label class="pp-label">เบอร์โทรศัพท์</label>
+              <input class="pp-input" type="text" placeholder="0XX-XXX-XXXX" id="pet-phone">
+            </div>
+          </div>
+          <div class="pp-form-row full">
+            <div class="pp-form-group">
+              <label class="pp-label">อีเมล</label>
+              <input class="pp-input" type="email" placeholder="owner@email.com" id="pet-email">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="pp-modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-pet')">ยกเลิก</button>
+      <button class="btn-primary" onclick="savePet()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+        บันทึก
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════
+     MODAL: ADD VACCINE
+══════════════════════════════ -->
+<div class="pp-modal-overlay" id="modal-vaccine">
+  <div class="pp-modal pp-modal-sm">
+    <div class="pp-modal-header">
+      <div>
+        <div class="pp-modal-title">เพิ่มบันทึกวัคซีน</div>
+        <div class="pp-modal-sub">น้อง <span id="vacc-pet-name">—</span></div>
+      </div>
+      <button class="pp-modal-close" onclick="closeModal('modal-vaccine')">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="pp-modal-body">
+      <div class="pp-form-row full" style="margin-bottom:14px">
+        <div class="pp-form-group">
+          <label class="pp-label">ชื่อวัคซีน <span class="req">*</span></label>
+          <input class="pp-input" type="text" placeholder="เช่น FVRCP, DHPPiL, Rabies" id="vacc-name">
+        </div>
+      </div>
+      <div class="pp-form-row" style="margin-bottom:14px">
+        <div class="pp-form-group">
+          <label class="pp-label">วันที่ฉีด <span class="req">*</span></label>
+          <input class="pp-input" type="date" id="vacc-date">
+        </div>
+        <div class="pp-form-group">
+          <label class="pp-label">วันหมดอายุ <span class="req">*</span></label>
+          <input class="pp-input" type="date" id="vacc-expiry">
+        </div>
+      </div>
+      <div class="pp-form-row full">
+        <div class="pp-form-group">
+          <label class="pp-label">คลินิก / โรงพยาบาล</label>
+          <input class="pp-input" type="text" placeholder="ชื่อสถานพยาบาล" id="vacc-clinic">
+        </div>
+      </div>
+    </div>
+    <div class="pp-modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-vaccine')">ยกเลิก</button>
+      <button class="btn-primary" onclick="saveVaccine()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+        บันทึกวัคซีน
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="js/components/sidebar.js"></script>
+<script src="js/components/navbar.js"></script>
+<script src="js/services/api.js"></script>
+<script src="js/pages/PetProfile.js"></script>
+<script>
+  function openEditFromView() {
+    const id = selectedPetId;
+    closeModal('modal-view-pet');
+    openEditPet(id);
+  }
+
+  const currentUser = { name: 'สมชาย มั่นคง', role: 'Administrator' };
+  Sidebar.render({ activePage: 'pets', user: currentUser });
+  Navbar.render({
+    title: 'Pet Profiles',
+    breadcrumb: 'Admin › โปรไฟล์สัตว์เลี้ยง (FR2)',
+    actionsHTML: `
+      <button class="btn-primary" onclick="openAddPet()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
+        เพิ่มสัตว์เลี้ยง
+      </button>
+    `,
+  });
+</script>
+</body>
+</html>

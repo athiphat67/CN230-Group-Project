@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inventory — Purrfect Stay</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Serif+Display:ital@0;1&family=Syne:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages/Inventory.css">
+</head>
+<body>
+
+<aside id="sidebar-root"></aside>
+<main class="main">
+  <div id="topbar-root"></div>
+  <div class="content">
+
+    <!-- ALERTS -->
+    <div class="iv-alerts-row" id="alerts-row">
+      <div class="iv-alert red" id="alert-low">
+        <div class="iv-alert-icon">📉</div>
+        <div class="iv-alert-text">
+          <div class="iv-alert-count" id="alert-low-count">0</div>
+          <div class="iv-alert-label">รายการสต็อกต่ำกว่าเกณฑ์</div>
+          <div style="font-size:11px;margin-top:2px;opacity:.8" id="alert-low-items"></div>
+        </div>
+      </div>
+      <div class="iv-alert amber" id="alert-exp">
+        <div class="iv-alert-icon">⏰</div>
+        <div class="iv-alert-text">
+          <div class="iv-alert-count" id="alert-exp-count">0</div>
+          <div class="iv-alert-label">รายการใกล้หมดอายุ (30 วัน)</div>
+          <div style="font-size:11px;margin-top:2px;opacity:.8" id="alert-exp-items"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STAT CARDS -->
+    <div class="iv-stats-row">
+      <div class="iv-stat orange">
+        <div class="iv-stat-icon">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+        </div>
+        <div class="iv-stat-label">รายการทั้งหมด</div>
+        <div class="iv-stat-value" id="stat-total">—</div>
+        <div class="iv-stat-sub">ทุกหมวดหมู่</div>
+      </div>
+      <div class="iv-stat green">
+        <div class="iv-stat-icon">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+        </div>
+        <div class="iv-stat-label">หมวดอาหาร</div>
+        <div class="iv-stat-value" id="stat-food">—</div>
+        <div class="iv-stat-sub">Food & Nutrition</div>
+      </div>
+      <div class="iv-stat red">
+        <div class="iv-stat-icon">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        </div>
+        <div class="iv-stat-label">สต็อกต่ำ</div>
+        <div class="iv-stat-value" id="stat-low">—</div>
+        <div class="iv-stat-sub">ต้องสั่งซื้อเพิ่ม</div>
+      </div>
+      <div class="iv-stat amber">
+        <div class="iv-stat-icon">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <div class="iv-stat-label">ใกล้หมดอายุ</div>
+        <div class="iv-stat-value" id="stat-expiring">—</div>
+        <div class="iv-stat-sub">ภายใน 30 วัน</div>
+      </div>
+    </div>
+
+    <!-- TABLE CARD -->
+    <div class="iv-card">
+      <div class="iv-card-header">
+        <div class="iv-filter-tabs">
+          <button class="iv-tab active" onclick="filterItems('all', this)">
+            ทั้งหมด <span class="iv-tab-count" id="count-all">8</span>
+          </button>
+          <button class="iv-tab" onclick="filterItems('food', this)">
+            🌾 อาหาร <span class="iv-tab-count" id="count-food">3</span>
+          </button>
+          <button class="iv-tab" onclick="filterItems('supplies', this)">
+            📦 อุปกรณ์ <span class="iv-tab-count" id="count-supplies">3</span>
+          </button>
+          <button class="iv-tab" onclick="filterItems('medicine', this)">
+            💊 ยา <span class="iv-tab-count" id="count-medicine">2</span>
+          </button>
+        </div>
+        <div class="iv-tools">
+          <div class="iv-search-wrap">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input class="iv-search" type="text" placeholder="ค้นหาชื่อสินค้า..." oninput="searchItems(this.value)">
+          </div>
+        </div>
+      </div>
+
+      <div class="iv-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ชื่อสินค้า</th>
+              <th>หมวดหมู่</th>
+              <th>ปริมาณคงเหลือ</th>
+              <th>จุด Reorder</th>
+              <th>วันหมดอายุ</th>
+              <th>สถานะ</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="inv-tbody"></tbody>
+        </table>
+        <div class="bl-empty" id="iv-empty" style="display:none">
+          <div class="bl-empty-icon">📦</div>
+          <p>ไม่พบรายการ</p>
+        </div>
+      </div>
+
+      <div class="iv-table-footer">
+        <span id="iv-showing">—</span>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- MODAL: ADD / EDIT -->
+<div class="iv-modal-overlay" id="modal-inv">
+  <div class="iv-modal">
+    <div class="iv-modal-header">
+      <div>
+        <div class="iv-modal-title" id="modal-inv-title">เพิ่มรายการใหม่</div>
+        <div class="iv-modal-sub">กรอกข้อมูลสินค้าหรืออุปกรณ์</div>
+      </div>
+      <button class="iv-modal-close" onclick="closeModal('modal-inv')">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="iv-modal-body">
+      <div class="iv-form-row">
+        <div class="iv-form-group" style="grid-column:1/-1">
+          <label class="iv-label">ชื่อสินค้า <span class="req">*</span></label>
+          <input class="iv-input" type="text" placeholder="เช่น Royal Canin Kitten" id="iv-name">
+        </div>
+      </div>
+      <div class="iv-form-row">
+        <div class="iv-form-group">
+          <label class="iv-label">หมวดหมู่ <span class="req">*</span></label>
+          <select class="iv-select" id="iv-category">
+            <option value="food">🌾 อาหาร</option>
+            <option value="supplies">📦 อุปกรณ์</option>
+            <option value="medicine">💊 ยา</option>
+          </select>
+        </div>
+        <div class="iv-form-group">
+          <label class="iv-label">หน่วย <span class="req">*</span></label>
+          <input class="iv-input" type="text" placeholder="กก., ลิตร, ขวด, เม็ด..." id="iv-unit">
+        </div>
+      </div>
+      <div class="iv-form-row">
+        <div class="iv-form-group">
+          <label class="iv-label">ปริมาณคงเหลือ <span class="req">*</span></label>
+          <input class="iv-input" type="number" placeholder="0" step="0.5" min="0" id="iv-qty-rem">
+        </div>
+        <div class="iv-form-group">
+          <label class="iv-label">ปริมาณทั้งหมด (เต็ม) <span class="req">*</span></label>
+          <input class="iv-input" type="number" placeholder="0" step="0.5" min="0" id="iv-qty-total">
+        </div>
+      </div>
+      <div class="iv-form-row">
+        <div class="iv-form-group">
+          <label class="iv-label">จุด Reorder (แจ้งเตือนเมื่อต่ำกว่า)</label>
+          <input class="iv-input" type="number" placeholder="0" step="0.5" min="0" id="iv-threshold">
+        </div>
+        <div class="iv-form-group">
+          <label class="iv-label">วันหมดอายุ</label>
+          <input class="iv-input" type="date" id="iv-expiry">
+        </div>
+      </div>
+    </div>
+    <div class="iv-modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-inv')">ยกเลิก</button>
+      <button class="btn-primary" onclick="saveInventory()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+        บันทึก
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="js/components/sidebar.js"></script>
+<script src="js/components/navbar.js"></script>
+<script src="js/services/api.js"></script>
+<script src="js/pages/Inventory.js"></script>
+<script>
+  const currentUser = { name: 'สมชาย มั่นคง', role: 'Administrator' };
+  Sidebar.render({ activePage: 'inventory', user: currentUser });
+  Navbar.render({
+    title: 'Inventory',
+    breadcrumb: 'Admin › คลังสินค้า (Inventory)',
+    actionsHTML: `
+      <button class="btn-primary" onclick="openAddModal()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
+        เพิ่มรายการ
+      </button>
+    `,
+  });
+</script>
+</body>
+</html>

@@ -1,255 +1,199 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Portal | Purrfect Stay</title>
-    <link rel="stylesheet" href="./css/dashboard.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Purrfect Stay</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Serif+Display:ital@0;1&family=Syne:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages/dashboard.css">
 </head>
 <body>
 
-    <aside class="sidebar">
-        <div class="brand-logo">
-            <span class="logo-icon">🐾</span>
-            <div class="logo-text">
-                <h3>Purrfect Stay</h3>
-                <p>ADMIN PORTAL</p>
-            </div>
+<aside id="sidebar-root"></aside>
+
+<main class="main">
+  <div id="topbar-root"></div>
+
+  <div class="content">
+
+    <!-- WELCOME BANNER -->
+    <div class="db-welcome">
+      <div>
+        <h1 class="db-welcome-title">สวัสดีตอนเช้า, <span id="welcome-name">สมชาย</span> 👋</h1>
+        <p class="db-welcome-sub">นี่คือภาพรวมของโรงแรมสัตว์เลี้ยงในวันนี้</p>
+      </div>
+      <div class="db-welcome-actions">
+        <button class="btn-cancel" onclick="handleClockIn()">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          ลงเวลาเข้างาน
+        </button>
+        <a href="Bookings.html" class="btn-primary">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
+          สร้างการจองใหม่
+        </a>
+      </div>
+    </div>
+
+    <!-- KPI STAT CARDS -->
+    <div class="db-stats-row">
+      <div class="db-stat blue">
+        <div class="db-stat-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
         </div>
-        
-        <nav class="sidebar-menu">
-            <a href="dashboard.html" class="menu-item active">
-                <span class="menu-icon">⊞</span> ภาพรวม (Dashboard)
-            </a>
-            <a href="calendar.html" class="menu-item">
-                <span class="menu-icon">📅</span> ปฏิทิน (Calendar)
-            </a>
-            <a href="bookings.html" class="menu-item">
-                <span class="menu-icon">📋</span> การจอง (Bookings)
-            </a>
-            <a href="invoice.html" class="menu-item">
-                <span class="menu-icon">💳</span> การเงิน (Billing)
-            </a>
-        </nav>
-
-        <div class="user-profile">
-            <div class="user-avatar">
-                <img src="https://ui-avatars.com/api/?name=Somchai+M&background=0D8ABC&color=fff" alt="User">
-            </div>
-            <div class="user-info">
-                <p class="user-name" id="display-staff-name">สมชาย มั่นคง</p>
-                <p class="user-role" id="display-staff-role">ผู้ดูแลระบบ (Admin)</p>
-            </div>
+        <div class="db-stat-body">
+          <div class="db-stat-label">รอเช็กอิน (CHECK-INS)</div>
+          <div class="db-stat-value" id="stat-checkins">—</div>
+          <div class="db-stat-sub" id="stat-checkins-trend">↗ กำลังโหลด...</div>
         </div>
-    </aside>
+        <div class="db-stat-ring"></div>
+      </div>
 
-    <main class="main-content">
-        
-        <header class="top-navbar">
-            <div class="search-bar">
-                <span class="search-icon">🔍</span>
-                <input type="text" placeholder="ค้นหาชื่อสัตว์เลี้ยง, เจ้าของ, หรือเลขห้อง...">
-            </div>
-            <div class="header-actions">
-                <button class="icon-btn">🔔</button>
-                <button class="icon-btn">⏱️</button>
-                <span class="header-title">Purrfect Management</span>
-            </div>
-        </header>
-
-        <div class="page-container">
-            
-            <div class="welcome-section">
-                <div>
-                    <h1>สวัสดีตอนเช้า, สมชาย</h1>
-                    <p class="subtitle">นี่คือภาพรวมของโรงแรมสัตว์เลี้ยงในวันนี้</p>
-                </div>
-                <div class="action-buttons">
-                    <button class="btn-outline">⏱️ ลงเวลาเข้างาน</button>
-                    <button class="btn-primary">⊕ สร้างการจองใหม่</button>
-                </div>
-            </div>
-
-            <div class="dashboard-grid">
-                
-                <div class="left-column">
-                    <div class="stats-row">
-                        <div class="stat-card border-blue">
-                            <p class="stat-title">รอเช็กอิน (CHECK-INS)</p>
-                            <div class="stat-val-group">
-                                <h2>12</h2>
-                                <span class="trend up">↗ +4</span>
-                            </div>
-                        </div>
-                        <div class="stat-card border-teal">
-                            <p class="stat-title">รอเช็กเอาต์ (CHECK-OUTS)</p>
-                            <div class="stat-val-group">
-                                <h2>08</h2>
-                                <span class="trend neutral">Expected</span>
-                            </div>
-                        </div>
-                        <div class="stat-card border-green">
-                            <p class="stat-title">กำลังพัก (ACTIVE STAYS)</p>
-                            <div class="stat-val-group">
-                                <h2>42</h2>
-                                <span class="trend neutral">Capacity 84%</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="priority-card">
-                        <div class="pet-avatar-large">🐶</div>
-                        <div class="priority-info">
-                            <span class="badge-priority">PRIORITY CHECK-IN</span>
-                            <h3>บิ๊กบอย (Golden Retriever)</h3>
-                            <p>กำลังจะมาถึงใน 15 นาที • ต้องการห้อง VIP C02</p>
-                        </div>
-                        <button class="btn-icon-right">❯</button>
-                    </div>
-                </div>
-
-                <div class="right-column">
-                    <div class="team-card">
-                        <div class="team-header">
-                            <h3>ทีมงานหน้างาน</h3>
-                            <span>4 Active</span>
-                        </div>
-                        <div class="team-list">
-                            <div class="team-member">
-                                <div class="avatar-sm bg-blue">มา</div>
-                                <div class="member-info">
-                                    <p>มาลี สุขสันต์</p>
-                                    <span>พนักงานดูแล (Staff)</span>
-                                </div>
-                                <div class="status-dot green"></div>
-                            </div>
-                            <div class="team-member">
-                                <div class="avatar-sm bg-green">นร</div>
-                                <div class="member-info">
-                                    <p>นริน พรหมดี</p>
-                                    <span>พนักงานดูแล (Staff)</span>
-                                </div>
-                                <div class="status-dot green"></div>
-                            </div>
-                            <div class="team-member">
-                                <div class="avatar-sm bg-orange">ปอ</div>
-                                <div class="member-info">
-                                    <p>ปอร์น ใจดี</p>
-                                    <span>ช่างซ่อมบำรุง</span>
-                                </div>
-                                <div class="status-dot orange"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
-            <div class="section-header">
-                <h2>สถานะห้องพัก (Mini Room Status)</h2>
-                <div class="legend">
-                    <span class="legend-item"><div class="box occupied"></div> มีผู้เข้าพัก</span>
-                    <span class="legend-item"><div class="box available"></div> ว่าง</span>
-                </div>
-            </div>
-
-            <div class="room-grid">
-                <div class="room-card">
-                    <div class="room-card-header">
-                        <span class="icon">🏠</span> <h3>โซนสุนัข (Dog Wing)</h3>
-                    </div>
-                    <div class="mini-rooms">
-                        <div class="m-room occupied"></div><div class="m-room available"></div><div class="m-room occupied"></div><div class="m-room available"></div><div class="m-room occupied"></div>
-                        <div class="m-room available"></div><div class="m-room available"></div><div class="m-room occupied"></div><div class="m-room occupied"></div><div class="m-room available"></div>
-                    </div>
-                    <div class="room-card-footer">
-                        <span>5/10 FREE</span>
-                        <span class="percent">50%</span>
-                    </div>
-                </div>
-
-                <div class="room-card">
-                    <div class="room-card-header">
-                        <span class="icon">❄️</span> <h3>โซนแมว (Cat Suites)</h3>
-                    </div>
-                    <div class="mini-rooms">
-                        <div class="m-room occupied"></div><div class="m-room occupied"></div><div class="m-room occupied"></div><div class="m-room available"></div><div class="m-room occupied"></div>
-                        <div class="m-room available"></div><div class="m-room available"></div><div class="m-room occupied"></div><div class="m-room available"></div><div class="m-room available"></div>
-                    </div>
-                    <div class="room-card-footer">
-                        <span>4/10 FREE</span>
-                        <span class="percent">40%</span>
-                    </div>
-                </div>
-
-                <div class="room-card">
-                    <div class="room-card-header">
-                        <span class="icon">⭐</span> <h3>VIP Penthouses</h3>
-                    </div>
-                    <div class="mini-rooms labels">
-                        <div class="m-room available">V-01</div><div class="m-room occupied">V-02</div><div class="m-room available">V-03</div><div class="m-room occupied">V-04</div>
-                        <div class="m-room occupied">V-05</div><div class="m-room available">V-06</div><div class="m-room available">V-07</div><div class="m-room occupied">V-08</div>
-                    </div>
-                    <div class="room-card-footer">
-                        <span>4/8 FREE</span>
-                        <span class="percent">50%</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="section-header mt-8">
-                <h2>คิวเข้าพักล่าสุด (Recent Check-ins)</h2>
-            </div>
-            <div class="table-card">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>สัตว์เลี้ยง / สายพันธุ์</th>
-                            <th>ห้องพัก</th>
-                            <th>ระยะเวลา</th>
-                            <th>จัดการ</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>
-                                <div class="td-pet-info">
-                                    <div class="td-avatar">🐈</div>
-                                    <div>
-                                        <p class="font-bold">มะม่วง</p>
-                                        <p class="text-muted">Scottish Fold • Owner: อาพิญา ศ.</p>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="font-medium text-blue">A01</td>
-                            <td>4 คืน (เช็กเอาต์ 05 เม.ย.)</td>
-                            <td><button class="btn-more">⋮</button></td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div class="td-pet-info">
-                                    <div class="td-avatar">🐕</div>
-                                    <div>
-                                        <p class="font-bold">โดนัท</p>
-                                        <p class="text-muted">Persian • Owner: ชัญญา ด.</p>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="font-medium text-blue">A03</td>
-                            <td>3 คืน (เช็กเอาต์ 06 เม.ย.)</td>
-                            <td><button class="btn-more">⋮</button></td>
-                        </tr>
-                    </tbody>
-                </table>
-                <div class="table-footer">
-                    <a href="#">ดูการจองที่กำลังเข้าพักทั้งหมด</a>
-                </div>
-            </div>
-
+      <div class="db-stat teal">
+        <div class="db-stat-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
         </div>
-    </main>
+        <div class="db-stat-body">
+          <div class="db-stat-label">รอเช็กเอาต์ (CHECK-OUTS)</div>
+          <div class="db-stat-value" id="stat-checkouts">—</div>
+          <div class="db-stat-sub">กำหนดออกวันนี้</div>
+        </div>
+        <div class="db-stat-ring"></div>
+      </div>
 
-    <script src="./js/api.js"></script>
-    <script src="./js/dashboard.js"></script>
+      <div class="db-stat green">
+        <div class="db-stat-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        </div>
+        <div class="db-stat-body">
+          <div class="db-stat-label">กำลังพัก (ACTIVE STAYS)</div>
+          <div class="db-stat-value" id="stat-active">—</div>
+          <div class="db-stat-sub" id="stat-occupancy">Occupancy —%</div>
+        </div>
+        <div class="db-stat-ring"></div>
+      </div>
+
+      <div class="db-stat amber">
+        <div class="db-stat-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <div class="db-stat-body">
+          <div class="db-stat-label">รายรับวันนี้</div>
+          <div class="db-stat-value" id="stat-revenue">—</div>
+          <div class="db-stat-sub">จากการ check-out วันนี้</div>
+        </div>
+        <div class="db-stat-ring"></div>
+      </div>
+    </div>
+
+    <!-- MAIN GRID -->
+    <div class="db-grid">
+
+      <!-- LEFT: Priority + Room Status -->
+      <div class="db-left">
+
+        <!-- Priority Check-in Card -->
+        <div class="db-section-title">🔔 Priority Check-in</div>
+        <div class="db-priority-card" id="priority-card">
+          <div class="db-priority-avatar">🐶</div>
+          <div class="db-priority-info">
+            <span class="db-priority-badge">PRIORITY</span>
+            <h3 id="priority-pet-name">กำลังโหลด...</h3>
+            <p id="priority-detail">—</p>
+          </div>
+          <a href="Bookings.html" class="db-priority-btn">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+          </a>
+        </div>
+
+        <!-- Recent Check-ins Table -->
+        <div class="db-section-title" style="margin-top:24px">📋 คิวเข้าพักล่าสุด</div>
+        <div class="db-table-card">
+          <table>
+            <thead>
+              <tr>
+                <th>สัตว์เลี้ยง / สายพันธุ์</th>
+                <th>ห้อง</th>
+                <th>ระยะเวลา</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="recent-checkins-tbody">
+              <tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text-3)">กำลังโหลด...</td></tr>
+            </tbody>
+          </table>
+          <div class="db-table-footer">
+            <a href="Bookings.html">ดูการจองที่กำลังเข้าพักทั้งหมด →</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Team + Notifications -->
+      <div class="db-right">
+
+        <!-- Team Online Card -->
+        <div class="db-section-title">👥 ทีมงานหน้างาน</div>
+        <div class="db-team-card">
+          <div class="db-team-header">
+            <span>ทีมงานวันนี้</span>
+            <span id="team-count" class="db-team-badge">— Active</span>
+          </div>
+          <div class="db-team-list" id="team-list">
+            <div style="text-align:center;padding:20px;color:var(--text-3);font-size:13px">กำลังโหลด...</div>
+          </div>
+          <a href="StaffManagement.html" class="db-team-link">จัดการทีมงาน →</a>
+        </div>
+
+        <!-- Quick Notifications -->
+        <div class="db-section-title" style="margin-top:20px">🔔 แจ้งเตือนล่าสุด</div>
+        <div class="db-notif-list" id="notif-list">
+          <div style="text-align:center;padding:20px;color:var(--text-3);font-size:13px">กำลังโหลด...</div>
+        </div>
+        <a href="Notifications.html" class="db-notif-all-link">ดูทั้งหมด →</a>
+      </div>
+
+    </div><!-- /.db-grid -->
+
+    <!-- ROOM STATUS SECTION -->
+    <div class="db-section-title" style="margin-top:28px">
+      🏠 สถานะห้องพัก (Mini Room Status)
+      <div class="db-legend">
+        <span class="db-legend-item"><span class="db-legend-box occupied"></span> มีผู้เข้าพัก</span>
+        <span class="db-legend-item"><span class="db-legend-box available"></span> ว่าง</span>
+      </div>
+    </div>
+    <div class="db-room-grid" id="room-grid">
+      <!-- populated by JS -->
+    </div>
+
+  </div><!-- /.content -->
+</main>
+
+<script src="js/components/sidebar.js"></script>
+<script src="js/components/navbar.js"></script>
+<script src="js/services/api.js"></script>
+<script src="js/pages/dashboard.js"></script>
+<script>
+  const currentUser = {
+    name: localStorage.getItem('staff_name') || 'สมชาย มั่นคง',
+    role: localStorage.getItem('staff_role') || 'Administrator',
+  };
+
+  Sidebar.render({ activePage: 'dashboard', user: currentUser });
+  Navbar.render({
+    title: 'Dashboard',
+    breadcrumb: 'Admin › ภาพรวม (Dashboard)',
+    actionsHTML: `
+      <a href="Notifications.html" class="btn-cancel" style="display:flex;align-items:center;gap:6px">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+        </svg>
+        แจ้งเตือน
+      </a>
+    `,
+  });
+</script>
 </body>
 </html>

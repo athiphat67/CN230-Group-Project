@@ -7,105 +7,29 @@
  */
 
 /* ── MOCK DATA ── */
-const PETS = [
-  {
-    pet_id: 1, owner_id: 5,
-    owner_name: 'อาพิญา ศ.', owner_phone: '081-234-5678', owner_email: 'apiya@email.com',
-    name: 'มะม่วง', emoji: '🐱', species: 'cat', breed: 'Scottish Fold',
-    sex: 'F', dob: '2021-03-15', weight_kg: 4.2, coat_color: 'น้ำตาล-ขาว',
-    medical_notes: 'แพ้ไก่ ระวังอาหารที่มีส่วนผสมของไก่',
-    allergies: 'ไก่',
-    behavior_notes: 'ขี้อาย ต้องใช้เวลาทำความรู้จัก ชอบซ่อนตัวช่วงแรก',
-    vaccines: [
-      { vaccine_id: 1, vaccine_name: 'FVRCP', administered_date: '2025-01-10', expiry_date: '2026-01-10', vet_clinic: 'คลินิกสัตวแพทย์สุขสันต์' },
-      { vaccine_id: 2, vaccine_name: 'Rabies', administered_date: '2024-11-05', expiry_date: '2025-11-05', vet_clinic: 'คลินิกสัตวแพทย์สุขสันต์' },
-    ],
-    meal_plans: [
-      { meal_period: 'MORNING', food_type: 'Royal Canin Kitten', quantity_grams: 80, notes: 'ผสมน้ำอุ่นนิดหน่อย' },
-      { meal_period: 'MIDDAY',  food_type: 'Royal Canin Kitten', quantity_grams: 60, notes: '' },
-      { meal_period: 'EVENING', food_type: 'Royal Canin Kitten', quantity_grams: 80, notes: '' },
-    ],
-  },
-  {
-    pet_id: 2, owner_id: 6,
-    owner_name: 'ชัญญา ด.', owner_phone: '082-345-6789', owner_email: 'chanya@email.com',
-    name: 'โดนัท', emoji: '🐶', species: 'dog', breed: 'Labrador Retriever',
-    sex: 'M', dob: '2020-07-22', weight_kg: 18.5, coat_color: 'เหลืองทอง',
-    medical_notes: '', allergies: '', behavior_notes: 'เป็นมิตร ชอบเล่นน้ำ',
-    vaccines: [
-      { vaccine_id: 3, vaccine_name: 'DHPPiL', administered_date: '2025-02-14', expiry_date: '2026-02-14', vet_clinic: 'โรงพยาบาลสัตว์จตุจักร' },
-      { vaccine_id: 4, vaccine_name: 'Rabies', administered_date: '2025-02-14', expiry_date: '2026-02-14', vet_clinic: 'โรงพยาบาลสัตว์จตุจักร' },
-    ],
-    meal_plans: [
-      { meal_period: 'MORNING', food_type: 'Pro Plan Large Breed', quantity_grams: 200, notes: '' },
-      { meal_period: 'EVENING', food_type: 'Pro Plan Large Breed', quantity_grams: 200, notes: '' },
-    ],
-  },
-  {
-    pet_id: 3, owner_id: 7,
-    owner_name: 'สมศักดิ์ ท.', owner_phone: '089-456-7890', owner_email: 'somsak@email.com',
-    name: 'บิ๊กบอย', emoji: '🐕', species: 'dog', breed: 'Golden Retriever',
-    sex: 'M', dob: '2019-12-01', weight_kg: 28.0, coat_color: 'ทอง',
-    medical_notes: 'มีปัญหาข้อสะโพก ห้ามออกกำลังกายหนัก',
-    allergies: '',
-    behavior_notes: 'รักความสงบ ชอบอยู่กับคน',
-    vaccines: [
-      { vaccine_id: 5, vaccine_name: 'DHPPiL', administered_date: '2024-12-20', expiry_date: '2025-12-20', vet_clinic: 'คลินิกหมาแมวรัก' },
-    ],
-    meal_plans: [
-      { meal_period: 'MORNING', food_type: 'Hill\'s Large Breed', quantity_grams: 250, notes: '' },
-      { meal_period: 'EVENING', food_type: 'Hill\'s Large Breed', quantity_grams: 250, notes: '' },
-    ],
-  },
-  {
-    pet_id: 4, owner_id: 8,
-    owner_name: 'ณิชา ร.', owner_phone: '085-789-0123', owner_email: 'nicha@email.com',
-    name: 'ทาโร่', emoji: '🐶', species: 'dog', breed: 'Pomeranian',
-    sex: 'M', dob: '2022-05-10', weight_kg: 3.1, coat_color: 'ขาวครีม',
-    medical_notes: '', allergies: 'ซีฟู้ด',
-    behavior_notes: 'ขี้แง แต่น่ารัก ชอบอยู่ใกล้คน',
-    vaccines: [
-      { vaccine_id: 6, vaccine_name: 'DHPPiL', administered_date: '2025-03-01', expiry_date: '2026-03-01', vet_clinic: 'โรงพยาบาลสัตว์จตุจักร' },
-      { vaccine_id: 7, vaccine_name: 'Rabies', administered_date: '2025-03-01', expiry_date: '2026-03-01', vet_clinic: 'โรงพยาบาลสัตว์จตุจักร' },
-    ],
-    meal_plans: [
-      { meal_period: 'MORNING', food_type: 'Royal Canin Toy Breed', quantity_grams: 50, notes: '' },
-      { meal_period: 'MIDDAY',  food_type: 'Royal Canin Toy Breed', quantity_grams: 40, notes: '' },
-      { meal_period: 'EVENING', food_type: 'Royal Canin Toy Breed', quantity_grams: 50, notes: '' },
-    ],
-  },
-  {
-    pet_id: 5, owner_id: 9,
-    owner_name: 'วิภาวี ส.', owner_phone: '084-678-9012', owner_email: 'wipawee@email.com',
-    name: 'มูมู่', emoji: '🐱', species: 'cat', breed: 'Persian',
-    sex: 'F', dob: '2020-11-30', weight_kg: 5.8, coat_color: 'ขาวเทา',
-    medical_notes: 'ตาน้ำไหลเรื้อรัง ต้องเช็ดตาทุกวัน',
-    allergies: '',
-    behavior_notes: 'ชอบความสงบ ไม่ชอบเสียงดัง',
-    vaccines: [
-      { vaccine_id: 8, vaccine_name: 'FVRCP', administered_date: '2023-08-15', expiry_date: '2024-08-15', vet_clinic: 'คลินิกสัตวแพทย์สุขสันต์' },
-    ],
-    meal_plans: [
-      { meal_period: 'MORNING', food_type: 'Whiskas Adult', quantity_grams: 100, notes: '' },
-      { meal_period: 'EVENING', food_type: 'Whiskas Adult', quantity_grams: 100, notes: '' },
-    ],
-  },
-  {
-    pet_id: 6, owner_id: 10,
-    owner_name: 'กัลยา ม.', owner_phone: '086-890-1234', owner_email: 'kallaya@email.com',
-    name: 'ลูน่า', emoji: '🐱', species: 'cat', breed: 'British Shorthair',
-    sex: 'F', dob: '2023-02-14', weight_kg: 3.5, coat_color: 'เทาเงิน',
-    medical_notes: '', allergies: '',
-    behavior_notes: 'เงียบ ชอบนอน เป็นมิตร',
-    vaccines: [
-      { vaccine_id: 9, vaccine_name: 'FVRCP', administered_date: '2025-04-01', expiry_date: '2026-04-01', vet_clinic: 'โรงพยาบาลสัตว์เพื่อนรัก' },
-    ],
-    meal_plans: [
-      { meal_period: 'MORNING', food_type: 'Royal Canin British', quantity_grams: 70, notes: '' },
-      { meal_period: 'EVENING', food_type: 'Royal Canin British', quantity_grams: 70, notes: '' },
-    ],
-  },
-];
+let PETS = []
+
+async function loadPetsData() {
+  // 1. เรียก API ผ่าน window.API ที่เราตั้งไว้
+  const res = await window.API.pets.getAll();
+
+  if (res.ok) {
+    // 2. นำข้อมูลจาก Database มาเก็บในตัวแปร PETS
+    // หมายเหตุ: Backend ของคุณส่งข้อมูลกลับมาในรูปแบบ { status: "success", data: [...] }
+    PETS = res.data.data.map(p => ({
+      ...p,
+      // เพิ่ม Emoji ตาม Species เพราะใน DB เก็บแค่ข้อความ
+      emoji: p.species?.toLowerCase() === 'cat' ? '🐱' : '🐶'
+    }));
+
+    // 3. สั่งให้ UI วาดตารางและตัวเลข Stat ใหม่
+    renderStats();
+    renderTable();
+  } else {
+    showToast('โหลดข้อมูลไม่สำเร็จ: ' + res.data.message, 'warn');
+  }
+}
+
 
 /* ── STATE ── */
 let currentFilter = 'all';
@@ -117,23 +41,26 @@ let activeModalTab = 'basic';
 /* ══════════════════════════════════════════
    INIT
 ══════════════════════════════════════════ */
-document.addEventListener('DOMContentLoaded', () => {
-  renderStats();
-  renderTable();
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadPetsData(); // เปลี่ยนจาก renderStats/renderTable เฉยๆ เป็นตัวนี้
   bindModalBackdrops();
   bindEscapeKey();
-
-  // TODO: เชื่อม API จริง
-  // window.API.pets.getAll().then(res => { if (res.ok) { PETS.length=0; res.data.forEach(p=>PETS.push(p)); } renderStats(); renderTable(); });
 });
 
 /* ══════════════════════════════════════════
    STATS
 ══════════════════════════════════════════ */
 function renderStats() {
-  const cats  = PETS.filter(p => p.species === 'cat').length;
-  const dogs  = PETS.filter(p => p.species === 'dog').length;
-  const alert = PETS.filter(p => p.allergies || p.medical_notes).length;
+  const cats  = PETS.filter(p => p.species?.toLowerCase() === 'cat').length;
+  const dogs  = PETS.filter(p => p.species?.toLowerCase() === 'dog').length;
+  
+  // ปรับการนับ alert ให้แม่นยำขึ้น
+  const alert = PETS.filter(p => {
+    const hasAllergy = p.allergies && p.allergies !== 'ไม่มี' && p.allergies !== '-';
+    const hasMedical = p.medical_notes && p.medical_notes !== 'ไม่มี' && p.medical_notes !== '-';
+    return hasAllergy || hasMedical;
+  }).length;
+  
   document.getElementById('stat-total').textContent  = PETS.length;
   document.getElementById('stat-cats').textContent   = cats;
   document.getElementById('stat-dogs').textContent   = dogs;
@@ -184,7 +111,7 @@ function renderTable() {
             <div class="pp-owner-phone">${pet.owner_phone}</div>
           </div>
         </td>
-        <td><span class="pp-species-badge ${pet.species}">${speciesLabel(pet.species)}</span></td>
+        <td><span class="pp-species-badge ${pet.species?.toLowerCase()}">${speciesLabel(pet.species)}</span></td>
         <td style="color:var(--pp-text-2);font-size:13px">${pet.sex === 'F' ? '♀️ เมีย' : '♂️ ผู้'} · ${age}</td>
         <td style="color:var(--pp-text-2);font-size:13px">${pet.weight_kg} kg</td>
         <td><span class="pp-vacc-badge ${vaccStatus.cls}">${vaccStatus.label}</span></td>
@@ -201,6 +128,9 @@ function renderTable() {
             <button class="pp-btn-icon edit" title="แก้ไข" onclick="openEditPet(${pet.pet_id})">
               <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
             </button>
+            <button class="pp-btn-icon delete" title="ลบ" onclick="deletePet(${pet.pet_id}, '${pet.name}')" style="color: #E11D48">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
             <button class="pp-btn-icon" title="เพิ่มวัคซีน" onclick="openAddVaccine(${pet.pet_id})">
               <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
             </button>
@@ -211,13 +141,43 @@ function renderTable() {
   }).join('');
 }
 
+async function deletePet(id, name) {
+  if (!confirm(`ยืนยันการลบโปรไฟล์ของ "${name}"? \nข้อมูลประวัติวัคซีนและแผนอาหารทั้งหมดจะถูกลบไปด้วยและไม่สามารถเรียกคืนได้`)) {
+    return;
+  }
+
+  try {
+    const res = await window.API.pets.delete(id);
+    if (res.ok) {
+      showToast('🗑️ ลบข้อมูลเรียบร้อยแล้ว');
+      await loadPetsData(); // รีโหลดตารางใหม่
+    } else {
+      showToast('ไม่สามารถลบข้อมูลได้: ' + res.data.message, 'warn');
+    }
+  } catch (error) {
+    showToast('เกิดข้อผิดพลาดในการเชื่อมต่อ Server', 'warn');
+  }
+}
+
 function getFiltered() {
   return PETS.filter(pet => {
-    const matchSpec = currentFilter === 'all' || pet.species === currentFilter;
+    const species = pet.species?.toLowerCase();
+    
+    let matchSpec = (currentFilter === 'all');
+    if (!matchSpec) {
+      if (currentFilter === 'other') {
+        // ถ้าเลือก Other ให้แสดงตัวที่ไม่ใช่แมวและสุนัข
+        matchSpec = (species !== 'cat' && species !== 'dog');
+      } else {
+        matchSpec = (species === currentFilter.toLowerCase());
+      }
+    }
+    
     const q = currentSearch.toLowerCase();
     const matchSearch = !q || pet.name.toLowerCase().includes(q) ||
       pet.owner_name.toLowerCase().includes(q) ||
       pet.breed.toLowerCase().includes(q);
+      
     return matchSpec && matchSearch;
   });
 }
@@ -236,104 +196,73 @@ function searchPets(q) {
 
 function updateCounts() {
   document.getElementById('count-all').textContent = PETS.length;
-  document.getElementById('count-cat').textContent = PETS.filter(p => p.species === 'cat').length;
-  document.getElementById('count-dog').textContent = PETS.filter(p => p.species === 'dog').length;
+  document.getElementById('count-cat').textContent = PETS.filter(p => p.species?.toLowerCase() === 'cat').length;
+  document.getElementById('count-dog').textContent = PETS.filter(p => p.species?.toLowerCase() === 'dog').length;
+  document.getElementById('count-other').textContent = PETS.filter(p => 
+    p.species !== 'cat' && p.species !== 'dog'
+  ).length;
 }
 
 /* ══════════════════════════════════════════
    VIEW PET MODAL
 ══════════════════════════════════════════ */
-function openViewPet(id) {
+async function openViewPet(id) {
   const pet = PETS.find(p => p.pet_id === id);
   if (!pet) return;
   selectedPetId = id;
 
+  // โหลดข้อมูลวัคซีนและแผนอาหารเพิ่มก่อนแสดง Modal
+  try {
+    const [vaccRes, mealRes] = await Promise.all([
+      window.API.pets.getVaccines(id),
+      window.API.pets.getMealPlans(id)
+    ]);
+
+    if (vaccRes.ok) pet.vaccines = vaccRes.data.data;
+    if (mealRes.ok) pet.meal_plans = mealRes.data.data;
+    
+    // หลังจากได้ข้อมูลครบค่อยวาด UI ใน Modal
+    renderViewModalContent(pet); 
+    openModal('modal-view-pet');
+  } catch (err) {
+    showToast('ไม่สามารถโหลดรายละเอียดเพิ่มเติมได้', 'warn');
+  }
+}
+
+function renderViewModalContent(pet) {
+  const body = document.getElementById('view-pet-body');
   document.getElementById('view-pet-subtitle').textContent = `${pet.name} (${pet.breed})`;
 
-  const vaccStatus = getVaccStatus(pet);
-  const age = calcAge(pet.dob);
-
-  document.getElementById('view-pet-body').innerHTML = `
-    <div class="pp-pet-profile-hero">
-      <div class="pp-pet-hero-avatar">${pet.emoji}</div>
-      <div>
-        <div class="pp-pet-hero-name">${pet.name}</div>
-        <div class="pp-pet-hero-sub">${pet.breed} · ${speciesLabel(pet.species)} · ${pet.sex === 'F' ? '♀️ เมีย' : '♂️ ผู้'}</div>
-        <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">
-          <span class="pp-vacc-badge ${vaccStatus.cls}" style="font-size:11px">${vaccStatus.label}</span>
-          ${pet.allergies ? `<span class="pp-alert-tag">⚠ แพ้ ${pet.allergies}</span>` : ''}
-        </div>
-      </div>
-    </div>
-
+  body.innerHTML = `
     <div class="pp-view-grid">
-      <div class="pp-view-box">
-        <div class="pp-view-box-label">🐾 ข้อมูลพื้นฐาน</div>
-        <div class="pp-view-row"><span class="pp-view-label">ชื่อ</span><span class="pp-view-val">${pet.name}</span></div>
-        <div class="pp-view-row"><span class="pp-view-label">สายพันธุ์</span><span class="pp-view-val">${pet.breed}</span></div>
-        <div class="pp-view-row"><span class="pp-view-label">วันเกิด</span><span class="pp-view-val">${formatDate(pet.dob)} (${age})</span></div>
-        <div class="pp-view-row"><span class="pp-view-label">น้ำหนัก</span><span class="pp-view-val">${pet.weight_kg} kg</span></div>
-        <div class="pp-view-row"><span class="pp-view-label">สีขน</span><span class="pp-view-val">${pet.coat_color || '—'}</span></div>
-      </div>
-      <div class="pp-view-box">
-        <div class="pp-view-box-label">👤 ข้อมูลเจ้าของ</div>
-        <div class="pp-view-row"><span class="pp-view-label">ชื่อ</span><span class="pp-view-val">${pet.owner_name}</span></div>
-        <div class="pp-view-row"><span class="pp-view-label">โทรศัพท์</span><span class="pp-view-val">${pet.owner_phone}</span></div>
-        <div class="pp-view-row"><span class="pp-view-label">อีเมล</span><span class="pp-view-val" style="font-size:12px">${pet.owner_email || '—'}</span></div>
-      </div>
-    </div>
-
-    ${(pet.allergies || pet.medical_notes || pet.behavior_notes) ? `
-    <div class="pp-view-box" style="margin-bottom:16px">
-      <div class="pp-view-box-label">🏥 ข้อมูลสุขภาพ & พฤติกรรม</div>
-      ${pet.allergies ? `<div class="pp-view-row"><span class="pp-view-label">แพ้</span><span class="pp-view-val" style="color:#DC2626;font-weight:700">${pet.allergies}</span></div>` : ''}
-      ${pet.medical_notes ? `<div class="pp-view-row"><span class="pp-view-label">ประวัติสุขภาพ</span><span class="pp-view-val" style="font-size:12.5px">${pet.medical_notes}</span></div>` : ''}
-      ${pet.behavior_notes ? `<div class="pp-view-row"><span class="pp-view-label">พฤติกรรม</span><span class="pp-view-val" style="font-size:12.5px">${pet.behavior_notes}</span></div>` : ''}
-    </div>` : ''}
-
-    <div style="margin-bottom:16px">
-      <div class="pp-view-box-label" style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--pp-text-3);margin-bottom:10px">💉 ประวัติวัคซีน (${pet.vaccines.length} รายการ)</div>
-      ${pet.vaccines.length ? `
-        <div class="pp-vacc-list">
-          ${pet.vaccines.map(v => {
-            const exp = getVaccExpiry(v.expiry_date);
-            return `
-              <div class="pp-vacc-item">
-                <div>
-                  <div class="pp-vacc-name">💉 ${v.vaccine_name}</div>
-                  <div class="pp-vacc-dates">ฉีด: ${formatDate(v.administered_date)} · หมดอายุ: ${formatDate(v.expiry_date)}</div>
-                  <div class="pp-vacc-clinic">${v.vet_clinic}</div>
-                </div>
-                <span class="pp-vacc-badge ${exp.cls}">${exp.label}</span>
-              </div>
-            `;
-          }).join('')}
+      <div class="pp-view-main">
+        <div class="pp-view-section">
+          <div class="pp-section-title">📋 ข้อมูลทั่วไป</div>
+          <p><strong>เพศ:</strong> ${pet.sex === 'M' ? 'ผู้' : 'เมีย'} | <strong>อายุ:</strong> ${calcAge(pet.dob)}</p>
+          <p><strong>น้ำหนัก:</strong> ${pet.weight_kg} kg | <strong>สีขน:</strong> ${pet.coat_color || '-'}</p>
         </div>
-      ` : `<p style="font-size:13px;color:var(--pp-text-3)">ยังไม่มีบันทึกวัคซีน</p>`}
-    </div>
-
-    ${pet.meal_plans.length ? `
-    <div>
-      <div class="pp-view-box-label" style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--pp-text-3);margin-bottom:10px">🍽 แผนอาหาร</div>
-      <div class="pp-meal-grid">
-        ${['MORNING','MIDDAY','EVENING'].map(period => {
-          const mp = pet.meal_plans.find(m => m.meal_period === period);
-          const icons = { MORNING: '🌅 เช้า', MIDDAY: '☀️ กลางวัน', EVENING: '🌙 เย็น' };
-          return `
-            <div class="pp-meal-card">
-              <div class="pp-meal-period">${icons[period]}</div>
-              ${mp ? `
-                <div class="pp-meal-food">${mp.food_type}</div>
-                <div class="pp-meal-qty">${mp.quantity_grams}g${mp.notes ? ' · ' + mp.notes : ''}</div>
-              ` : `<div class="pp-meal-qty" style="color:var(--pp-text-3)">—</div>`}
-            </div>
-          `;
-        }).join('')}
+        <div class="pp-view-section">
+          <div class="pp-section-title">🏥 สุขภาพและแจ้งเตือน</div>
+          <p><strong>โรคประจำตัว:</strong> ${pet.medical_notes || 'ไม่มี'}</p>
+          <p><strong>สิ่งที่แพ้:</strong> <span class="pp-alert-text">${pet.allergies || 'ไม่มี'}</span></p>
+        </div>
       </div>
-    </div>` : ''}
+      
+      <div class="pp-view-side">
+        <div class="pp-section-title">💉 ประวัติวัคซีนล่าสุด</div>
+        <div class="pp-vaccine-list">
+          ${pet.vaccines?.length > 0 
+            ? pet.vaccines.map(v => `
+                <div class="pp-vaccine-item">
+                  <div><strong>${v.vaccine_name}</strong></div>
+                  <div class="pp-text-sub">${formatDate(v.administered_date)} (หมดอายุ: ${formatDate(v.expiry_date)})</div>
+                </div>
+              `).join('')
+            : '<div class="pp-empty-sub">ไม่มีประวัติวัคซีน</div>'}
+        </div>
+      </div>
+    </div>
   `;
-
-  openModal('modal-view-pet');
 }
 
 /* ══════════════════════════════════════════
@@ -379,58 +308,70 @@ function clearPetForm() {
   document.getElementById('pet-sex').value = 'F';
 }
 
-function savePet() {
-  const name    = document.getElementById('pet-name').value.trim();
-  const species = document.getElementById('pet-species').value;
-  const breed   = document.getElementById('pet-breed').value.trim();
-  const sex     = document.getElementById('pet-sex').value;
-  const dob     = document.getElementById('pet-dob').value;
-  const weight  = parseFloat(document.getElementById('pet-weight').value);
-  const owner   = document.getElementById('pet-owner').value.trim();
-  const phone   = document.getElementById('pet-phone').value.trim();
+async function savePet() {
+  // 1. รวบรวมข้อมูล (ให้ชื่อ Key ตรงกับที่ pets.py รอรับ)
+  const payload = {
+    name: document.getElementById('pet-name').value.trim(),
+    species: document.getElementById('pet-species').value, // 'cat', 'dog'
+    breed: document.getElementById('pet-breed').value.trim(),
+    sex: document.getElementById('pet-sex').value, // 'M' หรือ 'F'
+    dob: document.getElementById('pet-dob').value, // YYYY-MM-DD
+    weight_kg: parseFloat(document.getElementById('pet-weight').value) || 0,
+    coat_color: document.getElementById('pet-coat').value,
+    medical_notes: document.getElementById('pet-medical').value,
+    allergies: document.getElementById('pet-allergies').value,
+    behavior_notes: document.getElementById('pet-behavior').value,
+    // หมายเหตุ: ในระบบจริงต้องดึง customerid จากการเลือกเจ้าของ
+    // ตอนนี้ Hardcode เป็น 1 ตาม Schema ของคุณที่ห้ามเป็น NULL
+    owner_id: 1 
+  };
 
-  if (!name || !breed || !owner) {
-    showToast('⚠️ กรุณากรอกข้อมูลที่จำเป็นให้ครบ', 'warn');
+  if (!payload.name || !payload.breed) {
+    showToast('⚠️ กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน', 'warn');
     return;
   }
 
-  const emojiMap = { cat: '🐱', dog: '🐶', other: '🐾' };
+  try {
+    let res;
+    if (editingPetId) {
+      // แก้ไขรายการเดิม (PUT /api/pets/{id})
+      res = await window.API.pets.update(editingPetId, payload);
+    } else {
+      // สร้างรายการใหม่ (POST /api/pets)
+      res = await window.API.pets.create(payload);
+    }
 
-  if (editingPetId) {
-    const idx = PETS.findIndex(p => p.pet_id === editingPetId);
-    if (idx !== -1) Object.assign(PETS[idx], {
-      name, species, breed, sex, dob, weight_kg: weight || PETS[idx].weight_kg,
-      emoji: emojiMap[species],
-      coat_color:      document.getElementById('pet-coat').value,
-      owner_name:      owner,
-      owner_phone:     phone,
-      owner_email:     document.getElementById('pet-email').value,
-      allergies:       document.getElementById('pet-allergies').value,
-      medical_notes:   document.getElementById('pet-medical').value,
-      behavior_notes:  document.getElementById('pet-behavior').value,
-    });
-    // TODO: PUT /api/pets/{pet_id}
-    showToast(`✅ อัปเดตโปรไฟล์ ${name} สำเร็จ!`);
-  } else {
-    const newPet = {
-      pet_id: PETS.length + 1, owner_id: 99,
-      name, species, breed, sex, dob,
-      weight_kg: weight || 0, emoji: emojiMap[species],
-      coat_color:     document.getElementById('pet-coat').value,
-      owner_name:     owner, owner_phone: phone,
-      owner_email:    document.getElementById('pet-email').value,
-      allergies:      document.getElementById('pet-allergies').value,
-      medical_notes:  document.getElementById('pet-medical').value,
-      behavior_notes: document.getElementById('pet-behavior').value,
-      vaccines: [], meal_plans: [],
-    };
-    PETS.unshift(newPet);
-    // TODO: POST /api/pets
-    showToast(`✅ เพิ่มโปรไฟล์ ${name} สำเร็จ!`);
+    if (res.ok) {
+      showToast(`✅ ${editingPetId ? 'อัปเดต' : 'เพิ่ม'}ข้อมูลน้อง ${payload.name} สำเร็จ`);
+      closeModal('modal-pet');
+      await loadPetsData(); // รีโหลดตารางใหม่จาก Database จริง
+    } else {
+      showToast('ผิดพลาด: ' + res.data.message, 'warn');
+    }
+  } catch (error) {
+    showToast('ไม่สามารถเชื่อมต่อกับ Server ได้', 'warn');
   }
+}
 
-  renderStats(); renderTable();
-  closeModal('modal-pet');
+async function loadPetsData() {
+  // 1. ดึงข้อมูลจาก Backend (ดึงผ่าน Query Params ถ้าต้องการฟิลเตอร์)
+  const res = await window.API.pets.getAll();
+
+  if (res.ok) {
+    PETS = res.data.data.map(p => ({
+      ...p,
+      species: p.species?.toLowerCase(),
+      emoji: p.species?.toLowerCase() === 'cat' ? '🐱' : 
+             p.species?.toLowerCase() === 'dog' ? '🐶' : '🐾',
+      vaccines: [], 
+      meal_plans: []
+    }));
+
+    renderStats();
+    renderTable();
+  } else {
+    showToast('โหลดข้อมูลล้มเหลว: ' + res.data.message, 'warn');
+  }
 }
 
 /* ══════════════════════════════════════════
@@ -448,29 +389,22 @@ function openAddVaccine(id) {
   openModal('modal-vaccine');
 }
 
-function saveVaccine() {
-  const pet = PETS.find(p => p.pet_id === selectedPetId);
-  if (!pet) return;
+async function saveVaccine() {
+  const payload = {
+    vaccine_name: document.getElementById('vacc-name').value.trim(),
+    administered_date: document.getElementById('vacc-date').value,
+    expiry_date: document.getElementById('vacc-expiry').value,
+    clinic_name: document.getElementById('vacc-clinic').value.trim()
+  };
 
-  const name   = document.getElementById('vacc-name').value.trim();
-  const date   = document.getElementById('vacc-date').value;
-  const expiry = document.getElementById('vacc-expiry').value;
-  const clinic = document.getElementById('vacc-clinic').value.trim();
-
-  if (!name || !date || !expiry) {
-    showToast('⚠️ กรุณากรอกชื่อวัคซีน วันที่ฉีด และวันหมดอายุ', 'warn');
-    return;
+  const res = await window.API.pets.addVaccine(selectedPetId, payload);
+  if (res.ok) {
+    showToast('✅ บันทึกประวัติวัคซีนเรียบร้อย');
+    closeModal('modal-vaccine');
+    await loadPetsData(); // รีโหลดเพื่ออัปเดต Badge สถานะวัคซีนในตาราง
+  } else {
+    showToast('เกิดข้อผิดพลาด: ' + res.data.message, 'warn');
   }
-
-  pet.vaccines.push({
-    vaccine_id: Date.now(), vaccine_name: name,
-    administered_date: date, expiry_date: expiry, vet_clinic: clinic,
-  });
-
-  // TODO: POST /api/pets/{pet_id}/vaccines
-  renderTable();
-  closeModal('modal-vaccine');
-  showToast(`✅ บันทึกวัคซีน ${name} ให้น้อง${pet.name} สำเร็จ!`);
 }
 
 /* ══════════════════════════════════════════
@@ -535,18 +469,33 @@ function formatDate(s) {
 }
 
 function speciesLabel(s) {
-  return { cat: '🐱 แมว', dog: '🐶 สุนัข', other: '🐾 อื่นๆ' }[s] ?? s;
+  if (!s) return '—';
+  const labels = { cat: '🐱 แมว', dog: '🐶 สุนัข', other: '🐾 อื่นๆ' };
+  return labels[s.toLowerCase()] ?? s;
 }
 
+// แก้ไขใน PetProfile.js
 function getVaccStatus(pet) {
-  if (!pet.vaccines || pet.vaccines.length === 0) return { cls: 'none', label: '— ไม่มีข้อมูล' };
-  const today = new Date();
-  const soon  = new Date(); soon.setDate(soon.getDate() + 60);
-  const expired  = pet.vaccines.some(v => new Date(v.expiry_date) < today);
-  const expiring = pet.vaccines.some(v => { const d = new Date(v.expiry_date); return d >= today && d <= soon; });
-  if (expired)  return { cls: 'expired',  label: '⚠ หมดอายุ' };
-  if (expiring) return { cls: 'expiring', label: '⏰ ใกล้หมดอายุ' };
-  return { cls: 'valid', label: '✓ ครบถ้วน' };
+  // 1. ถ้ามีข้อมูลใน Array รายละเอียด (โหลดมาแล้ว) ให้ใช้ข้อมูลนั้นก่อน
+  if (pet.vaccines && pet.vaccines.length > 0) {
+    const today = new Date();
+    const soon = new Date(); soon.setDate(soon.getDate() + 60);
+    const expired = pet.vaccines.some(v => new Date(v.expiry_date) < today);
+    const expiring = pet.vaccines.some(v => { 
+      const d = new Date(v.expiry_date); 
+      return d >= today && d <= soon; 
+    });
+    if (expired) return { cls: 'expired', label: '⚠ หมดอายุ' };
+    if (expiring) return { cls: 'expiring', label: '⏰ ใกล้หมดอายุ' };
+    return { cls: 'valid', label: '✓ ครบถ้วน' };
+  }
+
+  // 2. ถ้ายังไม่มี Array (กรณีแสดงในตารางครั้งแรก) ให้เช็คจาก is_vaccinated ในตาราง pet
+  if (pet.is_vaccinated) {
+    return { cls: 'valid', label: '✓ มีประวัติ' };
+  }
+
+  return { cls: 'none', label: '— ไม่มีข้อมูล' };
 }
 
 function getVaccExpiry(expiryDate) {
@@ -556,4 +505,25 @@ function getVaccExpiry(expiryDate) {
   if (d < today) return { cls: 'expired', label: 'หมดอายุแล้ว' };
   if (d <= soon) return { cls: 'expiring', label: 'ใกล้หมดอายุ' };
   return { cls: 'valid', label: 'ยังใช้ได้' };
+}
+
+function clickStatCard(type) {
+  // เอาสถานะ active ออกจาก Tab Filter ตรงหัวตารางก่อน
+  document.querySelectorAll('.pp-tab').forEach(t => t.classList.remove('active'));
+
+  // ตั้งค่า currentFilter ตามการ์ดที่กด
+  currentFilter = type;
+
+  // ถ้ากดการ์ดที่ตรงกับ Tab ก็ให้ Tab นั้น active ด้วย (ยกเว้น alert ที่ไม่มี Tab)
+  if (type === 'total' || type === 'all') {
+    currentFilter = 'all';
+    document.querySelector('.pp-tab[onclick*="all"]')?.classList.add('active');
+  } else if (type === 'cat') {
+    document.querySelector('.pp-tab[onclick*="cat"]')?.classList.add('active');
+  } else if (type === 'dog') {
+    document.querySelector('.pp-tab[onclick*="dog"]')?.classList.add('active');
+  }
+
+  // สั่งวาดตารางใหม่
+  renderTable();
 }

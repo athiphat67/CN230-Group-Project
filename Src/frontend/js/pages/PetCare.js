@@ -6,80 +6,23 @@
  *          create report modal · view report modal · mood filter
  */
 
-/* ── MOCK DATA ── */
-const ACTIVE_STAYS = [
-  { booking_id: 'BK-0001', pet_name: 'มะม่วง', pet_emoji: '🐱', breed: 'Scottish Fold', room: 'A01', checkin: '2025-04-02', checkout: '2025-04-06', reported_today: true },
-  { booking_id: 'BK-0002', pet_name: 'โดนัท', pet_emoji: '🐶', breed: 'Labrador', room: 'A03', checkin: '2025-04-03', checkout: '2025-04-06', reported_today: true },
-  { booking_id: 'BK-0003', pet_name: 'บิ๊กบอย', pet_emoji: '🐕', breed: 'Golden Retriever', room: 'V-02', checkin: '2025-04-05', checkout: '2025-04-10', reported_today: false },
-  { booking_id: 'BK-0006', pet_name: 'ทาโร่', pet_emoji: '🐶', breed: 'Pomeranian', room: 'B04', checkin: '2025-04-04', checkout: '2025-04-08', reported_today: false },
-  { booking_id: 'BK-0009', pet_name: 'พีช', pet_emoji: '🐱', breed: 'Ragdoll', room: 'C02', checkin: '2025-04-04', checkout: '2025-04-09', reported_today: true },
-  { booking_id: 'BK-0010', pet_name: 'โมจิ', pet_emoji: '🐶', breed: 'Corgi', room: 'B02', checkin: '2025-04-05', checkout: '2025-04-07', reported_today: false },
-  { booking_id: 'BK-0011', pet_name: 'โนวา', pet_emoji: '🐱', breed: 'Maine Coon', room: 'C03', checkin: '2025-04-03', checkout: '2025-04-08', reported_today: true },
-  { booking_id: 'BK-0012', pet_name: 'ดาวดิน', pet_emoji: '🐶', breed: 'Shih Tzu', room: 'A06', checkin: '2025-04-04', checkout: '2025-04-10', reported_today: false },
-];
+let CARE_REPORTS = []; // เปลี่ยนเป็น let และเริ่มด้วย Array ว่าง
 
-const CARE_REPORTS = [
-  {
-    report_id: 1, booking_id: 'BK-0001',
-    pet_name: 'มะม่วง', pet_emoji: '🐱', room: 'A01',
-    report_date: '2025-04-05',
-    food_intake: 'กินหมด', bowel_activity: 'ปกติ',
-    mood: 'HAPPY', behavior_notes: 'วิ่งเล่น ร้องขอกอด ดูมีชีวิตชีวามากขึ้น',
-    notes: 'วันนี้น้องมะม่วงกินอาหารครบทุกมื้อ',
-    reported_by: 'นริน พรหมดี', photo_urls: [],
-    created_at: '2025-04-05T18:00:00',
-  },
-  {
-    report_id: 2, booking_id: 'BK-0002',
-    pet_name: 'โดนัท', pet_emoji: '🐶', room: 'A03',
-    report_date: '2025-04-05',
-    food_intake: 'กินบางส่วน', bowel_activity: 'ปกติ',
-    mood: 'NEUTRAL', behavior_notes: 'สงบ นอนพักมาก ไม่ค่อยเล่น',
-    notes: '',
-    reported_by: 'มาลี สุขสันต์', photo_urls: [],
-    created_at: '2025-04-05T17:30:00',
-  },
-  {
-    report_id: 3, booking_id: 'BK-0009',
-    pet_name: 'พีช', pet_emoji: '🐱', room: 'C02',
-    report_date: '2025-04-05',
-    food_intake: 'กินน้อย', bowel_activity: 'ถ่ายน้อย',
-    mood: 'ANXIOUS', behavior_notes: 'ซ่อนตัวใต้เตียง ไม่ยอมออกมา ร้องเสียงดัง',
-    notes: 'แจ้งเจ้าของแล้ว น้องพีชดูเครียด อาจต้องการสิ่งของที่คุ้นเคยจากบ้าน',
-    reported_by: 'สมชาย มั่นคง', photo_urls: [],
-    created_at: '2025-04-05T16:45:00',
-  },
-  {
-    report_id: 4, booking_id: 'BK-0011',
-    pet_name: 'โนวา', pet_emoji: '🐱', room: 'C03',
-    report_date: '2025-04-05',
-    food_intake: 'กินหมด', bowel_activity: 'ปกติ',
-    mood: 'HAPPY', behavior_notes: 'เล่นของเล่น คลุกคลีกับ staff มาก',
-    notes: '',
-    reported_by: 'มาลี สุขสันต์', photo_urls: [],
-    created_at: '2025-04-05T19:00:00',
-  },
-  {
-    report_id: 5, booking_id: 'BK-0003',
-    pet_name: 'บิ๊กบอย', pet_emoji: '🐕', room: 'V-02',
-    report_date: '2025-04-04',
-    food_intake: 'กินหมด', bowel_activity: 'ปกติ',
-    mood: 'HAPPY', behavior_notes: 'ชอบเดินรอบห้อง VIP ดูอยากออกไปข้างนอก',
-    notes: 'น้องบิ๊กบอยสุขภาพดีมาก ขอบคุณที่ดูแล',
-    reported_by: 'นริน พรหมดี', photo_urls: [],
-    created_at: '2025-04-04T18:30:00',
-  },
-  {
-    report_id: 6, booking_id: 'BK-0006',
-    pet_name: 'ทาโร่', pet_emoji: '🐶', room: 'B04',
-    report_date: '2025-04-04',
-    food_intake: 'กินบางส่วน', bowel_activity: 'ท้องเสีย',
-    mood: 'SICK', behavior_notes: 'ซึมเซา ไม่ค่อยเคลื่อนไหว ท้องเสียเล็กน้อย',
-    notes: 'แนะนำให้เจ้าของพาไปพบสัตวแพทย์หลัง check-out',
-    reported_by: 'สมชาย มั่นคง', photo_urls: [],
-    created_at: '2025-04-04T17:00:00',
-  },
-];
+async function loadReports() {
+  const res = await window.API.care.getAll();
+  if (res.ok) {
+    CARE_REPORTS = res.data.data.map(r => ({
+      ...r,
+      // เพิ่ม Fallback ให้ mood เป็น NEUTRAL ถ้าหาก API ส่งค่า null มา
+      mood: r.mood || 'NEUTRAL', 
+      pet_emoji: r.species?.toLowerCase() === 'cat' ? '🐱' :
+                 r.species?.toLowerCase() === 'dog' ? '🐶' : '🐾'
+    }));
+    renderReports();
+  } else {
+    showToast('ไม่สามารถดึงข้อมูลรายงานการดูแลได้', 'warn');
+  }
+}
 
 /* ── STATE ── */
 let currentMoodFilter = 'all';
@@ -87,11 +30,38 @@ let currentStaySearch = '';
 let pendingBookingId = null;
 
 /* ══════════════════════════════════════════
-   INIT
+   ACTIVE STAYS
+══════════════════════════════════════════ */
+
+// 1. เปลี่ยนตัวแปรเป็น Array ว่าง
+let ACTIVE_STAYS = [];
+
+// 2. สร้างฟังก์ชันโหลดข้อมูลจริง
+async function loadActiveStays() {
+  const res = await window.API.care.getActiveStays();
+  if (res.ok) {
+    // นำข้อมูลมาเติม Emoji ตามประเภทสัตว์เลี้ยง
+    ACTIVE_STAYS = res.data.data.map(s => ({
+      ...s,
+      pet_emoji: s.species?.toLowerCase() === 'cat' ? '🐱' : '🐶'
+    }));
+
+    renderActiveStays(); // สั่งให้วาด UI ฝั่งซ้ายใหม่
+
+    // อัปเดตตัวเลขสถิติบนการ์ดใบแรก (กำลังพักอยู่)
+    const statActive = document.querySelector('.pc-stat.teal .pc-stat-value');
+    if (statActive) statActive.textContent = ACTIVE_STAYS.length;
+  } else {
+    showToast('ไม่สามารถดึงข้อมูลสัตว์เลี้ยงที่กำลังพักอยู่ได้', 'warn');
+  }
+}
+
+/* ══════════════════════════════════════════
+   INIT (รวบรวมไว้ที่เดียว)
 ══════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
-  renderActiveStays();
-  renderReports();
+  loadActiveStays(); // ดึงข้อมูลฝั่งซ้าย (จาก DB)
+  loadReports();     // ดึงข้อมูลฝั่งขวา (จาก DB)
   bindModalBackdrops();
   bindEscapeKey();
 
@@ -101,15 +71,15 @@ document.addEventListener('DOMContentLoaded', () => {
   if (dateInput) dateInput.value = today;
 });
 
-/* ══════════════════════════════════════════
-   ACTIVE STAYS
-══════════════════════════════════════════ */
 function renderActiveStays() {
   const list = document.getElementById('stays-list');
   const q = currentStaySearch.toLowerCase();
 
   const filtered = ACTIVE_STAYS.filter(s =>
-    !q || s.pet_name.toLowerCase().includes(q) || s.room.toLowerCase().includes(q) || s.breed.toLowerCase().includes(q)
+    !q || 
+    s.pet_name.toLowerCase().includes(q) || 
+    s.room?.toLowerCase().includes(q) || 
+    s.breed?.toLowerCase().includes(q)
   );
 
   if (filtered.length === 0) {
@@ -129,10 +99,10 @@ function renderActiveStays() {
         </div>
         <div class="pc-stay-actions">
           ${s.reported_today
-            ? `<button class="pc-btn-report done" disabled>✓ บันทึกแล้ว</button>
+        ? `<button class="pc-btn-report done" disabled>✓ บันทึกแล้ว</button>
                <div class="pc-report-badge">วันนี้</div>`
-            : `<button class="pc-btn-report" onclick="openReportModal('${s.booking_id}')">+ บันทึก</button>`
-          }
+        : `<button class="pc-btn-report" onclick="openReportModal('${s.booking_id}')">+ บันทึก</button>`
+      }
         </div>
       </div>
     `;
@@ -188,11 +158,11 @@ function renderReports() {
       <div class="pc-report-stats">
         <div class="pc-report-stat">
           <div class="pc-report-stat-label">อาหาร</div>
-          <div class="pc-report-stat-val">${r.food_intake}</div>
+          <div class="pc-report-stat-val">${formatFoodStatus(r.food_intake)}</div>
         </div>
         <div class="pc-report-stat">
           <div class="pc-report-stat-label">ขับถ่าย</div>
-          <div class="pc-report-stat-val">${r.bowel_activity}</div>
+          <div class="pc-report-stat-val">${formatPottyStatus(r.bowel_activity)}</div>
         </div>
         <div class="pc-report-stat">
           <div class="pc-report-stat-label">อารมณ์</div>
@@ -241,48 +211,31 @@ function openReportModal(bookingId) {
   openModal('modal-report');
 }
 
-function submitReport() {
-  const bookingId = document.getElementById('report-booking-id').value;
-  const date = document.getElementById('report-date').value;
-  const mood = document.querySelector('input[name="mood"]:checked')?.value ?? 'NEUTRAL';
-  const foodIntake = document.getElementById('report-food-intake').value;
-  const bowel = document.getElementById('report-bowel').value;
-  const behavior = document.getElementById('report-behavior').value.trim();
-  const notes = document.getElementById('report-notes').value.trim();
+async function submitReport() {
+  const selectedStay = ACTIVE_STAYS.find(s => s.booking_id == pendingBookingId);
 
-  if (!date) {
-    showToast('⚠️ กรุณาเลือกวันที่รายงาน', 'warn');
-    return;
-  }
-
-  const stay = ACTIVE_STAYS.find(s => s.booking_id === bookingId);
-  if (!stay) return;
-
-  // TODO: POST /api/care-reports
-  const newReport = {
-    report_id: CARE_REPORTS.length + 1,
-    booking_id: bookingId,
-    pet_name: stay.pet_name,
-    pet_emoji: stay.pet_emoji,
-    room: stay.room,
-    report_date: date,
-    food_intake: foodIntake,
-    bowel_activity: bowel,
-    mood,
-    behavior_notes: behavior,
-    notes,
-    reported_by: 'สมชาย มั่นคง',
-    photo_urls: [],
-    created_at: new Date().toISOString(),
+  const payload = {
+    booking_id: selectedStay.booking_id,
+    pet_id: selectedStay.pet_id, // ส่ง pet_id ไปด้วยเพื่อให้ Backend resolve ID ได้
+    food_status: document.getElementById('report-food-intake').value,
+    potty_status: document.getElementById('report-bowel').value,
+    mood: document.querySelector('input[name="mood"]:checked')?.value || 'NEUTRAL',
+    behavior_notes: document.getElementById('report-behavior').value.trim(),
+    staff_note: document.getElementById('report-notes').value.trim()
   };
 
-  CARE_REPORTS.unshift(newReport);
-  stay.reported_today = true;
-
-  renderActiveStays();
-  renderReports();
-  closeModal('modal-report');
-  showToast(`✅ บันทึกรายงานการดูแล ${stay.pet_name} สำเร็จ! ${notes ? '📲 แจ้งเจ้าของแล้ว' : ''}`);
+  try {
+    const res = await window.API.care.create(payload);
+    if (res.ok) {
+      showToast('✅ บันทึกรายงานการดูแลสำเร็จ!');
+      closeModal('modal-report');
+      await loadReports(); // โหลดข้อมูลใหม่จาก DB
+    } else {
+      showToast('เกิดข้อผิดพลาด: ' + res.data.message, 'warn');
+    }
+  } catch (error) {
+    showToast('ไม่สามารถเชื่อมต่อกับ Server ได้', 'warn');
+  }
 }
 
 /* ══════════════════════════════════════════
@@ -387,7 +340,7 @@ function showToast(msg, type = 'success') {
 
   const colors = {
     success: { bg: '#CCFBF1', color: '#0F766E', border: '#5EEAD4' },
-    warn:    { bg: '#FEF3C7', color: '#92400E', border: '#FCD34D' },
+    warn: { bg: '#FEF3C7', color: '#92400E', border: '#FCD34D' },
   };
   const c = colors[type] || colors.success;
 
@@ -420,4 +373,17 @@ function moodEmoji(mood) {
 
 function moodLabel(mood) {
   return { HAPPY: 'Happy', NEUTRAL: 'Neutral', ANXIOUS: 'Anxious', SICK: 'Sick' }[mood] ?? mood;
+}
+
+function formatFoodStatus(val) {
+  if (val === 'ALL') return 'กินหมด';
+  if (val === 'LITTLE') return 'กินน้อย';
+  if (val === 'NONE') return 'ไม่กิน';
+  return val || '—';
+}
+
+function formatPottyStatus(val) {
+  if (val === 'NORMAL') return 'ปกติ';
+  if (val === 'ABNORMAL') return 'ผิดปกติ';
+  return val || '—';
 }

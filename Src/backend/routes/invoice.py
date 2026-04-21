@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify, current_app
 import psycopg2
 import psycopg2.extras
+from utils import token_required
 
 invoice_bp = Blueprint('invoice', __name__)
 

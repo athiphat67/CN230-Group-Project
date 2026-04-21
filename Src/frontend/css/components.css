@@ -382,3 +382,85 @@
   background: #fff;
   box-shadow: 0 0 0 3px rgba(59,130,246,.1);
 }
+
+/* Sidebar Footer Layout */
+.sidebar-footer {
+  padding: 16px;
+  border-top: 1px solid rgba(226, 232, 240, 0.1); /* เส้นแบ่งบางๆ */
+}
+
+.user-widget {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.05); /* พื้นหลังจางๆ ให้ดูเป็นกล่อง */
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.user-widget:hover {
+  background: rgba(255, 255, 255, 0.08); /* สว่างขึ้นเล็กน้อยเมื่อวางเมาส์ */
+}
+
+.user-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0; /* ป้องกันชื่อพนักงานเบียดจนล้น */
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  flex-shrink: 0;
+}
+
+.user-details {
+  min-width: 0; /* ให้ ellipsis ทำงานได้ */
+}
+
+.user-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f8fafc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* ถ้าชื่อยาวเกินจะเปลี่ยนเป็น ... */
+}
+
+.user-role {
+  font-size: 11px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Logout Button Style */
+.logout-action {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  margin-left: 8px;
+}
+
+.logout-action:hover {
+  background: rgba(239, 68, 68, 0.1); /* สีแดงอ่อนๆ เมื่อจะกดออก */
+  color: #ef4444; /* ตัวไอคอนเปลี่ยนเป็นสีแดง */
+  transform: translateX(2px); /* เอฟเฟกต์เด้งเล็กน้อยบอกทิศทางการออกจากระบบ */
+}

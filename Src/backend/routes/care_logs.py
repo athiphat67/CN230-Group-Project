@@ -1,157 +1,83 @@
 from flask import Blueprint, request, jsonify, current_app
 import psycopg2
 import psycopg2.extras
+from utils import token_required # นำเข้าเพื่อเช็คสิทธิ์พนักงาน
 
 care_logs_bp = Blueprint('care_logs', __name__)
 
 def get_db_connection():
     return psycopg2.connect(current_app.config['SQLALCHEMY_DATABASE_URI'])
 
-
-# --- 1. CREATE: พนักงานเพิ่มบันทึกการดูแลรายวัน ---
-@care_logs_bp.route('/add', methods=['POST'])
-def add_care_log():
-    """
-    Body: {
-        "booking_detail_id": 1,
-        "food_status": "ALL",
-        "potty_status": "NORMAL",
-        "medication_given": false,
-        "staff_note": "...",
-        "photo_url": null,
-        "staff_id": 3
-    }
-    """
-    conn = None
+# ── 1. บันทึกรายงานการดูแลรายวัน (FR4.1 - 4.2) ──
+@care_logs_bp.route('', methods=['POST'])
+@token_required
+def add_care_log(current_user):
     try:
-        data               = request.get_json()
-        booking_detail_id  = data.get('booking_detail_id')
-        food_status        = data.get('food_status')
-        potty_status       = data.get('potty_status')
-        medication         = data.get('medication_given', False)
-        note               = data.get('staff_note', '')
-        photo_url          = data.get('photo_url', None)
-        staff_id           = data.get('staff_id')
-
-        if not all([booking_detail_id, food_status, potty_status, staff_id]):
-            return jsonify({"status": "error", "message": "กรุณาส่ง booking_detail_id, food_status, potty_status และ staff_id"}), 400
+        data = request.get_json()
+        
+        # ดึงข้อมูลจาก Token (current_user) แทนการรับ staff_id จาก body เพื่อความปลอดภัย
+        staff_id = current_user.get('staff_id') 
 
         conn = get_db_connection()
-        cur  = conn.cursor()
-
-        # [FIX] ตรวจสอบว่า Booking ที่เกี่ยวข้องยังเป็น ACTIVE อยู่
-        cur.execute("""
-            SELECT b.Status FROM Booking b
-            JOIN BookingDetail bd ON b.BookingID = bd.BookingID
-            WHERE bd.BookingDetailID = %s
-        """, (booking_detail_id,))
-        row = cur.fetchone()
-
-        if not row:
-            conn.close()
-            return jsonify({"status": "error", "message": "ไม่พบ BookingDetail นี้ในระบบ"}), 404
-
-        if row[0] != 'ACTIVE':
-            conn.close()
-            return jsonify({
-                "status": "error",
-                "message": f"ไม่สามารถเพิ่มบันทึกได้ เพราะการจองนี้มีสถานะ '{row[0]}' (ต้องเป็น ACTIVE เท่านั้น)"
-            }), 400
-
-        # บันทึก CareLog
-        cur.execute("""
-            INSERT INTO CareLog (BookingDetailID, FoodStatus, PottyStatus, MedicationGiven, StaffNote, PhotoURL, LoggedBy_StaffID)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-            RETURNING LogID;
-        """, (booking_detail_id, food_status, potty_status, medication, note, photo_url, staff_id))
-        log_id = cur.fetchone()[0]
-
-        conn.commit()
-        cur.close()
-        conn.close()
-
-        return jsonify({"status": "success", "message": "บันทึกการดูแลเรียบร้อย", "log_id": log_id}), 201
-
-    except Exception as e:
-        if conn:
-            conn.rollback()
-        return jsonify({"status": "error", "message": str(e)}), 500
-
-
-# --- 2. READ: ดูบันทึกการดูแลทั้งหมดของ Booking (สำหรับลูกค้า/พนักงาน) ---
-@care_logs_bp.route('/booking/<int:booking_id>', methods=['GET'])
-def get_care_logs(booking_id):
-    try:
-        conn = get_db_connection()
-        cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-
+        cur = conn.cursor()
+        
         query = """
-            SELECT cl.LogID, cl.LogDate, p.Name AS PetName,
-                   cl.FoodStatus, cl.PottyStatus, cl.MedicationGiven,
-                   cl.StaffNote, cl.PhotoURL,
-                   s.FirstName AS StaffName
-            FROM CareLog cl
-            JOIN BookingDetail bd ON cl.BookingDetailID = bd.BookingDetailID
-            JOIN Pet p            ON bd.PetID = p.PetID
-            JOIN Staff s          ON cl.LoggedBy_StaffID = s.StaffID
-            WHERE bd.BookingID = %s
-            ORDER BY cl.LogDate DESC
+            INSERT INTO carelog (
+                bookingdetailid, foodstatus, pottystatus, medicationgiven, 
+                staffnote, photourl, loggedby_staffid, mood, behavior_notes
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING logid;
         """
-        cur.execute(query, (booking_id,))
+        cur.execute(query, (
+            data.get('booking_detail_id'), 
+            data.get('food_status'), 
+            data.get('potty_status'), 
+            data.get('medication_given', False),
+            data.get('staff_note'), 
+            data.get('photo_url'), 
+            staff_id,
+            data.get('mood'),
+            data.get('behavior_notes')
+        ))
+        
+        new_log_id = cur.fetchone()[0]
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        # TODO: FR4.2 - ส่ง Notification ไปหาเจ้าของสัตว์เลี้ยง (Customer) ตรงนี้
+        
+        return jsonify({"status": "success", "message": "บันทึกรายงานการดูแลสำเร็จ", "log_id": new_log_id}), 201
+    except Exception as e:
+        return jsonify({"error": True, "code": 500, "message": "Internal Server Error", "detail": str(e)}), 500
+
+# ── 2. ดึงรายงานการดูแลตาม Booking (FR4.5) ──
+@care_logs_bp.route('/booking/<int:booking_detail_id>', methods=['GET'])
+@token_required
+def get_care_logs_by_booking(current_user, booking_detail_id):
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        
+        query = """
+            SELECT 
+                c.*, 
+                s.firstname || ' ' || s.lastname as staff_name
+            FROM carelog c
+            JOIN staff s ON c.loggedby_staffid = s.staffid
+            WHERE c.bookingdetailid = %s
+            ORDER BY c.logdate DESC
+        """
+        cur.execute(query, (booking_detail_id,))
         logs = cur.fetchall()
-
         cur.close()
         conn.close()
-
-        return jsonify({"status": "success", "total_logs": len(logs), "data": logs}), 200
-
+        
+        # แปลงวันที่ให้เป็น String
+        for log in logs:
+            if log['logdate']: log['logdate'] = log['logdate'].isoformat()
+            
+        return jsonify({"status": "success", "data": logs}), 200
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
-
-
-# --- 3. UPDATE: พนักงานแก้ไขบันทึก ---
-@care_logs_bp.route('/update/<int:log_id>', methods=['PUT'])
-def update_care_log(log_id):
-    try:
-        data         = request.get_json()
-        food_status  = data.get('food_status')
-        potty_status = data.get('potty_status')
-        medication   = data.get('medication_given')
-        note         = data.get('staff_note')
-
-        conn = get_db_connection()
-        cur  = conn.cursor()
-
-        cur.execute("""
-            UPDATE CareLog
-            SET FoodStatus = %s, PottyStatus = %s, MedicationGiven = %s, StaffNote = %s
-            WHERE LogID = %s
-        """, (food_status, potty_status, medication, note, log_id))
-
-        conn.commit()
-        cur.close()
-        conn.close()
-
-        return jsonify({"status": "success", "message": f"แก้ไขบันทึกการดูแล ID {log_id} เรียบร้อย"}), 200
-
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
-
-
-# --- 4. DELETE: ลบบันทึกการดูแล ---
-@care_logs_bp.route('/delete/<int:log_id>', methods=['DELETE'])
-def delete_care_log(log_id):
-    try:
-        conn = get_db_connection()
-        cur  = conn.cursor()
-
-        cur.execute("DELETE FROM CareLog WHERE LogID = %s", (log_id,))
-
-        conn.commit()
-        cur.close()
-        conn.close()
-
-        return jsonify({"status": "success", "message": f"ลบบันทึกการดูแล ID {log_id} ออกจากระบบแล้ว"}), 200
-
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return jsonify({"error": True, "message": str(e)}), 500

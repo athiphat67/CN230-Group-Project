@@ -15,74 +15,58 @@ from flask import Blueprint, request, jsonify, current_app
 import psycopg2
 import psycopg2.extras
 from utils import token_required
+from datetime import datetime, timezone, timedelta
 
 care_logs_bp = Blueprint('care_logs', __name__)
 
 def get_db_connection():
     return psycopg2.connect(current_app.config['SQLALCHEMY_DATABASE_URI'])
 
-
-# ── 1. บันทึก Daily Care Report (POST /api/care-reports) ──────────────
+# แก้ไขใน care_logs.py
 @care_logs_bp.route('', methods=['POST'])
 @token_required
 def add_care_log(current_user):
     try:
-        data     = request.get_json()
+        data = request.get_json()
         staff_id = current_user.get('staff_id')
-
-        # Frontend ส่ง booking_id + pet_id → resolve เป็น bookingdetailid
+        
+        # 1. ดึงข้อมูลที่ส่งมาจาก Frontend
         booking_id = data.get('booking_id')
         pet_id     = data.get('pet_id')
 
-        # ถ้าส่ง booking_detail_id มาตรงๆ ก็ใช้ได้เลย
-        booking_detail_id = data.get('booking_detail_id')
-
-        if not booking_detail_id:
-            if not booking_id:
-                return jsonify({"error": True, "message": "ต้องระบุ booking_id หรือ booking_detail_id"}), 400
-
-            conn = get_db_connection()
-            cur  = conn.cursor()
-
-            if pet_id:
-                cur.execute("""
-                    SELECT bookingdetailid FROM bookingdetail
-                    WHERE bookingid = %s AND petid = %s LIMIT 1
-                """, (booking_id, pet_id))
-            else:
-                cur.execute("""
-                    SELECT bookingdetailid FROM bookingdetail
-                    WHERE bookingid = %s LIMIT 1
-                """, (booking_id,))
-
-            row = cur.fetchone()
-            cur.close()
-            conn.close()
-
-            if not row:
-                return jsonify({"error": True, "code": 404, "message": "ไม่พบ bookingdetail สำหรับการจองนี้"}), 404
-
-            booking_detail_id = row[0]
-
+        # 2. ค้นหา bookingdetailid จากตาราง bookingdetail
         conn = get_db_connection()
         cur  = conn.cursor()
         cur.execute("""
+            SELECT bookingdetailid FROM bookingdetail 
+            WHERE bookingid = %s AND petid = %s 
+            LIMIT 1
+        """, (booking_id, pet_id))
+        
+        result = cur.fetchone()
+        if not result:
+            return jsonify({"error": True, "message": "ไม่พบข้อมูลการจองสำหรับสัตว์เลี้ยงตัวนี้"}), 404
+        
+        booking_detail_id = result[0] # ได้ ID มาใช้งานแล้ว
+
+        # 3. นำ booking_detail_id ที่หาได้ไป Insert ลง carelog
+        cur.execute("""
             INSERT INTO carelog
                 (bookingdetailid, foodstatus, pottystatus, medicationgiven,
-                 staffnote, photourl, loggedby_staffid, mood, behavior_notes)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-            RETURNING logid;
+                 staffnote, loggedby_staffid, mood, behavior_notes)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING logid;   # <--- ต้องเติมบรรทัดนี้
         """, (
             booking_detail_id,
-            data.get('food_status') or data.get('food_intake'),
-            data.get('potty_status') or data.get('bowel_activity'),
+            data.get('food_status'),
+            data.get('potty_status'),
             data.get('medication_given', False),
-            data.get('staff_note') or data.get('behavior_notes'),
-            data.get('photo_url'),
+            data.get('staff_note'),
             staff_id,
             data.get('mood'),
-            data.get('behavior_notes'),
+            data.get('behavior_notes')
         ))
+
         new_log_id = cur.fetchone()[0]
         conn.commit()
         cur.close()
@@ -117,19 +101,21 @@ def get_care_logs(current_user):
                 bd.bookingid                        AS booking_id,
                 p.petid                             AS pet_id,
                 p.name                              AS pet_name,
+                p.species                           AS species,        -- เพิ่มเพื่อส่งไปทำ Emoji
+                COALESCE(r.roomnumber, 'N/A')       AS room,           -- JOIN ห้องพักมาแสดง
                 c.logdate                           AS report_date,
                 c.foodstatus                        AS food_intake,
                 c.pottystatus                       AS bowel_activity,
-                c.mood,
-                c.behavior_notes,
+                c.mood                              AS mood,
+                c.behavior_notes                    AS behavior_notes,
                 c.photourl                          AS photo_url,
                 c.medicationgiven                   AS medication_given,
-                c.staffnote                         AS staff_note,
-                c.loggedby_staffid                  AS reported_by,
-                s.firstname || ' ' || s.lastname    AS caretaker_name
+                c.staffnote                         AS notes,          -- เปลี่ยนจาก staff_note เป็น notes
+                COALESCE(s.firstname || ' ' || s.lastname, 'Unknown') AS reported_by -- รวมชื่อส่งไปเลย
             FROM carelog c
             JOIN bookingdetail bd ON c.bookingdetailid = bd.bookingdetailid
             JOIN pet           p  ON bd.petid          = p.petid
+            LEFT JOIN room     r  ON bd.roomid         = r.roomid
             LEFT JOIN staff    s  ON c.loggedby_staffid = s.staffid
             WHERE 1=1
         """
@@ -189,6 +175,51 @@ def upload_photos(current_user, report_id):
             "report_id":  report_id,
             "photo_urls": [photo_url],
         }), 200
+
+    except Exception as e:
+        return jsonify({"error": True, "message": str(e)}), 500
+    
+# เพิ่มโค้ดนี้ต่อจากฟังก์ชันเดิมใน care_logs.py
+# ── 4. ดึงรายชื่อสัตว์เลี้ยงที่เข้าพักอยู่ (GET /api/care-reports/active-stays) ─────────
+@care_logs_bp.route('/active-stays', methods=['GET'])
+@token_required
+def get_active_stays(current_user):
+    try:
+        conn = get_db_connection()
+        cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        
+        cur.execute("""
+            SELECT 
+                b.bookingid AS booking_id,
+                bd.petid AS pet_id,
+                p.name AS pet_name,
+                p.species AS species,
+                p.breed AS breed,
+                r.roomnumber AS room,
+                b.checkindate AS checkin,
+                b.checkoutdate AS checkout,
+                EXISTS (
+                    SELECT 1 FROM carelog c 
+                    WHERE c.bookingdetailid = bd.bookingdetailid 
+                    AND (c.logdate AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Bangkok')::date = (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Bangkok')::date
+                ) AS reported_today
+            FROM booking b
+            JOIN bookingdetail bd ON b.bookingid = bd.bookingid
+            JOIN pet p ON bd.petid = p.petid
+            LEFT JOIN room r ON bd.roomid = r.roomid
+            WHERE (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Bangkok')::date >= b.checkindate 
+              AND (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Bangkok')::date <= b.checkoutdate
+        """)
+        
+        stays = cur.fetchall()
+        cur.close()
+        conn.close()
+
+        for s in stays:
+            if s['checkin']: s['checkin'] = s['checkin'].strftime('%Y-%m-%d')
+            if s['checkout']: s['checkout'] = s['checkout'].strftime('%Y-%m-%d')
+
+        return jsonify({"status": "success", "data": stays}), 200
 
     except Exception as e:
         return jsonify({"error": True, "message": str(e)}), 500

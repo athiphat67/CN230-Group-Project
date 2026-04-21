@@ -107,7 +107,8 @@ def deactivate_staff(staff_id):
         cur = conn.cursor()
         
         # เปลี่ยนสถานะเป็น FALSE แทนการลบข้อมูล
-        query = "UPDATE Staff SET IsActive = FALSE WHERE StaffID = %s"
+        # เปลี่ยนมาใช้ Single Quotes ครอบคำสั่งทั้งหมด และใช้ Double Quotes ครอบเฉพาะ "isActive"
+        query = 'UPDATE staff SET "isActive" = FALSE WHERE staffid = %s'
         cur.execute(query, (staff_id,))
         
         # ตรวจสอบว่ามีแถวถูกอัปเดตจริงไหม (เผื่อส่ง ID ผิดมา)

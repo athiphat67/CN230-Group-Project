@@ -28,6 +28,7 @@ async function loadReports() {
 let currentMoodFilter = 'all';
 let currentStaySearch = '';
 let pendingBookingId = null;
+let editingReportId = null;
 
 /* ══════════════════════════════════════════
    ACTIVE STAYS
@@ -95,6 +96,7 @@ function renderActiveStays() {
 
   list.innerHTML = page.pageItems.map((s, i) => {
     const daysLeft = calcDaysLeft(s.checkout);
+    const todayReport = findTodayReportForStay(s.booking_id, s.pet_id);
     return `
       <div class="pc-stay-item" style="animation-delay:${i * 0.05}s">
         <div class="pc-stay-emoji">${s.pet_emoji}</div>
@@ -105,9 +107,9 @@ function renderActiveStays() {
         </div>
         <div class="pc-stay-actions">
           ${s.reported_today
-        ? `<button class="pc-btn-report done" disabled>✓ บันทึกแล้ว</button>
+        ? `<button class="pc-btn-report done" onclick="openReportModal(${s.booking_id}, ${todayReport?.report_id || 'null'})">✎ แก้ไขวันนี้</button>
                <div class="pc-report-badge">วันนี้</div>`
-        : `<button class="pc-btn-report" onclick="openReportModal('${s.booking_id}')">+ บันทึก</button>`
+        : `<button class="pc-btn-report" onclick="openReportModal(${s.booking_id})">+ บันทึก</button>`
       }
         </div>
       </div>
@@ -214,31 +216,56 @@ function ensurePagerAfter(anchor, id) {
 /* ══════════════════════════════════════════
    CREATE REPORT MODAL
 ══════════════════════════════════════════ */
-function openReportModal(bookingId) {
-  const stay = ACTIVE_STAYS.find(s => s.booking_id === bookingId);
+function openReportModal(bookingId, reportId = null) {
+  const bid = Number(bookingId);
+  const stay = ACTIVE_STAYS.find(s => Number(s.booking_id) === bid);
   if (!stay) return;
-  pendingBookingId = bookingId;
+  pendingBookingId = bid;
+  editingReportId = reportId ? Number(reportId) : null;
 
-  document.getElementById('report-booking-id').value = bookingId;
+  document.getElementById('report-booking-id').value = bid;
   document.getElementById('report-subtitle').textContent = `${stay.pet_name} (${stay.breed}) — ห้อง ${stay.room}`;
 
   // Reset form fields
   document.getElementById('report-behavior').value = '';
   document.getElementById('report-food-detail').value = '';
   document.getElementById('report-notes').value = '';
-  document.getElementById('report-food-intake').value = 'กินหมด';
-  document.getElementById('report-bowel').value = 'ปกติ';
+  document.getElementById('report-food-intake').value = 'ALL';
+  document.getElementById('report-bowel').value = 'NORMAL';
   document.querySelector('input[name="mood"][value="NEUTRAL"]').checked = true;
   document.getElementById('photo-preview').innerHTML = '';
 
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('report-date').value = today;
+  const submitBtn = document.getElementById('report-submit-btn');
+
+  if (editingReportId) {
+    const existing = CARE_REPORTS.find(r => Number(r.report_id) === editingReportId);
+    if (existing) {
+      document.getElementById('report-food-intake').value = existing.food_intake || 'ALL';
+      document.getElementById('report-bowel').value = existing.bowel_activity || 'NORMAL';
+      const moodRadio = document.querySelector(`input[name="mood"][value="${existing.mood || 'NEUTRAL'}"]`);
+      if (moodRadio) moodRadio.checked = true;
+      document.getElementById('report-behavior').value = existing.behavior_notes || '';
+      document.getElementById('report-notes').value = existing.notes || '';
+      if (existing.report_date) {
+        document.getElementById('report-date').value = new Date(existing.report_date).toISOString().split('T')[0];
+      }
+    }
+    if (submitBtn) submitBtn.innerHTML = `<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg> อัปเดตรายงาน`;
+  } else {
+    if (submitBtn) submitBtn.innerHTML = `<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg> บันทึกรายงาน`;
+  }
 
   openModal('modal-report');
 }
 
 async function submitReport() {
-  const selectedStay = ACTIVE_STAYS.find(s => s.booking_id == pendingBookingId);
+  const selectedStay = ACTIVE_STAYS.find(s => Number(s.booking_id) === Number(pendingBookingId));
+  if (!selectedStay) {
+    showToast('ไม่พบข้อมูลสัตว์เลี้ยงที่กำลังเข้าพัก', 'warn');
+    return;
+  }
 
   const payload = {
     booking_id: selectedStay.booking_id,
@@ -251,11 +278,14 @@ async function submitReport() {
   };
 
   try {
-    const res = await window.API.care.create(payload);
+    const res = editingReportId
+      ? await window.API.care.update(editingReportId, payload)
+      : await window.API.care.create(payload);
     if (res.ok) {
-      showToast('✅ บันทึกรายงานการดูแลสำเร็จ!');
+      showToast(editingReportId ? '✅ อัปเดตรายงานการดูแลสำเร็จ!' : '✅ บันทึกรายงานการดูแลสำเร็จ!');
       closeModal('modal-report');
-      await loadReports(); // โหลดข้อมูลใหม่จาก DB
+      await Promise.all([loadReports(), loadActiveStays()]);
+      editingReportId = null;
     } else {
       showToast('เกิดข้อผิดพลาด: ' + res.data.message, 'warn');
     }
@@ -309,6 +339,9 @@ function openViewReport(reportId) {
         <p style="font-size:13px;color:var(--pc-amber);margin-top:4px;line-height:1.6">${r.notes}</p>
       </div>
     ` : ''}
+    <div style="display:flex;justify-content:flex-end;margin-top:10px">
+      <button class="pc-btn-report" onclick="openReportModal(${r.booking_id}, ${r.report_id}); closeModal('modal-view-report');">✎ แก้ไขรายงานนี้</button>
+    </div>
   `;
 
   openModal('modal-view-report');
@@ -412,4 +445,13 @@ function formatPottyStatus(val) {
   if (val === 'NORMAL') return 'ปกติ';
   if (val === 'ABNORMAL') return 'ผิดปกติ';
   return val || '—';
+}
+
+function findTodayReportForStay(bookingId, petId) {
+  const today = new Date().toISOString().slice(0, 10);
+  return CARE_REPORTS.find(r =>
+    Number(r.booking_id) === Number(bookingId) &&
+    Number(r.pet_id) === Number(petId) &&
+    String(r.report_date || '').slice(0, 10) === today
+  ) || null;
 }

@@ -93,8 +93,12 @@ def add_care_log(current_user):
         conn = get_db_connection()
         cur  = conn.cursor()
         cur.execute("""
-            SELECT bookingdetailid FROM bookingdetail 
-            WHERE bookingid = %s AND petid = %s 
+            SELECT bd.bookingdetailid
+            FROM bookingdetail bd
+            JOIN booking b ON bd.bookingid = b.bookingid
+            WHERE bd.bookingid = %s
+              AND bd.petid = %s
+              AND b.status::text = 'ACTIVE'
             LIMIT 1
         """, (booking_id, pet_id))
         
@@ -135,6 +139,66 @@ def add_care_log(current_user):
             "log_id":  new_log_id,
         }), 201
 
+    except Exception as e:
+        return jsonify({"error": True, "code": 500, "message": str(e)}), 500
+
+
+# ── 1.1 อัปเดตรายงาน (PATCH /api/care-reports/{report_id}) ───────────
+@care_logs_bp.route('/<int:report_id>', methods=['PATCH'])
+@token_required
+def update_care_log(current_user, report_id):
+    try:
+        data = request.get_json() or {}
+        staff_id = current_user.get('staff_id')
+
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("""
+            SELECT c.logid, bd.bookingid, bd.petid
+            FROM carelog c
+            JOIN bookingdetail bd ON c.bookingdetailid = bd.bookingdetailid
+            JOIN booking b ON bd.bookingid = b.bookingid
+            WHERE c.logid = %s
+              AND b.status::text = 'ACTIVE'
+            LIMIT 1
+        """, (report_id,))
+        row = cur.fetchone()
+        if not row:
+            cur.close()
+            conn.close()
+            return jsonify({"error": True, "code": 404, "message": "ไม่พบรายงาน หรือสัตว์เลี้ยงไม่ได้อยู่ในสถานะเข้าพัก"}), 404
+
+        cur2 = conn.cursor()
+        cur2.execute("""
+            UPDATE carelog
+            SET foodstatus = %s,
+                pottystatus = %s,
+                medicationgiven = %s,
+                staffnote = %s,
+                loggedby_staffid = %s,
+                mood = %s,
+                behavior_notes = %s
+            WHERE logid = %s
+        """, (
+            data.get('food_status'),
+            data.get('potty_status'),
+            data.get('medication_given', False),
+            data.get('staff_note'),
+            staff_id,
+            data.get('mood'),
+            data.get('behavior_notes'),
+            report_id
+        ))
+        conn.commit()
+        cur2.close()
+        cur.close()
+        conn.close()
+
+        return jsonify({
+            "status": "success",
+            "message": "อัปเดตรายงานการดูแลสำเร็จ",
+            "log_id": report_id
+        }), 200
     except Exception as e:
         return jsonify({"error": True, "code": 500, "message": str(e)}), 500
 
@@ -403,7 +467,8 @@ def get_active_stays(current_user):
             JOIN bookingdetail bd ON b.bookingid = bd.bookingid
             JOIN pet p ON bd.petid = p.petid
             LEFT JOIN room r ON bd.roomid = r.roomid
-            WHERE (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Bangkok')::date >= b.checkindate 
+            WHERE b.status::text = 'ACTIVE'
+              AND (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Bangkok')::date >= b.checkindate 
               AND (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Bangkok')::date <= b.checkoutdate
         """)
         

@@ -107,6 +107,7 @@ window.API = {
     getAll:       (params = {}) => apiFetch('/care-reports?' + new URLSearchParams(params)),
     getActiveStays: ()          => apiFetch('/care-reports/active-stays'),
     create:       (data)        => apiFetch('/care-reports', { method: 'POST', body: JSON.stringify(data) }),
+    update:       (id, data)    => apiFetch(`/care-reports/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
     uploadPhotos: (id, formData) => fetch(`${BASE_URL}/care-reports/${id}/photos`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${getToken()}` },

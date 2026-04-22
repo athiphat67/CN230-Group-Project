@@ -832,6 +832,54 @@
     </div>
   </div>
 
+  <div class="bk-modal-overlay" id="modal-edit-booking">
+    <div class="bk-modal bk-modal-sm">
+      <div class="bk-modal-header">
+        <div>
+          <div class="bk-modal-title">แก้ไขการจอง</div>
+          <div class="bk-modal-sub" id="eb-booking-id">—</div>
+        </div>
+        <button class="bk-modal-close" onclick="closeModal('modal-edit-booking')">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="bk-modal-body">
+        <div class="bk-form-group">
+          <label class="bk-label">ลูกค้า</label>
+          <input class="bk-input" id="eb-customer" disabled>
+        </div>
+        <div class="bk-form-group" style="margin-top:12px">
+          <label class="bk-label">สัตว์เลี้ยง</label>
+          <input class="bk-input" id="eb-pet" disabled>
+        </div>
+        <div class="bk-form-row" style="margin-top:12px">
+          <div class="bk-form-group">
+            <label class="bk-label">Check-in</label>
+            <input class="bk-input" type="date" id="eb-checkin">
+          </div>
+          <div class="bk-form-group">
+            <label class="bk-label">Check-out</label>
+            <input class="bk-input" type="date" id="eb-checkout">
+          </div>
+        </div>
+        <div class="bk-form-group" style="margin-top:12px">
+          <label class="bk-label">ห้องพัก</label>
+          <select class="bk-select" id="eb-room-select"></select>
+        </div>
+        <div class="bk-form-group" style="margin-top:12px">
+          <label class="bk-label">Add-on Services</label>
+          <div class="bk-addons-grid" id="eb-services-grid"></div>
+        </div>
+      </div>
+      <div class="bk-modal-footer">
+        <button class="btn-cancel" onclick="closeModal('modal-edit-booking')">ยกเลิก</button>
+        <button class="btn-primary" id="eb-save-btn" onclick="saveEditBooking()">บันทึกการแก้ไข</button>
+      </div>
+    </div>
+  </div>
+
   <script src="js/components/sidebar.js"></script>
   <script src="js/components/navbar.js"></script>
   <script src="js/services/api.js"></script>

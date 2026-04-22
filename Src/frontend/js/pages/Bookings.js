@@ -16,6 +16,7 @@ let BOOKINGS = [];
 let currentFilter = 'all';
 let currentSearch = '';
 let pendingActionId = null;
+let editingBookingId = null;
 const BOOKINGS_PAGE_KEY = 'admin-bookings';
 const BOOKINGS_PAGE_SIZE = 8;
 
@@ -165,32 +166,21 @@ function renderTable() {
           </span>
         </td>
         <td>
-          <div class="bk-detail-box" style="margin-bottom:16px">
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <div class="bk-detail-box-label">✨ Add-on Services</div>
-                ${b.status === 'CHECKED_IN' ? `
-                  <button onclick="openAddServiceModal(${b.booking_id})" style="background:var(--bk-blue-s);color:var(--bk-blue);border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;transition:opacity 0.2s;">
-                    + เพิ่มบริการ
-                  </button>
-                ` : ''}
-              </div>
-              ${b.addons.length
-                ? `<div class="bk-addon-tags" style="padding-top:8px">${b.addons.map(a => `<span class="bk-addon-tag">${a}</span>`).join('')}</div>`
-                : `<div style="font-size:13px; color:var(--bk-text-3); margin-top:8px;">— ไม่มี —</div>`}
-            </div>
-
-            ${b.notes ? `
-            <div class="bk-detail-box" style="margin-bottom:16px">
-              <div class="bk-detail-box-label">📝 หมายเหตุ</div>
-              <p style="font-size:13px;color:var(--bk-text-2);margin-top:4px;line-height:1.6">${b.notes}</p>
-            </div>` : ''}
-
-            ${b.status === 'CANCELLED' ? `
-            <div class="bk-detail-box" style="margin-bottom:16px; background-color: #FEF2F2; border: 1.5px solid #FCA5A5;">
-              <div class="bk-detail-box-label" style="color: #DC2626;">❌ ข้อมูลการยกเลิก</div>
-              <div class="bk-detail-item"><span class="bk-detail-item-label" style="color:#B91C1C;">ยกเลิกโดย</span><span class="bk-detail-item-val">${b.cancelled_by || 'ผู้ดูแลระบบ'}</span></div>
-              <div class="bk-detail-item"><span class="bk-detail-item-label" style="color:#B91C1C;">เวลาที่ยกเลิก</span><span class="bk-detail-item-val">${b.cancelled_at || '—'}</span></div>
-            </div>` : ''}
+          <div class="bk-action-btns">
+            <button class="bk-btn-action" onclick="openDetail(${b.booking_id})">ดู</button>
+            ${(b.status === 'PENDING' || b.status === 'CONFIRMED')
+              ? `<button class="bk-btn-action" onclick="openEditBooking(${b.booking_id})">แก้ไข</button>`
+              : ''}
+            ${(b.status === 'PENDING' || b.status === 'CONFIRMED')
+              ? `<button class="bk-btn-action danger" onclick="cancelBooking(${b.booking_id})">ยกเลิก</button>`
+              : ''}
+            ${b.status === 'CHECKED_IN'
+              ? `<button class="bk-btn-action" onclick="openAddServiceModal(${b.booking_id})">+บริการ</button>`
+              : ''}
+            ${b.status === 'PENDING' || b.status === 'CANCELLED'
+              ? `<button class="bk-btn-action danger" onclick="deleteBooking(${b.booking_id})">ลบ</button>`
+              : ''}
+          </div>
         </td>
       </tr>
     `;
@@ -403,6 +393,18 @@ async function cancelBooking(bookingId) {
     await loadFromAPI();
   } else {
     showToast('ยกเลิกไม่ได้: ' + (res.data?.message || ''), 'warn');
+  }
+}
+
+async function deleteBooking(bookingId) {
+  const b = BOOKINGS.find(x => x.booking_id === bookingId);
+  if (!b || !confirm(`ยืนยันการลบการจอง ${b.id}?`)) return;
+  const res = await window.API.bookings.delete(b.booking_id);
+  if (res.ok) {
+    showToast(`🗑️ ลบการจอง ${b.id} แล้ว`);
+    await loadFromAPI();
+  } else {
+    showToast('ลบไม่ได้: ' + (res.data?.message || ''), 'warn');
   }
 }
 
@@ -926,6 +928,109 @@ async function saveNewBooking() {
   }
 }
 
+async function openEditBooking(bookingId) {
+  const b = BOOKINGS.find(x => x.booking_id === bookingId);
+  if (!b) return;
+  editingBookingId = bookingId;
+
+  const res = await window.API.bookings.getById(bookingId);
+  if (!res.ok) {
+    showToast('โหลดรายละเอียดการจองไม่สำเร็จ', 'warn');
+    return;
+  }
+  const d = res.data?.data || {};
+  const services = d.services || [];
+
+  el('eb-booking-id').textContent = `BK-${String(bookingId).padStart(4, '0')}`;
+  el('eb-customer').textContent = d.owner_name || b.owner_name;
+  el('eb-pet').textContent = d.pet_name || b.pet_name;
+  setVal('eb-checkin', (d.checkin_date || '').split(' ')[0]);
+  setVal('eb-checkout', (d.checkout_date || '').split(' ')[0]);
+
+  const petType = (d.pet_species || '').toUpperCase() === 'DOG' ? 'DOG' : 'CAT';
+  const roomRes = await window.API.rooms.getAvailability({
+    checkin_date: (d.checkin_date || '').split(' ')[0],
+    checkout_date: (d.checkout_date || '').split(' ')[0],
+    pet_type: petType,
+  });
+  const roomSel = el('eb-room-select');
+  roomSel.innerHTML = '<option value="">-- เลือกห้อง --</option>';
+  if (roomRes.ok && Array.isArray(roomRes.data?.data)) {
+    roomSel.innerHTML += roomRes.data.data.map(r =>
+      `<option value="${r.room_id}" data-rate="${r.price_per_night}">${r.room_number} · ${r.room_type} · ฿${parseFloat(r.price_per_night).toLocaleString()}/คืน</option>`
+    ).join('');
+  }
+  // Include currently assigned room in case API excludes it
+  if (!Array.from(roomSel.options).some(o => Number(o.value) === Number(d.room_id))) {
+    roomSel.innerHTML += `<option value="${d.room_id}" data-rate="${d.price_room || 0}">${d.room_number} · ${d.room_type} · ฿${(d.price_room || 0).toLocaleString()}/คืน</option>`;
+  }
+  roomSel.value = String(d.room_id || '');
+
+  const svcRes = await window.API.bookings.getServices();
+  const svcGrid = el('eb-services-grid');
+  if (svcRes.ok && Array.isArray(svcRes.data?.data)) {
+    const selectedIds = new Set(services.map(s => Number(s.item_id)));
+    svcGrid.innerHTML = svcRes.data.data.map(s => `
+      <label class="bk-addon-item">
+        <input type="checkbox" value="${s.item_id}" data-price="${s.unit_price}" ${selectedIds.has(Number(s.item_id)) ? 'checked' : ''}>
+        <span class="bk-addon-icon">${serviceIcon(s.name)}</span>
+        ${s.name} (฿${parseFloat(s.unit_price).toLocaleString()})
+      </label>
+    `).join('');
+  } else {
+    svcGrid.innerHTML = '<div style="color:var(--bk-text-3);font-size:13px">ไม่มีบริการเสริม</div>';
+  }
+
+  openModal('modal-edit-booking');
+}
+
+async function saveEditBooking() {
+  if (!editingBookingId) return;
+  const b = BOOKINGS.find(x => x.booking_id === editingBookingId);
+  if (!b) return;
+
+  const checkin = el('eb-checkin')?.value;
+  const checkout = el('eb-checkout')?.value;
+  const roomId = Number(el('eb-room-select')?.value || 0);
+  const roomRate = Number(el('eb-room-select')?.selectedOptions?.[0]?.dataset?.rate || b.price_room || 0);
+
+  if (!checkin || !checkout || !roomId) {
+    showToast('กรุณากรอกข้อมูลให้ครบ', 'warn');
+    return;
+  }
+  if (new Date(checkout) <= new Date(checkin)) {
+    showToast('วันที่ Check-out ต้องหลัง Check-in', 'warn');
+    return;
+  }
+
+  const services = [];
+  document.querySelectorAll('#eb-services-grid input[type="checkbox"]:checked').forEach(cb => {
+    services.push({ item_id: parseInt(cb.value, 10), quantity: 1, unit_price: parseFloat(cb.dataset.price || 0) });
+  });
+  const nights = calcNights(checkin, checkout);
+  const payload = {
+    customer_id: b.owner_id,
+    checkin_date: checkin,
+    checkout_date: checkout,
+    total_rate: roomRate * nights,
+    pets: [{ pet_id: b.pet_id, room_id: roomId }],
+    services,
+  };
+
+  const btn = el('eb-save-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ กำลังบันทึก...'; }
+  const res = await window.API.bookings.update(editingBookingId, payload);
+  if (btn) { btn.disabled = false; btn.textContent = 'บันทึกการแก้ไข'; }
+
+  if (res.ok) {
+    closeModal('modal-edit-booking');
+    showToast('✅ บันทึกการแก้ไขสำเร็จ');
+    await loadFromAPI();
+  } else {
+    showToast('แก้ไขไม่สำเร็จ: ' + (res.data?.message || ''), 'warn');
+  }
+}
+
 /* ══════════════════════════════════════════
    MODAL HELPERS
 ══════════════════════════════════════════ */
@@ -1081,3 +1186,8 @@ function paymentLabel(s) {
 function escHtml(str) {
   return String(str || '').replace(/&/g, '&amp;').replace(/'/g, "\\'").replace(/"/g, '&quot;');
 }
+
+window.openDetail = openDetail;
+window.openEditBooking = openEditBooking;
+window.saveEditBooking = saveEditBooking;
+window.deleteBooking = deleteBooking;

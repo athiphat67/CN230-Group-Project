@@ -73,6 +73,8 @@ window.API = {
     getAll:      (params = {}) => apiFetch('/bookings?' + new URLSearchParams(params)),
     getById:     (id)          => apiFetch(`/bookings/${id}`),
     create:      (data)        => apiFetch('/bookings', { method: 'POST', body: JSON.stringify(data) }),
+    update:      (id, data)    => apiFetch(`/bookings/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    delete:      (id)          => apiFetch(`/bookings/${id}`, { method: 'DELETE' }),
     checkin:     (id)          => apiFetch(`/bookings/${id}/checkin`, { method: 'PATCH' }),
     checkout:    (id, data)    => apiFetch(`/bookings/${id}/checkout`, { method: 'PATCH', body: JSON.stringify(data) }),
     cancel:      (id, data)    => apiFetch(`/bookings/${id}/cancel`, { method: 'PATCH', body: JSON.stringify(data || {}) }),

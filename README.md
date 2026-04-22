@@ -174,7 +174,7 @@ curl http://127.0.0.1:5000/api/test-connection
 
 | Student ID | Name | Role |
 |:---:|:---|:---|
-| `6710615292` | Athiphat Sunsit | Frontend Developer & QA Engineer |
+| `6710615292` | Athiphat Sunsit | Full Stack |
 | `6710615060` | Chotiwit Daugstan | Frontend Developer |
 | `6710615185` | Purich Ampawa | Project Lead & Backend Developer |
 | `6710685014` | Theepob Rattanasapsiri | Database Designer |

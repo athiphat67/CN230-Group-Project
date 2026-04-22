@@ -353,3 +353,230 @@ html, body {
   text-align: center;
   font-weight: 700;
 }
+
+/* ============================================================
+   Action Buttons — Unified UX Direction (non-billing)
+   Scope: bookings, rooms, pet profile, pet care, inventory,
+          notifications, dashboard, staff/common actions
+   ============================================================ */
+:root {
+  --act-h: 34px;
+  --act-h-lg: 38px;
+  --act-pad-x: 12px;
+  --act-gap: 6px;
+  --act-r: 10px;
+  --act-border: #d9e2ec;
+  --act-text: #415166;
+  --act-bg: #f8fafc;
+  --act-hover-bg: #eef3f8;
+  --act-primary: #00787a;
+  --act-primary-hover: #00686a;
+  --act-primary-shadow: 0 6px 16px rgba(0, 120, 122, 0.22);
+  --act-danger: #dc2626;
+}
+
+/* action group consistency */
+.bk-action-btns,
+.pp-action-btns,
+.iv-action-btns,
+.rm-action-btns,
+.pc-stay-actions,
+.nt-item-actions,
+.db-welcome-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px !important;
+  flex-wrap: wrap;
+}
+
+/* primary actions */
+.btn-primary,
+.bk-btn-checkin,
+.bk-btn-checkout,
+.pc-btn-report:not(.done),
+.nt-mark-btn:not(.secondary),
+.nt-row-btn:not(.secondary),
+.rm-add-btn,
+.at-apply-btn,
+.an-refresh-btn {
+  min-height: var(--act-h-lg) !important;
+  padding: 0 var(--act-pad-x) !important;
+  border: 1px solid transparent !important;
+  border-radius: var(--act-r) !important;
+  background: linear-gradient(135deg, var(--act-primary), var(--act-primary-hover)) !important;
+  color: #fff !important;
+  font-family: 'DM Sans', sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  letter-spacing: .1px;
+  line-height: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: var(--act-gap) !important;
+  white-space: nowrap !important;
+  box-shadow: 0 2px 8px rgba(0, 120, 122, .18) !important;
+  transition: transform .16s ease, box-shadow .16s ease, filter .16s ease !important;
+}
+
+.btn-primary:hover,
+.bk-btn-checkin:hover,
+.bk-btn-checkout:hover,
+.pc-btn-report:not(.done):hover,
+.nt-mark-btn:not(.secondary):hover,
+.nt-row-btn:not(.secondary):hover,
+.rm-add-btn:hover,
+.at-apply-btn:hover,
+.an-refresh-btn:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: var(--act-primary-shadow) !important;
+  filter: saturate(1.02);
+}
+
+/* secondary / neutral actions */
+.btn-cancel,
+.bk-btn-cancel,
+.filter-btn,
+.nt-mark-btn.secondary,
+.nt-row-btn.secondary,
+.pc-btn-report.done {
+  min-height: var(--act-h) !important;
+  padding: 0 var(--act-pad-x) !important;
+  border-radius: var(--act-r) !important;
+  border: 1px solid var(--act-border) !important;
+  background: var(--act-bg) !important;
+  color: var(--act-text) !important;
+  font-family: 'DM Sans', sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: var(--act-gap) !important;
+  transition: border-color .16s ease, background .16s ease, color .16s ease !important;
+}
+
+.btn-cancel:hover,
+.bk-btn-cancel:hover,
+.filter-btn:hover,
+.nt-mark-btn.secondary:hover,
+.nt-row-btn.secondary:hover {
+  border-color: #c7d4e2 !important;
+  background: var(--act-hover-bg) !important;
+  color: #233246 !important;
+}
+
+/* compact table action buttons (text) */
+.bk-btn-action {
+  min-height: 30px !important;
+  padding: 0 10px !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--act-border) !important;
+  background: #f9fbfd !important;
+  color: var(--act-text) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  transition: border-color .16s ease, background .16s ease, color .16s ease !important;
+}
+
+.bk-btn-action:hover {
+  border-color: #9ec7ea !important;
+  background: #ecf6ff !important;
+  color: #0d5e9c !important;
+}
+
+.bk-btn-action.danger:hover {
+  border-color: #f2b4b4 !important;
+  background: #fff1f1 !important;
+  color: var(--act-danger) !important;
+}
+
+/* icon actions */
+.rm-btn-icon,
+.pp-btn-icon,
+.iv-btn-icon,
+.bk-btn-view,
+.btn-icon {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 9px !important;
+  border: 1px solid var(--act-border) !important;
+  background: #f9fbfd !important;
+  color: #5f7288 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  transition: border-color .16s ease, background .16s ease, color .16s ease, transform .16s ease !important;
+}
+
+.rm-btn-icon svg,
+.pp-btn-icon svg,
+.iv-btn-icon svg,
+.bk-btn-view svg,
+.btn-icon svg {
+  width: 14px !important;
+  height: 14px !important;
+}
+
+.rm-btn-icon:hover,
+.pp-btn-icon:hover,
+.iv-btn-icon:hover:not(.danger),
+.bk-btn-view:hover,
+.btn-icon:hover {
+  transform: translateY(-1px) !important;
+  border-color: #8dc3eb !important;
+  background: #ecf6ff !important;
+  color: #0f6fb4 !important;
+}
+
+.rm-btn-icon.danger:hover,
+.iv-btn-icon.danger:hover,
+.btn-icon.danger:hover {
+  border-color: #efb5b5 !important;
+  background: #fff1f1 !important;
+  color: var(--act-danger) !important;
+}
+
+/* shared disabled behavior */
+button:disabled,
+.btn-primary:disabled,
+.btn-cancel:disabled,
+.bk-btn-action:disabled,
+.rm-btn-icon:disabled,
+.pp-btn-icon:disabled,
+.iv-btn-icon:disabled,
+.nt-mark-btn:disabled,
+.nt-row-btn:disabled {
+  opacity: .5 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* responsive action layout */
+@media (max-width: 760px) {
+  .db-welcome-actions,
+  .pc-stay-actions,
+  .nt-item-actions {
+    width: 100%;
+  }
+
+  .db-welcome-actions > button,
+  .pc-stay-actions > button,
+  .nt-item-actions > button {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .bk-action-btns,
+  .pp-action-btns,
+  .iv-action-btns,
+  .rm-action-btns {
+    justify-content: flex-start;
+  }
+}

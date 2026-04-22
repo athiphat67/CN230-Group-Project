@@ -1,6 +1,6 @@
 <div align="center">
 
-  <img src="documents/Image/LOGO/PurrfectStay_Logo.png" width="150" alt="Logo">
+  <img src="documents/Image/LOGO/PurrfectStay_Logo.png" width="225" alt="Logo">
 
   # Purrfect Stay — Pet Hotel Management System
   ### CN230 Database Systems · Computer Engineering · Thammasat School of Engineering

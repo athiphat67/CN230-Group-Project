@@ -3,29 +3,43 @@
  * Purrfect Stay Admin Panel
  */
 
-/* ── MOCK DATA ── */
-const NOTIFICATIONS = [
-  { notification_id: 1, type: 'NEW_BOOKING_ALERT',  title: 'การจองใหม่ — น้องมะม่วง',  body: 'อาพิญา ศ. ได้สร้างการจองใหม่สำหรับน้องมะม่วง ห้อง A01 Check-in 2 เม.ย.',    booking_id: 'BK-0001', is_read: false, sent_at: '2026-04-21T09:05:00' },
-  { notification_id: 2, type: 'CHECKIN_REMINDER',   title: 'แจ้งเตือน Check-in พรุ่งนี้ — น้องบิ๊กบอย', body: 'บิ๊กบอย (Golden Retriever) กำหนด Check-in พรุ่งนี้ ห้อง V-02',     booking_id: 'BK-0003', is_read: false, sent_at: '2026-04-21T08:00:00' },
-  { notification_id: 3, type: 'CARE_REPORT',        title: 'รายงานดูแลรายวัน — น้องมะม่วง', body: 'นริน พรหมดี ได้อัปเดตรายงานดูแลน้องมะม่วงประจำวันที่ 5 เม.ย. อารมณ์: Happy 😄', booking_id: 'BK-0001', is_read: false, sent_at: '2026-04-21T18:00:00' },
-  { notification_id: 4, type: 'PAYMENT_CONFIRMED',  title: 'ยืนยันการชำระเงิน — INV-0001', body: 'ชำระเงินสำเร็จ ฿2,350 สำหรับ Booking BK-0001 โดย เงินสด',             booking_id: 'BK-0001', is_read: true,  sent_at: '2026-04-20T14:30:00' },
-  { notification_id: 5, type: 'BOOKING_CONFIRMED',  title: 'ยืนยันการจอง — น้องโดนัท',  body: 'ยืนยันการจองน้องโดนัท ห้อง A03 Check-in 3 เม.ย. — Check-out 6 เม.ย.',      booking_id: 'BK-0002', is_read: true,  sent_at: '2026-04-19T10:30:00' },
-  { notification_id: 6, type: 'CARE_REPORT',        title: 'รายงานดูแลรายวัน — น้องทาโร่', body: 'สมชาย มั่นคง รายงานว่าน้องทาโร่ท้องเสียเล็กน้อย อารมณ์: Sick 🤒 ควรติดตามอาการ', booking_id: 'BK-0006', is_read: true,  sent_at: '2026-04-19T17:00:00' },
-  { notification_id: 7, type: 'BOOKING_CANCELLED',  title: 'ยกเลิกการจอง — น้องโคโค่', body: 'ยกเลิกการจอง BK-0008 สำหรับน้องโคโค่ เนื่องจากเจ้าของป่วย',             booking_id: 'BK-0008', is_read: true,  sent_at: '2026-04-18T09:00:00' },
-  { notification_id: 8, type: 'NEW_BOOKING_ALERT',  title: 'การจองใหม่ — น้องพีช',     body: 'มาลี สุขสันต์ ได้สร้างการจองใหม่สำหรับน้องพีช ห้อง C02 ระยะเวลา 5 คืน',  booking_id: 'BK-0009', is_read: true,  sent_at: '2026-04-18T14:00:00' },
-];
-
 /* ── STATE ── */
 let currentFilter = 'all';
+let NOTIFICATIONS = []; // เคลียร์ Mock Data ออก และรอรับค่าจาก API
 
 /* ── INIT ── */
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   renderStats();
   renderList();
-
-  // TODO: เชื่อม API จริง
-  // window.API.notifications.getAll().then(res => { if (res.ok) { NOTIFICATIONS.length=0; res.data.forEach(n=>NOTIFICATIONS.push(n)); } renderStats(); renderList(); });
+  
+  // โหลดข้อมูลจริงจาก Backend ทันทีที่เปิดหน้า
+  await fetchNotifications();
 });
+
+/* ── API CALLS ── */
+async function fetchNotifications() {
+  try {
+    const response = await fetch('/api/notifications', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const result = await response.json();
+    
+    if (result.status === 'success') {
+      NOTIFICATIONS = result.data;
+      renderStats();
+      renderList();
+    } else {
+      console.error('Failed to load notifications:', result.message);
+    }
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+  }
+}
 
 /* ── STATS ── */
 function renderStats() {
@@ -102,22 +116,57 @@ function filterNotifications(filter, btn) {
 }
 
 /* ── MARK READ ── */
-function markRead(id) {
+async function markRead(id) {
   const n = NOTIFICATIONS.find(x => x.notification_id === id);
   if (n && !n.is_read) {
+    // 1. อัปเดต UI ทันที (Optimistic Update)
     n.is_read = true;
-    // TODO: PATCH /api/notifications/{id}/read
     renderStats();
     renderList();
+
+    // 2. ยิง API อัปเดตสถานะที่ Backend
+    try {
+      await fetch(`/api/notifications/${id}/read`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+    } catch (error) {
+      console.error(`Error marking notification ${id} as read:`, error);
+      // หากต้องการให้สมบูรณ์ขึ้น สามารถเขียน Logic คืนค่า n.is_read กลับเป็น false ได้ถ้ายิง API พลาด
+    }
   }
 }
 
-function markAllRead() {
+async function markAllRead() {
+  // 1. อัปเดต UI ทันที
   NOTIFICATIONS.forEach(n => n.is_read = true);
-  // TODO: PATCH /api/notifications/read-all
   renderStats();
   renderList();
-  showToast('✅ ทำเครื่องหมายอ่านทั้งหมดแล้ว');
+  showToast('⏳ กำลังอัปเดต...');
+
+  // 2. ยิง API
+  try {
+    const response = await fetch('/api/notifications/read-all', {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const result = await response.json();
+    if (result.status === 'success') {
+      showToast('✅ ทำเครื่องหมายอ่านทั้งหมดแล้ว');
+    } else {
+      showToast('❌ เกิดข้อผิดพลาดจากเซิร์ฟเวอร์');
+    }
+  } catch (error) {
+    console.error('Error marking all as read:', error);
+    showToast('❌ ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้');
+  }
 }
 
 /* ── TOAST ── */

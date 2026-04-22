@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Portal | Purrfect Stay</title>
+    <link rel="stylesheet" href="./css/invoice.css">
+</head>
+
+<body>
+
+    <aside class="sidebar">
+        <div class="brand-logo">
+            <span class="logo-icon">🐾</span>
+            <div class="logo-text">
+                <h3>Purrfect Stay</h3>
+                <p>ADMIN PORTAL</p>
+            </div>
+        </div>
+
+        <nav class="sidebar-menu">
+            <a href="dashboard.html" class="menu-item">
+                <span class="menu-icon">⊞</span> ภาพรวม (Dashboard)
+            </a>
+            <a href="calendar.html" class="menu-item">
+                <span class="menu-icon">📅</span> ปฏิทิน (Calendar)
+            </a>
+            <a href="bookings.html" class="menu-item">
+                <span class="menu-icon">📋</span> การจอง (Bookings)
+            </a>
+            <a href="invoice.html" class="menu-item active">
+                <span class="menu-icon">💳</span> การเงิน (Billing)
+            </a>
+        </nav>
+
+        <div class="user-profile">
+            <div class="user-avatar">
+                <img src="https://ui-avatars.com/api/?name=Somchai+M&background=0D8ABC&color=fff" alt="User">
+            </div>
+            <div class="user-info">
+                <p class="user-name" id="display-staff-name">สมชาย มั่นคง</p>
+                <p class="user-role" id="display-staff-role">ผู้ดูแลระบบ (Admin)</p>
+            </div>
+        </div>
+    </aside>
+
+
+    <div class="cart-container">
+
+        <div class="cart-header">
+            <h1>นี่คือรายการการจองของคุณ $321.00</h1>
+            <button class="btn-primary" onclick="window.location.href='payment.html'">ชำระเงิน</button>
+        </div>
+
+        <div class="item-list">
+
+            <div class="cart-item">
+                <img src="https://images.unsplash.com/photo-1631049307264-da0ec9d70304?q=80&w=400&auto=format&fit=crop" alt="Standard Suite Bedroom"
+                    class="item-image">
+                <div class="item-details">
+                    <h2 class="item-title">Standard Suite (Cosy & Quiet)</h2>
+                    <a href="#">แสดงรายละเอียดการเข้าพัก ∨</a>
+                </div>
+                <div class="item-actions">
+                    <div class="item-qty">
+                        <select>
+                            <option>1 คืน</option>
+                            <option>2 คืน</option>
+                            <option selected>3 คืน</option>
+                            <option>4 คืน</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="item-actions">
+                    <div class="item-price-val">$255.00</div>
+                    <a href="#">ลบออก</a>
+                </div>
+            </div>
+
+            <div class="cart-item">
+                <img src="https://images.unsplash.com/photo-1591160690555-5debfba289f0?q=80&w=400&auto=format&fit=crop" alt="Expert Grooming Session"
+                    class="item-image">
+                <div class="item-details">
+                    <h2 class="item-title">Expert Grooming for Buddy</h2>
+                    <a href="#">กำหนดเวลาในช่วงพัก ∨</a>
+                </div>
+                <div class="item-actions">
+                    <div class="item-qty">
+                        <select>
+                            <option selected>1 ครั้ง</option>
+                            <option>2 ครั้ง</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="item-actions">
+                    <div class="item-price-val">$45.00</div>
+                    <a href="#">ลบออก</a>
+                </div>
+            </div>
+
+            <div class="cart-item upsell-item">
+                <div class="item-details">
+                    <h3 class="upsell-title">
+                        <span class="sparkle">✨</span>
+                        เพิ่ม Physical Wellness สำหรับ Buddy ราคา $30.00
+                    </h3>
+                    <p class="upsell-desc">เพื่อสุขภาพที่ดีและพลังงานที่สมดุลตลอดการเข้าพัก</p>
+                </div>
+                <div class="item-actions">
+                    <a href="#">เพิ่ม</a>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="cart-footer">
+            <div class="footer-left">
+                เช็คอิน: 14:00 น. | เช็คเอาท์: 11:00 น.<br>
+                วันที่: 11/12/2026 - 11/15/2026
+            </div>
+
+            <div class="footer-right">
+                <div class="summary-row">
+                    <span>ยอดรวม (ก่อนภาษี)</span>
+                    <span>$300.00</span>
+                </div>
+                <div class="summary-row">
+                    <span>รวมค่าภาษี (7%)</span>
+                    <span>+ $21.00</span>
+                </div>
+                <div class="summary-row total">
+                    <span>ยอดชำระเงินของคุณ</span>
+                    <span class="total-amount">$321.00</span>
+                </div>
+                <div class="finance-info">
+                    รวม VAT จำนวน $21.00<br>
+                    <a href="#">$32.10/เดือน เป็นเวลา 10 เดือน ดอกเบี้ย 0% ⊕</a>
+                </div>
+                <div class="footer-cta">
+                    <button class="btn-primary" onclick="window.location.href='payment.html'">ชำระเงิน</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+
+</html>

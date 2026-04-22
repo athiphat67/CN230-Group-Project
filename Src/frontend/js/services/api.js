@@ -83,8 +83,12 @@ window.API = {
   /* --- Rooms --- */
   rooms: {
     getAll:          ()         => apiFetch('/rooms'),
+    getById:         (id)       => apiFetch(`/rooms/${id}`),
+    getOptions:      ()         => apiFetch('/rooms/options'),
+    create:          (data)     => apiFetch('/rooms', { method: 'POST', body: JSON.stringify(data) }),
     getAvailability: (p)        => apiFetch('/rooms/availability?' + new URLSearchParams(p)),
     update:          (id, data) => apiFetch(`/rooms/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    delete:          (id)       => apiFetch(`/rooms/${id}`, { method: 'DELETE' }),
   },
 
   /* --- Billing --- */

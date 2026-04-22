@@ -42,6 +42,126 @@ def _parse_date(s):
 @token_required
 @admin_required
 def get_dashboard(current_user):
+    """
+    ดึงข้อมูลสถิติและภาพรวมของระบบ (Dashboard Analytics)
+    ---
+    tags:
+      - Analytics
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: start_date
+        in: query
+        type: string
+        format: date
+        required: false
+        description: วันที่เริ่มต้น (YYYY-MM-DD) ค่าเริ่มต้นคือวันแรกของเดือนปัจจุบัน
+      - name: end_date
+        in: query
+        type: string
+        format: date
+        required: false
+        description: วันที่สิ้นสุด (YYYY-MM-DD) ค่าเริ่มต้นคือวันนี้
+    responses:
+      200:
+        description: ข้อมูลสถิติของ Dashboard แบบละเอียด
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+              example: success
+            data:
+              type: object
+              properties:
+                period:
+                  type: object
+                  properties:
+                    start:
+                      type: string
+                      format: date
+                    end:
+                      type: string
+                      format: date
+                revenue:
+                  type: object
+                  properties:
+                    total:
+                      type: number
+                    room:
+                      type: number
+                    addons:
+                      type: number
+                    avg_bill:
+                      type: number
+                    growth_pct:
+                      type: number
+                      description: เปอร์เซ็นต์การเติบโตเทียบกับช่วงเวลาก่อนหน้า
+                      nullable: true
+                    prev_total:
+                      type: number
+                bookings:
+                  type: object
+                  properties:
+                    total:
+                      type: integer
+                    checked_in:
+                      type: integer
+                    checked_out:
+                      type: integer
+                    cancelled:
+                      type: integer
+                    pending:
+                      type: integer
+                occupancy_rate:
+                  type: number
+                  description: อัตราการเข้าพัก (0.0 - 1.0)
+                low_stock_alert:
+                  type: integer
+                  description: จำนวนสินค้าที่ใกล้หมดสต็อก
+                low_stock_items:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      in_stock:
+                        type: integer
+                      threshold:
+                        type: integer
+                pet_ratio:
+                  type: object
+                  description: สัดส่วนประเภทสัตว์เลี้ยงที่เข้าพัก
+                  additionalProperties:
+                    type: integer
+                  example: {"CAT": 15, "DOG": 8}
+                top_addons:
+                  type: array
+                  description: บริการเสริมยอดนิยม 5 อันดับแรก
+                  items:
+                    type: object
+                    properties:
+                      service:
+                        type: string
+                      count:
+                        type: integer
+                      revenue:
+                        type: number
+                daily_revenue:
+                  type: array
+                  description: แนวโน้มรายได้รายวัน
+                  items:
+                    type: object
+                    properties:
+                      date:
+                        type: string
+                        format: date
+                      amount:
+                        type: number
+      500:
+        description: Internal Server Error
+    """
     try:
         today      = _thai_now()
         start_date = request.args.get('start_date', today.replace(day=1).strftime('%Y-%m-%d'))

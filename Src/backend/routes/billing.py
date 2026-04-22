@@ -30,6 +30,80 @@ def fmt_invoice_id(raw_id):
 @billing_bp.route('', methods=['GET'])
 @token_required
 def get_all_invoices(current_user):
+    """
+    ดึงรายการ Invoice ทั้งหมด
+    ---
+    tags:
+      - Billing
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: status
+        in: query
+        type: string
+        required: false
+        description: กรองตามสถานะการชำระเงิน (เช่น PAID, UNPAID)
+        example: UNPAID
+      - name: booking_id
+        in: query
+        type: integer
+        required: false
+        description: กรองตาม ID การจอง
+    responses:
+      200:
+        description: รายการ Invoice ทั้งหมด
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+              example: success
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  invoice_id:
+                    type: string
+                    example: INV-0001
+                  invoice_id_raw:
+                    type: integer
+                  booking_id:
+                    type: integer
+                  owner_name:
+                    type: string
+                  owner_id:
+                    type: integer
+                  pet_names:
+                    type: array
+                    items:
+                      type: string
+                  checkin_date:
+                    type: string
+                    format: date
+                  checkout_date:
+                    type: string
+                    format: date
+                  room_total:
+                    type: number
+                  service_total:
+                    type: number
+                  vet_cost:
+                    type: number
+                  grand_total:
+                    type: number
+                  deposit_paid:
+                    type: number
+                  payment_status:
+                    type: string
+                  payment_method:
+                    type: string
+                  paid_at:
+                    type: string
+                    format: date-time
+      500:
+        description: Internal Server Error
+    """
     try:
         status_filter = request.args.get('status')   # PAID | UNPAID
         booking_id    = request.args.get('booking_id')
@@ -109,6 +183,36 @@ def get_all_invoices(current_user):
 @billing_bp.route('/preview', methods=['POST'])
 @token_required
 def preview_invoice(current_user):
+    """
+    ดูพรีวิว Invoice และคำนวณยอดสุทธิ (ก่อนชำระเงินจริง)
+    ---
+    tags:
+      - Billing
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - booking_id
+          properties:
+            booking_id:
+              type: integer
+              description: ID ของการจองที่ต้องการดูยอดชำระ
+              example: 1
+    responses:
+      200:
+        description: พรีวิวรายละเอียดบิลและรายการค่าใช้จ่าย (Line Items)
+      400:
+        description: ข้อมูลไม่ครบถ้วน (ไม่ได้ระบุ booking_id)
+      404:
+        description: ไม่พบการจอง
+      500:
+        description: Internal Server Error
+    """
     try:
         data       = request.get_json()
         booking_id = data.get('booking_id')
@@ -194,6 +298,27 @@ def preview_invoice(current_user):
 @billing_bp.route('/<int:invoice_id>', methods=['GET'])
 @token_required
 def get_invoice(current_user, invoice_id):
+    """
+    ดูรายละเอียด Invoice (รายตัว)
+    ---
+    tags:
+      - Billing
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: invoice_id
+        in: path
+        type: integer
+        required: true
+        description: รหัส ID (ตัวเลข) ของ Invoice ที่ต้องการดู
+    responses:
+      200:
+        description: ข้อมูลรายละเอียดบิล และรายการสินค้า/บริการทั้งหมด
+      404:
+        description: ไม่พบ Invoice
+      500:
+        description: Internal Server Error
+    """
     try:
         conn = get_db_connection()
         cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -259,6 +384,38 @@ def get_invoice(current_user, invoice_id):
 @billing_bp.route('/<int:invoice_id>/pay', methods=['PATCH'])
 @token_required
 def process_payment(current_user, invoice_id):
+    """
+    บันทึกการรับชำระเงินและปิดการจอง
+    ---
+    tags:
+      - Billing
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: invoice_id
+        in: path
+        type: integer
+        required: true
+        description: รหัส ID (ตัวเลข) ของ Invoice ที่ต้องการชำระเงิน
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            payment_method:
+              type: string
+              description: วิธีการชำระเงิน
+              enum: [cash, qr_promptpay, credit_card, bank_transfer]
+              example: qr_promptpay
+    responses:
+      200:
+        description: ชำระเงินสำเร็จ และอัปเดตสถานะการจองเป็น COMPLETED (Check-out) แล้ว
+      404:
+        description: ไม่พบ Invoice
+      500:
+        description: Internal Server Error
+    """
     try:
         data   = request.get_json()
         method = data.get('payment_method')   # cash | qr_promptpay | credit_card

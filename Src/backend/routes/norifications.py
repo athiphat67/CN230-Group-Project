@@ -22,6 +22,54 @@ def get_db_connection():
 @notifications_bp.route('', methods=['GET'])
 @token_required
 def get_notifications(current_user):
+    """
+    ดึงรายการการแจ้งเตือนของ Staff
+    ---
+    tags:
+      - Notifications
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: is_read
+        in: query
+        type: string
+        required: false
+        description: กรองสถานะการอ่าน (true หรือ false) หากไม่ระบุจะแสดงทั้งหมด
+        example: "false"
+    responses:
+      200:
+        description: รายการการแจ้งเตือน (จำกัด 100 รายการล่าสุด)
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+              example: success
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  notification_id:
+                    type: integer
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  body:
+                    type: string
+                  booking_id:
+                    type: integer
+                  is_read:
+                    type: boolean
+                  sent_at:
+                    type: string
+                    format: date-time
+                  recipient_staff_id:
+                    type: integer
+      500:
+        description: Internal Server Error
+    """
     try:
         staff_id = current_user.get('staff_id')
         is_read  = request.args.get('is_read')   # "true" | "false" | ไม่ส่ง = ดูทั้งหมด
@@ -62,6 +110,28 @@ def get_notifications(current_user):
 @notifications_bp.route('/read-all', methods=['PATCH'])
 @token_required
 def mark_all_read(current_user):
+    """
+    ทำเครื่องหมายว่าอ่านการแจ้งเตือนทั้งหมดแล้ว
+    ---
+    tags:
+      - Notifications
+    security:
+      - BearerAuth: []
+    responses:
+      200:
+        description: อัปเดตสถานะสำเร็จ
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+              example: success
+            message:
+              type: string
+              example: ทำเครื่องหมายอ่านทั้งหมดแล้ว
+      500:
+        description: Internal Server Error
+    """
     try:
         staff_id = current_user.get('staff_id')
 
@@ -86,6 +156,35 @@ def mark_all_read(current_user):
 @notifications_bp.route('/<int:notification_id>/read', methods=['PATCH'])
 @token_required
 def mark_read(current_user, notification_id):
+    """
+    ทำเครื่องหมายว่าอ่านการแจ้งเตือนแล้ว (รายตัว)
+    ---
+    tags:
+      - Notifications
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: notification_id
+        in: path
+        type: integer
+        required: true
+        description: ID ของการแจ้งเตือนที่ต้องการอัปเดตสถานะ
+    responses:
+      200:
+        description: อัปเดตสถานะสำเร็จ
+        schema:
+          type: object
+          properties:
+            notification_id:
+              type: integer
+            is_read:
+              type: boolean
+              example: true
+      404:
+        description: ไม่พบการแจ้งเตือน
+      500:
+        description: Internal Server Error
+    """
     try:
         conn = get_db_connection()
         cur  = conn.cursor()

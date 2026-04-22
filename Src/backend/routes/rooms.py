@@ -19,6 +19,44 @@ def get_db_connection():
 @rooms_bp.route('', methods=['GET'])
 @token_required
 def get_all_rooms(current_user):
+    """
+    ดูรายการห้องพักทั้งหมด
+    ---
+    tags:
+      - Rooms
+    security:
+      - BearerAuth: []
+    responses:
+      200:
+        description: รายการห้องพักทั้งหมดพร้อมสถานะและราคา
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+              example: success
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  room_id:
+                    type: integer
+                  room_number:
+                    type: string
+                  room_type:
+                    type: string
+                  pet_type:
+                    type: string
+                  price_per_night:
+                    type: number
+                  status:
+                    type: string
+                  is_available:
+                    type: boolean
+      500:
+        description: Internal Server Error
+    """
     try:
         conn = get_db_connection()
         cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -43,11 +81,44 @@ def get_all_rooms(current_user):
         return jsonify({"error": True, "message": str(e)}), 500
 
 
-# ── 2. Get Available Rooms  (เดิมอยู่ใน bookings.py) ──────────────────
-#  ⚠️ ต้องวางก่อน /<int:room_id> เพื่อป้องกัน Flask routing conflict
+# ── 2. Get Available Rooms ─────────────────────────────────────────────
 @rooms_bp.route('/availability', methods=['GET'])
 @token_required
 def get_available_rooms(current_user):
+    """
+    ค้นหาห้องว่างตามช่วงเวลาที่กำหนด
+    ---
+    tags:
+      - Rooms
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: checkin_date
+        in: query
+        type: string
+        required: true
+        description: วันที่เช็คอิน (YYYY-MM-DD)
+        example: "2026-05-01"
+      - name: checkout_date
+        in: query
+        type: string
+        required: true
+        description: วันที่เช็คเอาท์ (YYYY-MM-DD)
+        example: "2026-05-05"
+      - name: pet_type
+        in: query
+        type: string
+        required: false
+        default: CAT
+        description: ประเภทของสัตว์เลี้ยง (เช่น CAT, DOG)
+    responses:
+      200:
+        description: รายการห้องที่ว่างในช่วงเวลาที่กำหนด
+      400:
+        description: ไม่ได้ระบุวันที่เช็คอินหรือเช็คเอาท์
+      500:
+        description: Internal Server Error
+    """
     try:
         checkin  = request.args.get('checkin_date') or request.args.get('check_in')
         checkout = request.args.get('checkout_date') or request.args.get('check_out')
@@ -94,6 +165,43 @@ def get_available_rooms(current_user):
 @token_required
 @admin_required
 def update_room(current_user, room_id):
+    """
+    อัปเดตสถานะหรือราคาห้องพัก (เฉพาะ Admin)
+    ---
+    tags:
+      - Rooms
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: room_id
+        in: path
+        type: integer
+        required: true
+        description: ID ของห้องที่ต้องการอัปเดต
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+              description: สถานะห้อง (เช่น AVAILABLE, MAINTENANCE)
+              example: MAINTENANCE
+            price_per_night:
+              type: number
+              description: ราคาต่อคืน
+              example: 1200.50
+    responses:
+      200:
+        description: อัปเดตข้อมูลสำเร็จ
+      400:
+        description: ไม่มีข้อมูลที่ต้องการอัปเดตส่งมา
+      404:
+        description: ไม่พบห้องที่ต้องการ
+      500:
+        description: Internal Server Error
+    """
     try:
         data   = request.get_json()
         status = data.get('status')

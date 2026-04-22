@@ -611,6 +611,115 @@ suite('Integration — Inventory alert threshold (20%)', ctx => {
   });
 });
 
+// ── 11. Auth & Validation Tests ──────────────────────────────────
+
+suite('Validation — isValidUsername()', ctx => {
+  test(ctx, 'Valid: somchai_123', () => {
+    expect(isValidUsername('somchai_123')).toBeTruthy();
+  });
+  test(ctx, 'Valid: ADMIN', () => {
+    expect(isValidUsername('ADMIN')).toBeTruthy();
+  });
+  test(ctx, 'Invalid: มีช่องว่าง (som chai)', () => {
+    expect(isValidUsername('som chai')).toBeFalsy();
+  });
+  test(ctx, 'Invalid: มีอักขระพิเศษ (somchai@)', () => {
+    expect(isValidUsername('somchai@')).toBeFalsy();
+  });
+  test(ctx, 'Invalid: ค่าว่าง (empty string)', () => {
+    expect(isValidUsername('')).toBeFalsy();
+  });
+  test(ctx, 'Invalid: null', () => {
+    expect(isValidUsername(null)).toBeFalsy();
+  });
+});
+
+suite('Validation — isValidEmail()', ctx => {
+  test(ctx, 'Valid: test@purrfect.com', () => {
+    expect(isValidEmail('test@purrfect.com')).toBeTruthy();
+  });
+  test(ctx, 'Valid: user.name+tag@domain.co.th', () => {
+    expect(isValidEmail('user.name+tag@domain.co.th')).toBeTruthy();
+  });
+  test(ctx, 'Invalid: ไม่มี @ (testdomain.com)', () => {
+    expect(isValidEmail('testdomain.com')).toBeFalsy();
+  });
+  test(ctx, 'Invalid: มีช่องว่าง (test @domain.com)', () => {
+    expect(isValidEmail('test @domain.com')).toBeFalsy();
+  });
+  test(ctx, 'Invalid: ไม่มีโดเมน (test@)', () => {
+    expect(isValidEmail('test@')).toBeFalsy();
+  });
+});
+
+suite('Auth — calcPasswordScore()', ctx => {
+  test(ctx, 'Score 0: ค่าว่าง', () => {
+    expect(calcPasswordScore('')).toBe(0);
+  });
+  test(ctx, 'Score 0: สั้นเกินและไม่มีความซับซ้อน (abc)', () => {
+    expect(calcPasswordScore('abc')).toBe(0);
+  });
+  test(ctx, 'Score 1: ยาว 8 ตัวอักษรแต่เป็นพิมพ์เล็กหมด (abcdefgh)', () => {
+    expect(calcPasswordScore('abcdefgh')).toBe(1);
+  });
+  test(ctx, 'Score 2: 8 ตัว + พิมพ์ใหญ่ (Abcdefgh)', () => {
+    expect(calcPasswordScore('Abcdefgh')).toBe(2);
+  });
+  test(ctx, 'Score 3: 8 ตัว + พิมพ์ใหญ่ + ตัวเลข (Abcdefgh1)', () => {
+    expect(calcPasswordScore('Abcdefgh1')).toBe(3);
+  });
+  test(ctx, 'Score 4: 8 ตัว + พิมพ์ใหญ่ + ตัวเลข + สัญลักษณ์ (Abcdefgh1!)', () => {
+    expect(calcPasswordScore('Abcdefgh1!')).toBe(4);
+  });
+  test(ctx, 'Score 3 (กรณีพิเศษ): ไม่ถึง 8 ตัว แต่มีความซับซ้อนครบ (A1!bcd)', () => {
+    // ยาวไม่ถึง 8 (ได้ 0) แต่นอกนั้นเข้าเกณฑ์ 3 ข้อ (+3) = Score 3
+    expect(calcPasswordScore('A1!bcd')).toBe(3);
+  });
+});
+
+suite('UI Logic — getStepStatus()', ctx => {
+  test(ctx, 'Current Step 2, Node Step 1 → done', () => {
+    expect(getStepStatus(2, 1)).toBe('done');
+  });
+  test(ctx, 'Current Step 2, Node Step 2 → active', () => {
+    expect(getStepStatus(2, 2)).toBe('active');
+  });
+  test(ctx, 'Current Step 2, Node Step 3 → pending', () => {
+    expect(getStepStatus(2, 3)).toBe('pending');
+  });
+});
+
+// ── Auth & Validation (login, register, forgot-password) ──
+
+// ตรวจสอบรูปแบบ Username (ตัวอักษร ตัวเลข และ underscore เท่านั้น)
+function isValidUsername(username) {
+  if (!username) return false;
+  return /^[a-zA-Z0-9_]+$/.test(username);
+}
+
+// ตรวจสอบรูปแบบ Email
+function isValidEmail(email) {
+  if (!email) return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+// คำนวณความแข็งแกร่งของรหัสผ่าน (คืนค่า 0 - 4)
+function calcPasswordScore(pw) {
+  let score = 0;
+  if (!pw) return 0;
+  if (pw.length >= 8)  score++; // ความยาว 8 ตัวขึ้นไป
+  if (/[A-Z]/.test(pw)) score++; // มีตัวพิมพ์ใหญ่
+  if (/[0-9]/.test(pw)) score++; // มีตัวเลข
+  if (/[^A-Za-z0-9]/.test(pw)) score++; // มีอักขระพิเศษ
+  return score;
+}
+
+// จำลองการตรวจสอบสเตตัสของ Progress Bar (Step หน้า Register)
+function getStepStatus(currentStep, nodeStep) {
+  if (nodeStep < currentStep) return 'done';
+  if (nodeStep === currentStep) return 'active';
+  return 'pending';
+}
 
 // ═══════════════════════════════════════════════════
 // RENDER RESULTS

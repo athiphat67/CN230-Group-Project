@@ -153,9 +153,9 @@ const Navbar = {
   async _loadNotifCount() {
     if (!window.CustomerAPI) return;
     try {
-      const res = await CustomerAPI.notifications.getAll({ is_read: false, limit: 10 });
+      const res = await CustomerAPI.notifications.getAll({ status: 'unread', page: 1, page_size: 1 });
       if (res.ok) {
-        const count = (res.data?.data || []).length;
+        const count = Number(res.data?.meta?.unread_count ?? (res.data?.data || []).length);
         const badge = document.getElementById('notif-badge');
         if (badge) {
           badge.style.display = count > 0 ? 'block' : 'none';

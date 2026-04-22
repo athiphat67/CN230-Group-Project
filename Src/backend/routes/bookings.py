@@ -15,6 +15,7 @@ from datetime import datetime, timedelta
 import psycopg2
 import psycopg2.extras
 from utils import token_required
+from routes.notification_events import emit_notification
 
 bookings_bp = Blueprint('bookings', __name__)
 
@@ -31,6 +32,14 @@ def parse_iso_date(value):
     if len(text) == 10:
         return datetime.strptime(text, '%Y-%m-%d')
     return datetime.fromisoformat(text.replace('Z', '+00:00'))
+
+
+def _safe_emit(conn, **kwargs):
+    try:
+        emit_notification(conn, **kwargs)
+    except Exception:
+        # Notification flow must not block core booking operations.
+        pass
 
 # Map DB status → Frontend status
 STATUS_MAP = {
@@ -318,6 +327,20 @@ def create_booking(current_user):
         """, (booking_id, total_rate))
 
         conn.commit()
+        _safe_emit(
+            conn,
+            notif_type='NEW_BOOKING_ALERT',
+            title=f'มีการจองใหม่ BK-{str(booking_id).zfill(4)}',
+            message=f'สร้างการจองใหม่สำหรับลูกค้า #{data["customer_id"]}',
+            recipient_staff_id=None,
+            related_id=booking_id,
+            booking_id=booking_id,
+            actor_staff_id=staff_id,
+            actor_customer_id=current_user.get('customer_id'),
+            target_id=booking_id,
+            metadata={"event": "booking_created", "customer_id": data["customer_id"]},
+        )
+        conn.commit()
         return jsonify({
             "status": "success",
             "message": "สร้างการจองสำเร็จ",
@@ -535,6 +558,20 @@ def update_booking(current_user, booking_id):
         """, (room_total, service_total, booking_id))
 
         conn.commit()
+        _safe_emit(
+            conn,
+            notif_type='BOOKING_CONFIRMED',
+            title=f'อัปเดตการจอง BK-{str(booking_id).zfill(4)}',
+            message='รายละเอียดการจองถูกแก้ไขแล้ว',
+            recipient_staff_id=None,
+            related_id=booking_id,
+            booking_id=booking_id,
+            actor_staff_id=current_user.get('staff_id'),
+            actor_customer_id=current_user.get('customer_id'),
+            target_id=booking_id,
+            metadata={"event": "booking_updated", "pet_id": pet_id, "room_id": room_id},
+        )
+        conn.commit()
         cur2.close()
         return jsonify({
             "status": "success",
@@ -629,6 +666,19 @@ def checkin(current_user, booking_id):
             return jsonify({"error": True, "code": 404, "message": "ไม่พบการจอง"}), 404
 
         conn.commit()
+        _safe_emit(
+            conn,
+            notif_type='CHECKIN_REMINDER',
+            title=f'เช็กอินสำเร็จ BK-{str(booking_id).zfill(4)}',
+            message='สถานะการจองเปลี่ยนเป็น CHECKED_IN',
+            recipient_staff_id=None,
+            related_id=booking_id,
+            booking_id=booking_id,
+            actor_staff_id=current_user.get('staff_id'),
+            target_id=booking_id,
+            metadata={"event": "booking_checkin"},
+        )
+        conn.commit()
         cur.close()
         conn.close()
 
@@ -721,6 +771,19 @@ def checkout(current_user, booking_id):
                 grand_total = float(inv[1] or 0)
 
         conn.commit()
+        _safe_emit(
+            conn,
+            notif_type='BOOKING_CONFIRMED',
+            title=f'เช็กเอาต์สำเร็จ BK-{str(booking_id).zfill(4)}',
+            message='สถานะการจองเปลี่ยนเป็น CHECKED_OUT',
+            recipient_staff_id=None,
+            related_id=booking_id,
+            booking_id=booking_id,
+            actor_staff_id=staff_id,
+            target_id=booking_id,
+            metadata={"event": "booking_checkout", "invoice_id": invoice_id},
+        )
+        conn.commit()
         cur.close()
         cur2.close()
         conn.close()
@@ -792,6 +855,19 @@ def cancel_booking(current_user, booking_id):
             return jsonify({"error": True, "code": 400,
                             "message": "ไม่พบการจอง หรือยกเลิกไม่ได้แล้ว"}), 400
 
+        conn.commit()
+        _safe_emit(
+            conn,
+            notif_type='BOOKING_CANCELLED',
+            title=f'ยกเลิกการจอง BK-{str(booking_id).zfill(4)}',
+            message='การจองถูกยกเลิกแล้ว',
+            recipient_staff_id=None,
+            related_id=booking_id,
+            booking_id=booking_id,
+            actor_staff_id=staff_id,
+            target_id=booking_id,
+            metadata={"event": "booking_cancelled"},
+        )
         conn.commit()
         cur.close()
         conn.close()
@@ -893,6 +969,19 @@ def add_addon(current_user, booking_id):
                 UPDATE invoice SET servicetotal = servicetotal + %s WHERE bookingid = %s
             """, (total_added_cost, booking_id))
 
+        conn.commit()
+        _safe_emit(
+            conn,
+            notif_type='BOOKING_CONFIRMED',
+            title=f'เพิ่มบริการเสริม BK-{str(booking_id).zfill(4)}',
+            message=f'เพิ่มบริการเสริม {len(services)} รายการ',
+            recipient_staff_id=None,
+            related_id=booking_id,
+            booking_id=booking_id,
+            actor_staff_id=current_user.get('staff_id'),
+            target_id=booking_id,
+            metadata={"event": "booking_addons", "count": len(services), "added_cost": total_added_cost},
+        )
         conn.commit()
         cur.close()
         cur2.close()

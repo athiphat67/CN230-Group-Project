@@ -44,7 +44,7 @@ async function loadDashboard() {
 
     const [bookingsRes, notifRes, staffRes, roomsRes, analyticsRes] = await Promise.allSettled([
       window.API.bookings.getAll(),
-      window.API.notifications.getAll({ is_read: false }),
+      window.API.notifications.getAll({ page: 1, page_size: 20 }),
       window.API.staff.getAll(),
       window.API.rooms.getAll(),
       window.API.analytics.getDashboard({ start_date: today, end_date: today }),
@@ -52,7 +52,8 @@ async function loadDashboard() {
 
     // Extract data safely
     const bookings  = _extract(bookingsRes,   []);
-    const notifs    = _extract(notifRes,      []);
+    const notifData = _extractNotif(notifRes);
+    const notifs    = notifData.data;
     const staff     = _extract(staffRes,      []);
     const rooms     = _extract(roomsRes,      []);
     const analytics = _extractObj(analyticsRes, null);
@@ -63,7 +64,7 @@ async function loadDashboard() {
     renderPendingTable(bookings);
     renderActiveTable(bookings);
     renderTeam(staff);
-    renderNotifications(notifs);
+    renderNotifications(notifs, notifData.meta);
     renderRoomGrid(rooms, bookings);
 
   } catch (err) {
@@ -85,6 +86,16 @@ function _extractObj(settled, fallback) {
   const res = settled.value;
   if (!res.ok) return fallback;
   return res.data?.data ?? res.data ?? fallback;
+}
+
+function _extractNotif(settled) {
+  if (settled.status !== 'fulfilled') return { data: [], meta: {} };
+  const res = settled.value;
+  if (!res.ok) return { data: [], meta: {} };
+  return {
+    data: res.data?.data ?? [],
+    meta: res.data?.meta ?? {},
+  };
 }
 
 /* ─── 1. KPI STAT CARDS ──────────────────── */
@@ -271,11 +282,11 @@ function renderTeam(staff) {
 }
 
 /* ─── 6. NOTIFICATIONS ───────────────────── */
-function renderNotifications(notifs) {
+function renderNotifications(notifs, meta = {}) {
   const listEl  = document.getElementById('notif-list');
   const badgeEl = document.getElementById('unread-badge');
 
-  const unread = notifs.filter(n => !n.is_read).length;
+  const unread = Number(meta.unread_count ?? notifs.filter(n => !n.is_read).length);
   if (badgeEl) {
     badgeEl.style.display = unread > 0 ? 'inline-flex' : 'none';
     badgeEl.textContent   = unread;
@@ -302,7 +313,7 @@ function renderNotifications(notifs) {
         <div class="db-notif-icon">${typeIcon[n.type] || '🔔'}</div>
         <div class="db-notif-content">
           <div class="db-notif-title">${n.title || '—'}</div>
-          <div class="db-notif-time">🕐 ${_fmtDateTime(n.sent_at)}</div>
+          <div class="db-notif-time">🕐 ${_fmtDateTime(n.created_at || n.sent_at)}</div>
         </div>
         ${!n.is_read ? '<div class="db-notif-dot"></div>' : ''}
       </div>

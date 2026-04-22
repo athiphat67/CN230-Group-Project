@@ -189,7 +189,7 @@ async function loadNotifications() {
     listEl.innerHTML = `<div style="padding:24px;text-align:center"><div class="spinner"></div></div>`;
 
     // เรียก API จริง (ถ้า Backend ยังไม่มีระบบ Notif มันจะคืนค่าว่างมา ซึ่งถูกต้องแล้ว)
-    const res = await CustomerAPI.notifications.getAll({ limit: 5 });
+    const res = await CustomerAPI.notifications.getAll({ page: 1, page_size: 20 });
     const notifications = (res.ok && res.data?.data) ? res.data.data : [];
 
     if (notifications.length === 0) {
@@ -236,17 +236,23 @@ function renderNotifItem(n) {
         VACCINE: { icon: '💉', cls: 'notif-icon--vaccine', color: '#EF4444' },
         BOOKING: { icon: '📅', cls: 'notif-icon--booking', color: '#1557A0' },
         PAYMENT: { icon: '💳', cls: 'notif-icon--payment', color: '#C9943A' },
+        CARE_REPORT: { icon: '📋', cls: 'notif-icon--care', color: '#0D9488' },
+        BOOKING_CONFIRMED: { icon: '📅', cls: 'notif-icon--booking', color: '#1557A0' },
+        BOOKING_CANCELLED: { icon: '📅', cls: 'notif-icon--booking', color: '#1557A0' },
+        PAYMENT_CONFIRMED: { icon: '💳', cls: 'notif-icon--payment', color: '#C9943A' },
+        CHECKIN_REMINDER: { icon: '⏰', cls: 'notif-icon--care', color: '#0D9488' },
+        NEW_BOOKING_ALERT: { icon: '🔔', cls: 'notif-icon--booking', color: '#1557A0' },
     };
 
     const cfg = typeConfig[n.type] || typeConfig.CARE;
-    const time = timeAgo(n.sent_at);
+    const time = timeAgo(n.created_at || n.sent_at);
 
     return `
     <div class="notif-item ${!n.is_read ? 'unread' : ''}" data-notif-id="${n.id}">
       <div class="notif-icon ${cfg.cls}">${cfg.icon}</div>
       <div class="notif-body">
         <div class="notif-title">${escHtml(n.title)}</div>
-        <div class="notif-text">${escHtml(n.body || '')}</div>
+        <div class="notif-text">${escHtml(n.message || n.body || '')}</div>
         ${n.action ? `<a href="${n.action.href}" class="notif-link" style="display:inline-block;margin-top:8px;font-size:13px;font-weight:700;color:var(--primary)">${n.action.label}</a>` : ''}
         <div class="notif-time">${time}</div>
       </div>

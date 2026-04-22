@@ -13,6 +13,7 @@ import psycopg2
 import psycopg2.extras
 from datetime import datetime, timedelta
 from utils import token_required
+from routes.notification_events import emit_notification
 
 billing_bp = Blueprint('billing', __name__)
 PAYMENT_METHODS = {'cash', 'qr_promptpay', 'credit_card', 'bank_transfer'}
@@ -46,6 +47,13 @@ def normalize_status_for_ui(db_status):
 def normalize_status_for_db(ui_status):
     status = (ui_status or '').upper()
     return UI_TO_DB_STATUS.get(status, status)
+
+
+def _safe_emit(conn, **kwargs):
+    try:
+        emit_notification(conn, **kwargs)
+    except Exception:
+        pass
 
 # ── 1. รายการ Invoice ทั้งหมด (GET /api/billing) ──────────────────────
 @billing_bp.route('', methods=['GET'])
@@ -497,6 +505,24 @@ def update_billing(current_user, invoice_id):
             cur2.execute("UPDATE booking SET status = 'PENDING' WHERE bookingid = %s", (row['bookingid'],))
 
         conn.commit()
+        _safe_emit(
+            conn,
+            notif_type='PAYMENT_CONFIRMED',
+            title=f'อัปเดตบิล {fmt_invoice_id(invoice_id)}',
+            message=f'สถานะชำระเงินเปลี่ยนเป็น {normalize_status_for_ui(db_status)}',
+            recipient_staff_id=None,
+            related_id=row['bookingid'],
+            booking_id=row['bookingid'],
+            actor_staff_id=current_user.get('staff_id'),
+            target_id=invoice_id,
+            metadata={
+                "event": "billing_updated",
+                "payment_status": db_status,
+                "amount_paid": new_amount_paid,
+                "remaining_amount": max(total_amount - new_amount_paid, 0),
+            },
+        )
+        conn.commit()
         cur2.close()
         cur.close()
         conn.close()
@@ -583,6 +609,19 @@ def process_payment(current_user, invoice_id):
         # ปิดการจอง → COMPLETED
         cur2.execute("UPDATE booking SET status = 'COMPLETED' WHERE bookingid = %s", (booking_id,))
 
+        conn.commit()
+        _safe_emit(
+            conn,
+            notif_type='PAYMENT_CONFIRMED',
+            title=f'รับชำระเงินสำเร็จ {fmt_invoice_id(invoice_id)}',
+            message='มีการชำระเงินและปิดการจองเรียบร้อยแล้ว',
+            recipient_staff_id=None,
+            related_id=booking_id,
+            booking_id=booking_id,
+            actor_staff_id=current_user.get('staff_id'),
+            target_id=invoice_id,
+            metadata={"event": "payment_processed", "payment_method": method},
+        )
         conn.commit()
         cur.close()
         cur2.close()

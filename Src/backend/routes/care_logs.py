@@ -16,11 +16,19 @@ import psycopg2
 import psycopg2.extras
 from utils import token_required
 from datetime import datetime, timezone, timedelta
+from routes.notification_events import emit_notification
 
 care_logs_bp = Blueprint('care_logs', __name__)
 
 def get_db_connection():
     return psycopg2.connect(current_app.config['SQLALCHEMY_DATABASE_URI'])
+
+
+def _safe_emit(conn, **kwargs):
+    try:
+        emit_notification(conn, **kwargs)
+    except Exception:
+        pass
 
 # แก้ไขใน care_logs.py
 @care_logs_bp.route('', methods=['POST'])
@@ -109,13 +117,14 @@ def add_care_log(current_user):
         booking_detail_id = result[0] # ได้ ID มาใช้งานแล้ว
 
         # 3. นำ booking_detail_id ที่หาได้ไป Insert ลง carelog
-        cur.execute("""
+        insert_sql = """
             INSERT INTO carelog
                 (bookingdetailid, foodstatus, pottystatus, medicationgiven,
                  staffnote, loggedby_staffid, mood, behavior_notes)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            RETURNING logid;   # <--- ต้องเติมบรรทัดนี้
-        """, (
+            RETURNING logid
+        """
+        insert_params = (
             booking_detail_id,
             data.get('food_status'),
             data.get('potty_status'),
@@ -124,9 +133,38 @@ def add_care_log(current_user):
             staff_id,
             data.get('mood'),
             data.get('behavior_notes')
-        ))
+        )
+        try:
+            cur.execute(insert_sql, insert_params)
+        except psycopg2.Error as db_err:
+            if getattr(db_err, "pgcode", None) == "23505":
+                conn.rollback()
+                cur.execute("""
+                    SELECT setval(
+                        'public.carelog_logid_seq',
+                        COALESCE((SELECT MAX(logid) FROM carelog), 0) + 1,
+                        false
+                    )
+                """)
+                conn.commit()
+                cur.execute(insert_sql, insert_params)
+            else:
+                raise
 
         new_log_id = cur.fetchone()[0]
+        conn.commit()
+        _safe_emit(
+            conn,
+            notif_type='CARE_REPORT',
+            title=f'บันทึกรายงานดูแล #{new_log_id}',
+            message='มีการสร้างรายงานการดูแลสัตว์เลี้ยงใหม่',
+            recipient_staff_id=None,
+            related_id=booking_id,
+            booking_id=booking_id,
+            actor_staff_id=staff_id,
+            target_id=new_log_id,
+            metadata={"event": "care_log_created", "pet_id": pet_id},
+        )
         conn.commit()
         cur.close()
         conn.close()
@@ -189,6 +227,19 @@ def update_care_log(current_user, report_id):
             data.get('behavior_notes'),
             report_id
         ))
+        conn.commit()
+        _safe_emit(
+            conn,
+            notif_type='CARE_REPORT',
+            title=f'อัปเดตรายงานดูแล #{report_id}',
+            message='มีการแก้ไขรายงานการดูแลสัตว์เลี้ยง',
+            recipient_staff_id=None,
+            related_id=row['bookingid'],
+            booking_id=row['bookingid'],
+            actor_staff_id=staff_id,
+            target_id=report_id,
+            metadata={"event": "care_log_updated", "pet_id": row['petid']},
+        )
         conn.commit()
         cur2.close()
         cur.close()

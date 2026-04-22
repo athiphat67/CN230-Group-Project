@@ -154,9 +154,13 @@ window.API = {
 
   /* --- Notifications --- */
   notifications: {
-    getAll:     (params = {}) => apiFetch('/notifications?' + new URLSearchParams(params)),
-    markRead:   (id)          => apiFetch(`/notifications/${id}/read`, { method: 'PATCH' }),
-    markAllRead: ()           => apiFetch('/notifications/read-all', { method: 'PATCH' }),
+    getAll:       (params = {}) => apiFetch('/notifications?' + new URLSearchParams(params)),
+    create:       (data)        => apiFetch('/notifications', { method: 'POST', body: JSON.stringify(data) }),
+    markRead:     (id)          => apiFetch(`/notifications/${id}/read`, { method: 'PATCH', body: JSON.stringify({ is_read: true }) }),
+    markUnread:   (id)          => apiFetch(`/notifications/${id}/unread`, { method: 'PATCH' }),
+    setReadStatus:(id, isRead)  => apiFetch(`/notifications/${id}/read`, { method: 'PATCH', body: JSON.stringify({ is_read: !!isRead }) }),
+    markAllRead:  ()            => apiFetch('/notifications/read-all', { method: 'PATCH', body: JSON.stringify({ is_read: true }) }),
+    markAllUnread:()            => apiFetch('/notifications/read-all', { method: 'PATCH', body: JSON.stringify({ is_read: false }) }),
   },
 
   /* --- Dashboard (aggregate helper) --- */
@@ -271,9 +275,13 @@ window.CustomerAPI = {
 
   /* --- Notifications --- */
   notifications: {
-    getAll:      (params = {}) => apiFetch('/notifications?' + new URLSearchParams(params)),
-    markRead:    (id)          => apiFetch(`/notifications/${id}/read`, { method: 'PATCH' }),
-    markAllRead: ()           => apiFetch('/notifications/read-all', { method: 'PATCH' }),
+    getAll:       (params = {}) => apiFetch('/notifications?' + new URLSearchParams(params)),
+    create:       (data)        => apiFetch('/notifications', { method: 'POST', body: JSON.stringify(data) }),
+    markRead:     (id)          => apiFetch(`/notifications/${id}/read`, { method: 'PATCH', body: JSON.stringify({ is_read: true }) }),
+    markUnread:   (id)          => apiFetch(`/notifications/${id}/unread`, { method: 'PATCH' }),
+    setReadStatus:(id, isRead)  => apiFetch(`/notifications/${id}/read`, { method: 'PATCH', body: JSON.stringify({ is_read: !!isRead }) }),
+    markAllRead:  ()            => apiFetch('/notifications/read-all', { method: 'PATCH', body: JSON.stringify({ is_read: true }) }),
+    markAllUnread:()            => apiFetch('/notifications/read-all', { method: 'PATCH', body: JSON.stringify({ is_read: false }) }),
   }
   
 };

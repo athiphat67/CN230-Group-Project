@@ -22,6 +22,70 @@ def get_db_connection():
 @token_required
 @admin_required
 def get_audit_logs(current_user):
+    """
+    ดึงข้อมูลประวัติการใช้งานระบบ (Audit Trail)
+    ---
+    tags:
+      - Audit
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: staff_id
+        in: query
+        type: integer
+        required: false
+        description: กรองตาม ID ของพนักงาน
+      - name: action_type
+        in: query
+        type: string
+        required: false
+        description: กรองตามประเภทการกระทำ (เช่น INSERT, UPDATE, DELETE, LOGIN)
+      - name: start_date
+        in: query
+        type: string
+        format: date
+        required: false
+        description: เริ่มต้นตั้งแต่วันที่ (YYYY-MM-DD)
+      - name: end_date
+        in: query
+        type: string
+        format: date
+        required: false
+        description: สิ้นสุดถึงวันที่ (YYYY-MM-DD)
+    responses:
+      200:
+        description: รายการประวัติการใช้งาน (จำกัด 500 รายการล่าสุด)
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+              example: success
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  audit_id:
+                    type: integer
+                  staff_id:
+                    type: integer
+                  staff_name:
+                    type: string
+                  action_type:
+                    type: string
+                  table_affected:
+                    type: string
+                  record_id:
+                    type: integer
+                  description:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+      500:
+        description: Internal Server Error
+    """
     try:
         staff_id    = request.args.get('staff_id')
         action_type = request.args.get('action_type')

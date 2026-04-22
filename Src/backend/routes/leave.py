@@ -15,6 +15,61 @@ def get_thai_time():
 # --- 1. ดึงรายการคำขอลาทั้งหมด ---
 @leave_bp.route('', methods=['GET'])
 def get_leave_requests():
+    """
+    ดึงรายการคำขอลาทั้งหมด
+    ---
+    tags:
+      - Leave
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: status
+        in: query
+        type: string
+        required: false
+        description: กรองตามสถานะการลา (เช่น PENDING, APPROVED, REJECTED)
+        example: "PENDING"
+    responses:
+      200:
+        description: รายการคำขอลาทั้งหมด
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+              example: success
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  leave_id:
+                    type: integer
+                  staff_id:
+                    type: integer
+                  first_name:
+                    type: string
+                  last_name:
+                    type: string
+                  leave_type:
+                    type: string
+                  start_date:
+                    type: string
+                    format: date
+                  end_date:
+                    type: string
+                    format: date
+                  reason:
+                    type: string
+                  status:
+                    type: string
+                  approved_by:
+                    type: integer
+                  approver_name:
+                    type: string
+      500:
+        description: Internal Server Error
+    """
     try:
         status_filter = request.args.get('status') # เช่น pending, approved, rejected
 
@@ -66,6 +121,44 @@ def get_leave_requests():
 # --- 2. อนุมัติ / ปฏิเสธ คำขอลา ---
 @leave_bp.route('/<int:leave_id>', methods=['PATCH'])
 def update_leave_status(leave_id):
+    """
+    อนุมัติ หรือ ปฏิเสธ คำขอลา
+    ---
+    tags:
+      - Leave
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: leave_id
+        in: path
+        type: integer
+        required: true
+        description: ID ของรายการคำขอลา
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+              description: สถานะที่ต้องการเปลี่ยนเป็น
+              enum: [APPROVED, REJECTED]
+              example: APPROVED
+            approved_by:
+              type: integer
+              description: ID ของแอดมินหรือผู้ที่มีสิทธิ์อนุมัติ
+              example: 1
+    responses:
+      200:
+        description: อัปเดตสถานะเรียบร้อยแล้ว
+      400:
+        description: สถานะที่ส่งมาไม่ถูกต้อง (ต้องเป็น APPROVED หรือ REJECTED)
+      404:
+        description: ไม่พบรายการลา หรือรายการนี้ถูกจัดการไปแล้ว
+      500:
+        description: Internal Server Error
+    """
     try:
         data = request.get_json()
         new_status = data.get('status') # 'APPROVED' หรือ 'REJECTED'

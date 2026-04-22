@@ -33,6 +33,60 @@ def normalize_action(raw: str) -> str:
 # ── 1. Clock IN / OUT ─────────────────────────────────────────────────
 @attendance_bp.route('/clock', methods=['POST'])
 def clock_in_out():
+    """
+    บันทึกเวลาเข้า-ออกงาน (Clock-In / Clock-Out)
+    ---
+    tags:
+      - Attendance
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - staff_id
+            - action
+          properties:
+            staff_id:
+              type: integer
+              description: ID ของพนักงาน
+              example: 1
+            action:
+              type: string
+              description: ประเภทการลงเวลา (IN, OUT, CLOCK_IN, CLOCK_OUT)
+              example: "CLOCK_IN"
+            note:
+              type: string
+              description: หมายเหตุเพิ่มเติม (ถ้ามี)
+              example: "มาสายเพราะรถติดหนักมาก"
+    responses:
+      200:
+        description: บันทึกเวลาสำเร็จ
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+              example: success
+            message:
+              type: string
+            attendance_id:
+              type: integer
+            staff_id:
+              type: integer
+            action:
+              type: string
+            timestamp:
+              type: string
+              format: date-time
+      400:
+        description: ลงเวลาเข้า/ออกซ้ำ หรือ Action ไม่ถูกต้อง
+      500:
+        description: Internal Server Error
+    """
     try:
         data     = request.get_json()
         staff_id = data.get('staff_id')
@@ -109,6 +163,70 @@ def clock_in_out():
 # ── 2. Get Attendance Records ─────────────────────────────────────────
 @attendance_bp.route('', methods=['GET'])
 def get_attendance():
+    """
+    ดึงประวัติการลงเวลาเข้า-ออกงาน
+    ---
+    tags:
+      - Attendance
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: start_date
+        in: query
+        type: string
+        format: date
+        required: false
+        description: วันที่เริ่มต้น (YYYY-MM-DD) หากไม่ระบุจะดึงข้อมูลของวันนี้
+      - name: end_date
+        in: query
+        type: string
+        format: date
+        required: false
+        description: วันที่สิ้นสุด (YYYY-MM-DD) หากไม่ระบุจะดึงข้อมูลของวันนี้
+      - name: staff_id
+        in: query
+        type: integer
+        required: false
+        description: กรองตาม ID ของพนักงาน
+    responses:
+      200:
+        description: รายการข้อมูลประวัติการลงเวลา
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+              example: success
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  attendanceid:
+                    type: integer
+                  staff_id:
+                    type: integer
+                  first_name:
+                    type: string
+                  last_name:
+                    type: string
+                  work_date:
+                    type: string
+                    format: date
+                  clock_in:
+                    type: string
+                    example: "08:55"
+                  clock_out:
+                    type: string
+                    example: "17:30"
+                  status:
+                    type: string
+                    example: "On Time"
+                  remark:
+                    type: string
+      500:
+        description: Internal Server Error
+    """
     try:
         start_date = request.args.get('start_date')
         end_date   = request.args.get('end_date')

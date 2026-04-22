@@ -36,6 +36,47 @@ STATUS_MAP_REVERSE = {v: k for k, v in STATUS_MAP.items()}
 @bookings_bp.route('', methods=['GET'])
 @token_required
 def get_all_bookings(current_user):
+    """
+    ดึงรายการการจองทั้งหมด (พร้อมตัวกรอง)
+    ---
+    tags:
+      - Bookings
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: status
+        in: query
+        type: string
+        required: false
+        description: สถานะการจอง (เช่น PENDING, CHECKED_IN, CHECKED_OUT, CANCELLED)
+      - name: start_date
+        in: query
+        type: string
+        format: date
+        required: false
+        description: วันที่เช็คอินเริ่มต้น (YYYY-MM-DD)
+      - name: end_date
+        in: query
+        type: string
+        format: date
+        required: false
+        description: วันที่เช็คเอาท์สิ้นสุด (YYYY-MM-DD)
+      - name: pet_name
+        in: query
+        type: string
+        required: false
+        description: ค้นหาด้วยชื่อสัตว์เลี้ยง
+      - name: owner_name
+        in: query
+        type: string
+        required: false
+        description: ค้นหาด้วยชื่อเจ้าของ
+    responses:
+      200:
+        description: รายการการจอง
+      500:
+        description: Internal Server Error
+    """
     try:
         status_fe  = request.args.get('status', '')
         start_date = request.args.get('start_date', '')
@@ -145,6 +186,75 @@ def get_all_bookings(current_user):
 @bookings_bp.route('', methods=['POST'])
 @token_required
 def create_booking(current_user):
+    """
+    สร้างการจองใหม่
+    ---
+    tags:
+      - Bookings
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - customer_id
+            - checkin_date
+            - checkout_date
+            - pets
+          properties:
+            customer_id:
+              type: integer
+              example: 1
+            checkin_date:
+              type: string
+              format: date
+              example: "2026-05-01"
+            checkout_date:
+              type: string
+              format: date
+              example: "2026-05-05"
+            total_rate:
+              type: number
+              description: ราคารวมค่าห้องที่คำนวณมาล่วงหน้า
+              example: 1500.00
+            pets:
+              type: array
+              description: รายการสัตว์เลี้ยงที่เข้าพักและห้อง
+              items:
+                type: object
+                properties:
+                  pet_id:
+                    type: integer
+                    example: 2
+                  room_id:
+                    type: integer
+                    example: 5
+            services:
+              type: array
+              description: บริการเสริมเริ่มต้น (ตัวเลือก)
+              items:
+                type: object
+                properties:
+                  item_id:
+                    type: integer
+                    example: 1
+                  quantity:
+                    type: integer
+                    example: 1
+                  unit_price:
+                    type: number
+                    example: 300.00
+    responses:
+      201:
+        description: สร้างการจองสำเร็จ
+      400:
+        description: ข้อมูลไม่ครบถ้วน หรือข้อผิดพลาดอื่นๆ
+      500:
+        description: Internal Server Error
+    """
     conn = get_db_connection()
     cur  = conn.cursor()
     try:
@@ -208,6 +318,27 @@ def create_booking(current_user):
 @bookings_bp.route('/<int:booking_id>', methods=['GET'])
 @token_required
 def get_booking_by_id(current_user, booking_id):
+    """
+    ดูรายละเอียดการจอง
+    ---
+    tags:
+      - Bookings
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: booking_id
+        in: path
+        type: integer
+        required: true
+        description: ID ของการจอง
+    responses:
+      200:
+        description: ข้อมูลรายละเอียดการจอง
+      404:
+        description: ไม่พบการจอง
+      500:
+        description: Internal Server Error
+    """
     try:
         conn = get_db_connection()
         cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -276,6 +407,29 @@ def get_booking_by_id(current_user, booking_id):
 @bookings_bp.route('/<int:booking_id>/checkin', methods=['PATCH'])
 @token_required
 def checkin(current_user, booking_id):
+    """
+    Check-In สัตว์เลี้ยง (เปลี่ยนสถานะเป็น ACTIVE)
+    ---
+    tags:
+      - Bookings
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: booking_id
+        in: path
+        type: integer
+        required: true
+        description: ID ของการจอง
+    responses:
+      200:
+        description: Check-in สำเร็จ
+      400:
+        description: ไม่สามารถ Check-in ได้เนื่องจากสถานะปัจจุบัน
+      404:
+        description: ไม่พบการจอง
+      500:
+        description: Internal Server Error
+    """
     try:
         conn = get_db_connection()
         cur  = conn.cursor()
@@ -319,6 +473,39 @@ def checkin(current_user, booking_id):
 @bookings_bp.route('/<int:booking_id>/checkout', methods=['PATCH'])
 @token_required
 def checkout(current_user, booking_id):
+    """
+    Check-Out สัตว์เลี้ยง (เปลี่ยนสถานะเป็น COMPLETED และบันทึกการจ่ายเงิน)
+    ---
+    tags:
+      - Bookings
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: booking_id
+        in: path
+        type: integer
+        required: true
+        description: ID ของการจอง
+      - name: body
+        in: body
+        required: false
+        schema:
+          type: object
+          properties:
+            payment_method:
+              type: string
+              description: วิธีการชำระเงิน (เช่น CASH, CREDIT_CARD, TRANSFER)
+              example: "TRANSFER"
+    responses:
+      200:
+        description: Check-out สำเร็จ
+      400:
+        description: ไม่สามารถ Check-out ได้เนื่องจากสถานะปัจจุบัน
+      404:
+        description: ไม่พบการจอง
+      500:
+        description: Internal Server Error
+    """
     try:
         data           = request.get_json() or {}
         payment_method = data.get('payment_method')
@@ -381,6 +568,36 @@ def checkout(current_user, booking_id):
 @bookings_bp.route('/<int:booking_id>/cancel', methods=['PATCH'])
 @token_required
 def cancel_booking(current_user, booking_id):
+    """
+    ยกเลิกการจอง
+    ---
+    tags:
+      - Bookings
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: booking_id
+        in: path
+        type: integer
+        required: true
+        description: ID ของการจอง
+      - name: body
+        in: body
+        required: false
+        schema:
+          type: object
+          properties:
+            cancelled_by:
+              type: integer
+              description: ID พนักงานที่กดยกเลิก (ถ้าไม่ระบุ จะดึงจาก Token อัตโนมัติ)
+    responses:
+      200:
+        description: ยกเลิกการจองสำเร็จ
+      400:
+        description: ไม่พบการจอง หรืออยู่ในสถานะที่ไม่สามารถยกเลิกได้แล้ว (เช่น Check-out ไปแล้ว)
+      500:
+        description: Internal Server Error
+    """
     try:
         data     = request.get_json() or {}
         staff_id = data.get('cancelled_by', current_user.get('staff_id'))
@@ -419,6 +636,51 @@ def cancel_booking(current_user, booking_id):
 @bookings_bp.route('/<int:booking_id>/addons', methods=['POST'])
 @token_required
 def add_addon(current_user, booking_id):
+    """
+    เพิ่มบริการเสริม (Add-on) ระหว่างการเข้าพัก
+    ---
+    tags:
+      - Bookings
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: booking_id
+        in: path
+        type: integer
+        required: true
+        description: ID ของการจอง
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            services:
+              type: array
+              description: รายการบริการเสริม
+              items:
+                type: object
+                properties:
+                  item_id:
+                    type: integer
+                    example: 1
+                  quantity:
+                    type: integer
+                    example: 1
+            item_id:
+              type: integer
+              description: กรณีส่งรายการเดียว (Fallback แบบเก่า)
+            quantity:
+              type: integer
+              description: จำนวน (Fallback แบบเก่า)
+    responses:
+      201:
+        description: เพิ่มบริการเสริมและอัปเดตยอด Invoice สำเร็จ
+      400:
+        description: ข้อมูลไม่ครบถ้วน
+      500:
+        description: Internal Server Error
+    """
     conn = get_db_connection()
     cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     try:
@@ -479,7 +741,38 @@ def add_addon(current_user, booking_id):
 @bookings_bp.route('/services', methods=['GET'])
 @token_required
 def get_services(current_user):
-    """ดึงรายการบริการเสริมที่คิดเงินได้ สำหรับใช้ใน new booking form"""
+    """
+    ดึงรายการบริการเสริมที่สามารถคิดเงินได้
+    ---
+    tags:
+      - Bookings
+    security:
+      - BearerAuth: []
+    responses:
+      200:
+        description: รายการสินค้า/บริการที่มีการคิดเงิน (ischargeable = TRUE)
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+              example: success
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  item_id:
+                    type: integer
+                  name:
+                    type: string
+                  unit_price:
+                    type: number
+                  category:
+                    type: string
+      500:
+        description: Internal Server Error
+    """
     try:
         conn = get_db_connection()
         cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)

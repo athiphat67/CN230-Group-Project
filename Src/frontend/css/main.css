@@ -42,6 +42,7 @@
   --sidebar-w: 240px;
 }
 
+
 body {
   font-family: 'DM Sans', sans-serif;
   background: var(--bg);
@@ -49,6 +50,19 @@ body {
   display: flex;
   min-height: 100vh;
   font-size: 14px;
+}
+
+html, body, #root, #app {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow-x: hidden !important;
+}
+
+.container, .app-container, .layout-wrapper, .main-layout {
+  width: 100% !important;
+  max-width: 100% !important;
 }
 
 /* ── ANIMATIONS ── */

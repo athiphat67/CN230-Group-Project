@@ -4,31 +4,15 @@
  * ใช้ Chart.js สำหรับกราฟ
  */
 
-/* ── MOCK DATA ── */
+/* ── MOCK DATA (ใช้เป็น Fallback กรณี API พังเท่านั้น) ── */
 const MOCK_ANALYTICS = {
   period: { start: '2026-04-01', end: '2026-04-30' },
-  revenue: { total: 128500, room: 95000, addons: 33500 },
-  bookings: { total: 42, checked_in: 12, checked_out: 26, cancelled: 4 },
-  occupancy_rate: 0.84,
-  top_addons: [
-    { service: 'อาบน้ำ',       count: 18, revenue: 3600 },
-    { service: 'ตัดขน',        count: 12, revenue: 4200 },
-    { service: 'ตรวจสุขภาพ',  count: 8,  revenue: 3200 },
-    { service: 'นวด',          count: 7,  revenue: 1750 },
-    { service: 'ถ่ายรูป',      count: 14, revenue: 2100 },
-  ],
-  daily_revenue: [
-    { date: '2026-04-01', amount: 3200 }, { date: '2026-04-02', amount: 4500 },
-    { date: '2026-04-03', amount: 3800 }, { date: '2026-04-04', amount: 5200 },
-    { date: '2026-04-05', amount: 4100 }, { date: '2026-04-06', amount: 6300 },
-    { date: '2026-04-07', amount: 4800 }, { date: '2026-04-08', amount: 3600 },
-    { date: '2026-04-09', amount: 4200 }, { date: '2026-04-10', amount: 5100 },
-    { date: '2026-04-11', amount: 3900 }, { date: '2026-04-12', amount: 4700 },
-    { date: '2026-04-13', amount: 5500 }, { date: '2026-04-14', amount: 6100 },
-    { date: '2026-04-15', amount: 4300 }, { date: '2026-04-16', amount: 3700 },
-    { date: '2026-04-17', amount: 4900 }, { date: '2026-04-18', amount: 5300 },
-    { date: '2026-04-19', amount: 4600 }, { date: '2026-04-20', amount: 5800 },
-  ],
+  revenue: { total: 0, room: 0, addons: 0 },
+  bookings: { total: 0, checked_in: 0, checked_out: 0, cancelled: 0 },
+  occupancy_rate: 0,
+  low_stock_alert: 0,
+  top_addons: [],
+  daily_revenue: [],
 };
 
 let revenueChart = null;
@@ -36,28 +20,81 @@ let bookingChart = null;
 
 /* ── INIT ── */
 document.addEventListener('DOMContentLoaded', async () => {
-  const data = MOCK_ANALYTICS; // TODO: replace with API call
+  // ตั้งค่าวันที่ Default ให้เป็นต้นเดือนถึงวันนี้ (ถ้า input ว่าง)
+  const fromInput = document.getElementById('an-from');
+  const toInput   = document.getElementById('an-to');
+  
+  if (!fromInput.value || !toInput.value) {
+    const today = new Date();
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    
+    // แปลงเป็น YYYY-MM-DD แบบ Local time (ไทย)
+    toInput.value   = today.toLocaleDateString('en-CA'); 
+    fromInput.value = firstDay.toLocaleDateString('en-CA');
+  }
 
-  // TODO: เชื่อม API จริง — uncomment
-  // const res = await window.API.analytics.getDashboard({
-  //   start_date: document.getElementById('an-from').value,
-  //   end_date:   document.getElementById('an-to').value,
-  // });
-  // const data = res.ok ? res.data : MOCK_ANALYTICS;
+  // โหลดข้อมูลจริงทันทีที่เปิดหน้า
+  await refreshData();
+});
 
+/* ── FETCH & REFRESH DATA ── */
+async function refreshData() {
+  const from = document.getElementById('an-from').value;
+  const to   = document.getElementById('an-to').value;
+
+  try {
+    // ยิง API ไปที่ /api/analytics/dashboard
+    const res = await window.API.analytics.getDashboard({ start_date: from, end_date: to });
+    
+    if (res.ok) {
+      // ดึงก้อนข้อมูล (รองรับทั้งเคสที่ api.js ห่อ data มา 1 หรือ 2 ชั้น)
+      const data = res.data.data || res.data;
+      
+      renderAll(data);
+      showToast('🔄 โหลดข้อมูลล่าสุดเรียบร้อยแล้ว');
+    } else {
+      console.error('โหลดข้อมูล Analytics ไม่สำเร็จ:', res.message);
+      renderAll(MOCK_ANALYTICS);
+      showToast('⚠️ ไม่สามารถดึงข้อมูลได้ แสดงข้อมูลว่างเปล่า');
+    }
+  } catch (error) {
+    console.error('เกิดข้อผิดพลาดในการเชื่อมต่อ API:', error);
+    renderAll(MOCK_ANALYTICS);
+    showToast('❌ ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้');
+  }
+}
+
+/* ── MASTER RENDERER ── */
+function renderAll(data) {
+  if (!data) return;
   renderKPIs(data);
   renderRevenueChart(data);
   renderBookingChart(data);
   renderTopAddons(data);
   renderStatusSummary(data);
-});
+}
 
 /* ── KPI CARDS ── */
 function renderKPIs(data) {
-  document.getElementById('kpi-revenue').textContent     = `฿${(data.revenue.total / 1000).toFixed(0)}K`;
-  document.getElementById('kpi-bookings').textContent    = data.bookings.total;
-  document.getElementById('kpi-occupancy').textContent   = `${Math.round(data.occupancy_rate * 100)}%`;
-  document.getElementById('kpi-avg-bill').textContent    = `฿${Math.round(data.revenue.total / data.bookings.total).toLocaleString()}`;
+  // จัดการตัวเลขให้เป็น Format ที่ถูกต้องและป้องกันค่า NaN
+  const revTotal = data.revenue?.total || 0;
+  const bookTotal = data.bookings?.total || 0;
+  const occRate = data.occupancy_rate || 0;
+  
+  // คำนวณค่าเฉลี่ยต่อบิล (ป้องกันหารด้วย 0)
+  const avgBill = bookTotal > 0 ? Math.round(revTotal / bookTotal) : 0;
+
+  const revEl = document.getElementById('kpi-revenue');
+  if (revEl) revEl.textContent = `฿${(revTotal / 1000).toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})}K`;
+  
+  const bookEl = document.getElementById('kpi-bookings');
+  if (bookEl) bookEl.textContent = bookTotal;
+  
+  const occEl = document.getElementById('kpi-occupancy');
+  if (occEl) occEl.textContent = `${Math.round(occRate * 100)}%`;
+  
+  const avgEl = document.getElementById('kpi-avg-bill');
+  if (avgEl) avgEl.textContent = `฿${avgBill.toLocaleString()}`;
 }
 
 /* ── REVENUE CHART (Line) ── */
@@ -67,8 +104,9 @@ function renderRevenueChart(data) {
 
   if (revenueChart) revenueChart.destroy();
 
-  const labels  = data.daily_revenue.map(d => formatShortDate(d.date));
-  const amounts = data.daily_revenue.map(d => d.amount);
+  const daily = data.daily_revenue || [];
+  const labels  = daily.map(d => formatShortDate(d.date));
+  const amounts = daily.map(d => d.amount);
 
   revenueChart = new Chart(ctx, {
     type: 'line',
@@ -107,8 +145,26 @@ function renderBookingChart(data) {
 
   if (bookingChart) bookingChart.destroy();
 
-  const { checked_in, checked_out, cancelled, total } = data.bookings;
-  const pending = total - checked_in - checked_out - cancelled;
+  const checked_in  = data.bookings?.checked_in || 0;
+  const checked_out = data.bookings?.checked_out || 0;
+  const cancelled   = data.bookings?.cancelled || 0;
+  const total       = data.bookings?.total || 0;
+  
+  // Pending คือรายการที่สร้างแล้วแต่ยังไม่ได้ Check-in หรือยกเลิก
+  const pending = Math.max(0, total - checked_in - checked_out - cancelled);
+
+  // ถ้าไม่มีข้อมูลเลย ให้แสดงกราฟว่างๆ สีเทา
+  if (total === 0) {
+    bookingChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['ไม่มีข้อมูล'],
+        datasets: [{ data: [1], backgroundColor: ['#E5E7EB'], borderWidth: 0 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, cutout: '68%', plugins: { tooltip: { enabled: false } } }
+    });
+    return;
+  }
 
   bookingChart = new Chart(ctx, {
     type: 'doughnut',
@@ -130,28 +186,31 @@ function renderBookingChart(data) {
       },
     },
   });
-
-  // Status list
-  renderStatusSummary(data);
 }
 
 function renderStatusSummary(data) {
-  const { checked_in, checked_out, cancelled, total } = data.bookings;
-  const pending = total - checked_in - checked_out - cancelled;
+  const container = document.getElementById('status-list');
+  if (!container) return;
+
+  const checked_in  = data.bookings?.checked_in || 0;
+  const checked_out = data.bookings?.checked_out || 0;
+  const cancelled   = data.bookings?.cancelled || 0;
+  const total       = data.bookings?.total || 1; // กันหาร 0
+  const pending     = Math.max(0, data.bookings?.total - checked_in - checked_out - cancelled);
+
   const items = [
     { label: 'กำลังเข้าพัก', val: checked_in, color: '#16A34A' },
-    { label: 'Checked Out',   val: checked_out, color: '#4F46E5' },
+    { label: 'Checked Out',  val: checked_out, color: '#4F46E5' },
     { label: 'รอยืนยัน',    val: pending,     color: '#D97706' },
     { label: 'ยกเลิก',      val: cancelled,   color: '#DC2626' },
   ];
-  const container = document.getElementById('status-list');
-  if (!container) return;
+  
   container.innerHTML = items.map(item => `
     <div class="an-status-row">
       <div class="an-status-dot" style="background:${item.color}"></div>
       <div class="an-status-label">${item.label}</div>
       <div class="an-status-val">${item.val}</div>
-      <div class="an-status-pct">${Math.round(item.val/total*100)}%</div>
+      <div class="an-status-pct">${Math.round((item.val/total)*100)}%</div>
     </div>
   `).join('');
 }
@@ -161,8 +220,14 @@ function renderTopAddons(data) {
   const container = document.getElementById('top-addons');
   if (!container) return;
 
-  const maxCount = Math.max(...data.top_addons.map(a => a.count));
-  container.innerHTML = data.top_addons
+  const addons = data.top_addons || [];
+  if (addons.length === 0) {
+    container.innerHTML = '<div style="color:var(--text-3); text-align:center; padding: 20px 0;">ไม่พบข้อมูลบริการเสริมในช่วงเวลานี้</div>';
+    return;
+  }
+
+  const maxCount = Math.max(...addons.map(a => a.count));
+  container.innerHTML = addons
     .sort((a, b) => b.count - a.count)
     .map((addon, i) => `
       <div class="an-addon-row">
@@ -170,7 +235,7 @@ function renderTopAddons(data) {
         <div class="an-addon-label">${addon.service}</div>
         <div class="an-addon-bar-wrap">
           <div class="an-addon-bar">
-            <div class="an-addon-fill" style="width:${Math.round(addon.count/maxCount*100)}%"></div>
+            <div class="an-addon-fill" style="width:${maxCount > 0 ? Math.round((addon.count/maxCount)*100) : 0}%"></div>
           </div>
         </div>
         <div class="an-addon-count">${addon.count} ครั้ง</div>
@@ -179,27 +244,9 @@ function renderTopAddons(data) {
     `).join('');
 }
 
-/* ── REFRESH ── */
-async function refreshData() {
-  const from = document.getElementById('an-from').value;
-  const to   = document.getElementById('an-to').value;
-
-  // TODO: เชื่อม API จริง
-  // const res = await window.API.analytics.getDashboard({ start_date: from, end_date: to });
-  // const data = res.ok ? res.data : MOCK_ANALYTICS;
-
-  const data = MOCK_ANALYTICS; // ชั่วคราวใช้ mock
-  renderKPIs(data);
-  renderRevenueChart(data);
-  renderBookingChart(data);
-  renderTopAddons(data);
-  renderStatusSummary(data);
-
-  showToast('🔄 โหลดข้อมูลเรียบร้อยแล้ว');
-}
-
 /* ── UTILS ── */
 function formatShortDate(s) {
+  if (!s) return '';
   return new Date(s).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
 }
 

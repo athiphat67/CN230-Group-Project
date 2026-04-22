@@ -9,7 +9,6 @@
   <link rel="stylesheet" href="css/main.css">
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/pages/Analytics.css">
-  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
@@ -19,47 +18,82 @@
   <div id="topbar-root"></div>
   <div class="content">
 
-    <!-- TOOLBAR -->
+    <!-- ── TOOLBAR ── -->
     <div class="an-toolbar">
       <span class="an-toolbar-label">ช่วงเวลา:</span>
       <input class="an-date-input" type="date" id="an-from" value="2026-04-01">
       <span class="an-toolbar-label">ถึง</span>
       <input class="an-date-input" type="date" id="an-to"   value="2026-04-30">
-      <button class="an-refresh-btn" onclick="refreshData()">
-        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+      <button class="an-refresh-btn" id="an-refresh-btn" onclick="refreshData()">
+        <svg id="an-refresh-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
         โหลดข้อมูล
       </button>
+      <!-- Low Stock Badge (แสดงเมื่อมีสินค้าใกล้หมด) -->
+      <div class="an-stock-badge" id="an-stock-badge" style="display:none">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+        <span id="an-stock-count">0</span> รายการสต็อกใกล้หมด
+      </div>
     </div>
 
-    <!-- KPI CARDS -->
+    <!-- ── LOW STOCK ALERT BAR (แสดงเมื่อ low_stock_alert > 0) ── -->
+    <div class="an-alert-bar" id="an-alert-bar" style="display:none">
+      <div class="an-alert-icon">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+      </div>
+      <div class="an-alert-body">
+        <strong>สต็อกใกล้หมด!</strong>
+        <span id="an-alert-items">กำลังโหลด...</span>
+      </div>
+      <a class="an-alert-link" href="Inventory.html">จัดการคลัง →</a>
+    </div>
+
+    <!-- ── KPI CARDS ── -->
     <div class="an-kpi-row">
+      <!-- รายรับรวม -->
       <div class="an-kpi indigo">
         <div class="an-kpi-icon">
-          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
         </div>
         <div class="an-kpi-label">รายรับรวม</div>
         <div class="an-kpi-value" id="kpi-revenue">—</div>
-        <div class="an-kpi-trend up">↑ +12% จากเดือนก่อน</div>
+        <div class="an-kpi-trend" id="kpi-revenue-trend">เทียบกับช่วงก่อน</div>
       </div>
+      <!-- การจองทั้งหมด -->
       <div class="an-kpi green">
         <div class="an-kpi-icon">
-          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
         </div>
         <div class="an-kpi-label">การจองทั้งหมด</div>
         <div class="an-kpi-value" id="kpi-bookings">—</div>
-        <div class="an-kpi-trend up">↑ +7 รายการ</div>
+        <div class="an-kpi-sub" id="kpi-bookings-sub">ในช่วงที่เลือก</div>
       </div>
+      <!-- Occupancy Rate -->
       <div class="an-kpi amber">
         <div class="an-kpi-icon">
-          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+          </svg>
         </div>
         <div class="an-kpi-label">Occupancy Rate</div>
         <div class="an-kpi-value" id="kpi-occupancy">—</div>
-        <div class="an-kpi-sub">เฉลี่ยทั้งเดือน</div>
+        <div class="an-kpi-sub" id="kpi-occ-sub">เฉลี่ยทั้งเดือน</div>
       </div>
+      <!-- รายรับเฉลี่ย/บิล -->
       <div class="an-kpi teal">
         <div class="an-kpi-icon">
-          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+          </svg>
         </div>
         <div class="an-kpi-label">รายรับเฉลี่ย/บิล</div>
         <div class="an-kpi-value" id="kpi-avg-bill">—</div>
@@ -67,42 +101,54 @@
       </div>
     </div>
 
-    <!-- CHARTS ROW -->
+    <!-- ── CHARTS ROW 1: Revenue Line + Booking Donut ── -->
     <div class="an-charts-row">
       <div class="an-chart-card">
         <div class="an-chart-title">📈 รายรับรายวัน</div>
-        <div class="an-chart-sub">ยอดรวมรายวัน (บาท) ตลอดช่วงที่เลือก</div>
+        <div class="an-chart-sub">ยอดที่รับชำระจริง (PAID / PARTIAL) รายวัน</div>
         <div class="an-chart-wrap">
           <canvas id="chart-revenue"></canvas>
         </div>
       </div>
       <div class="an-chart-card">
         <div class="an-chart-title">🥧 สัดส่วน Booking</div>
-        <div class="an-chart-sub">แบ่งตามสถานะ</div>
-        <div class="an-chart-wrap">
+        <div class="an-chart-sub">แบ่งตามสถานะในช่วงที่เลือก</div>
+        <div class="an-chart-wrap" style="height:200px">
           <canvas id="chart-booking"></canvas>
         </div>
         <div class="an-status-list" id="status-list"></div>
       </div>
     </div>
 
-    <!-- BOTTOM ROW -->
+    <!-- ── CHARTS ROW 2: Species + Top Addons + Revenue Split ── -->
     <div class="an-bottom-row">
+      <!-- Species Ratio -->
+      <div class="an-chart-card">
+        <div class="an-chart-title">🐾 สัดส่วนสัตว์เลี้ยง</div>
+        <div class="an-chart-sub">ประเภทที่เข้าพักในช่วงที่เลือก</div>
+        <div id="an-species-wrap" style="margin-top:16px"></div>
+        <div class="an-chart-wrap" style="height:160px; margin-top:8px">
+          <canvas id="chart-species"></canvas>
+        </div>
+      </div>
+      <!-- Top Add-on Services -->
       <div class="an-chart-card">
         <div class="an-chart-title">🏆 Top Add-on Services</div>
         <div class="an-chart-sub">บริการเสริมที่ได้รับความนิยมสูงสุด</div>
-        <div class="an-addons-list" id="top-addons" style="margin-top:8px"></div>
+        <div class="an-addons-list" id="top-addons" style="margin-top:12px"></div>
       </div>
+      <!-- Revenue Split -->
       <div class="an-chart-card">
         <div class="an-chart-title">💰 สัดส่วนรายรับ</div>
         <div class="an-chart-sub">ค่าห้อง vs Add-on Services</div>
-        <div class="an-chart-wrap" style="height:180px">
+        <div class="an-chart-wrap" style="height:200px">
           <canvas id="chart-revenue-split"></canvas>
         </div>
+        <div class="an-split-legend" id="split-legend" style="margin-top:12px"></div>
       </div>
     </div>
 
-  </div>
+  </div><!-- /content -->
 </main>
 
 <script src="js/components/sidebar.js"></script>
@@ -110,31 +156,10 @@
 <script src="js/services/api.js"></script>
 <script src="js/pages/Analytics.js"></script>
 <script>
-  // Revenue Split Donut (inline — depends on MOCK_ANALYTICS)
-  document.addEventListener('DOMContentLoaded', () => {
-    const ctx = document.getElementById('chart-revenue-split')?.getContext('2d');
-    if (ctx) {
-      new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels: ['ค่าห้อง', 'Add-on Services'],
-          datasets: [{ data: [95000, 33500], backgroundColor: ['#4F46E5','#0D9488'], borderWidth: 0, hoverOffset: 6 }],
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false, cutout: '65%',
-          plugins: {
-            legend: { position: 'bottom', labels: { font: { family: 'DM Sans', size: 12 }, padding: 16 } },
-            tooltip: { callbacks: { label: ctx => `${ctx.label}: ฿${ctx.raw.toLocaleString()}` } },
-          },
-        },
-      });
-    }
-  });
-
-  const currentUser = { name: 'สมชาย มั่นคง', role: 'Administrator' };
+  const currentUser = { name: 'สมชาย วงศ์สวัสดิ์', role: 'Administrator' };
   Sidebar.render({ activePage: 'analytics', user: currentUser });
   Navbar.render({
-    title: 'Analytics',
+    title: 'Analytics & Reports',
     breadcrumb: 'Admin › Analytics & Reports',
     actionsHTML: '',
   });

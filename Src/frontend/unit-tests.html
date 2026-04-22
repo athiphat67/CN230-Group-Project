@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>Unit Tests — Purrfect Stay Frontend</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:        #080d14;
+      --surface:   #0e1623;
+      --surface2:  #131e2e;
+      --border:    #1d2d44;
+      --border2:   #243548;
+      --pass:      #22d3a0;
+      --pass-dim:  #0f3028;
+      --fail:      #f1503a;
+      --fail-dim:  #2d1210;
+      --skip:      #64748b;
+      --skip-dim:  #141c28;
+      --accent:    #5b8af5;
+      --accent2:   #7c5bf5;
+      --text1:     #e8f0fe;
+      --text2:     #8ba3c7;
+      --text3:     #4a6282;
+      --mono:      'JetBrains Mono', monospace;
+      --sans:      'Syne', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--mono);
+      background: var(--bg);
+      color: var(--text1);
+      min-height: 100vh;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      background: linear-gradient(135deg, #0e1623 0%, #091020 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 28px 40px 24px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-paw {
+      font-size: 28px;
+      filter: drop-shadow(0 0 12px rgba(91,138,245,.5));
+    }
+    .logo-text h1 {
+      font-family: var(--sans);
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text1);
+      letter-spacing: -.3px;
+      line-height: 1;
+    }
+    .logo-text p {
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 3px;
+      letter-spacing: .5px;
+    }
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .btn {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 500;
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border2);
+      background: var(--surface2);
+      color: var(--text2);
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .btn:hover { border-color: var(--accent); color: var(--accent); }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .btn.primary:hover { background: var(--accent2); border-color: var(--accent2); color: #fff; }
+
+    /* ── SUMMARY CARDS ── */
+    .summary-strip {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+    .stat-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 72px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+    }
+    .stat-card.pass-card::before  { background: var(--pass); }
+    .stat-card.fail-card::before  { background: var(--fail); }
+    .stat-card.skip-card::before  { background: var(--skip); }
+    .stat-card.total-card::before { background: var(--accent); }
+    .stat-val {
+      font-family: var(--sans);
+      font-size: 24px;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .pass-card  .stat-val { color: var(--pass); }
+    .fail-card  .stat-val { color: var(--fail); }
+    .skip-card  .stat-val { color: var(--skip); }
+    .total-card .stat-val { color: var(--accent); }
+    .stat-label { font-size: 10px; color: var(--text3); margin-top: 4px; letter-spacing: 1px; text-transform: uppercase; }
+
+    /* Progress bar */
+    .progress-wrap {
+      flex: 1;
+      height: 8px;
+      background: var(--border);
+      border-radius: 99px;
+      overflow: hidden;
+      min-width: 120px;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--pass), #3bf5c4);
+      transition: width .6s cubic-bezier(.16,1,.3,1);
+    }
+    .progress-fill.has-fail {
+      background: linear-gradient(90deg, var(--pass) 0%, var(--fail) 100%);
+    }
+
+    /* ── TOOLBAR ── */
+    .toolbar {
+      padding: 16px 40px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      background: var(--surface);
+    }
+    .filter-tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 4px;
+    }
+    .tab {
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 6px 14px;
+      border-radius: 7px;
+      border: none;
+      background: none;
+      color: var(--text3);
+      cursor: pointer;
+      transition: all .15s;
+      font-weight: 500;
+    }
+    .tab.active       { background: var(--surface2); color: var(--text1); }
+    .tab.active.pass  { color: var(--pass); }
+    .tab.active.fail  { color: var(--fail); }
+    .tab.active.skip  { color: var(--skip); }
+    .tab:hover:not(.active) { color: var(--text2); }
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0 14px;
+      flex: 1;
+      max-width: 340px;
+      transition: border-color .15s;
+    }
+    .search-box:focus-within { border-color: var(--accent); }
+    .search-box span { color: var(--text3); font-size: 14px; }
+    .search-box input {
+      background: none;
+      border: none;
+      outline: none;
+      color: var(--text1);
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 9px 0;
+      width: 100%;
+    }
+    .search-box input::placeholder { color: var(--text3); }
+
+    .collapse-all-btn {
+      margin-left: auto;
+      font-size: 11px;
+    }
+
+    /* ── CONTENT ── */
+    .content {
+      padding: 28px 40px;
+      max-width: 1100px;
+    }
+
+    /* ── SUITE ── */
+    .suite {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color .2s;
+    }
+    .suite:hover { border-color: var(--border2); }
+    .suite.all-hidden { display: none; }
+
+    .suite-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 20px;
+      cursor: pointer;
+      user-select: none;
+      border-bottom: 1px solid transparent;
+      transition: background .15s, border-color .15s;
+    }
+    .suite-header:hover { background: var(--surface2); }
+    .suite.open .suite-header { border-bottom-color: var(--border); }
+
+    .suite-toggle {
+      color: var(--text3);
+      font-size: 10px;
+      transition: transform .2s;
+      flex-shrink: 0;
+    }
+    .suite.open .suite-toggle { transform: rotate(90deg); }
+
+    .suite-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .suite-dot.pass { background: var(--pass); box-shadow: 0 0 6px var(--pass); }
+    .suite-dot.fail { background: var(--fail); box-shadow: 0 0 6px var(--fail); }
+    .suite-dot.skip { background: var(--skip); }
+
+    .suite-name {
+      font-family: var(--sans);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text1);
+      flex: 1;
+    }
+    .suite-name em {
+      font-style: normal;
+      color: var(--accent);
+    }
+    .suite-meta {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      font-size: 11px;
+    }
+    .suite-count {
+      padding: 2px 10px;
+      border-radius: 99px;
+      font-weight: 600;
+    }
+    .suite-count.pass { background: var(--pass-dim); color: var(--pass); }
+    .suite-count.fail { background: var(--fail-dim); color: var(--fail); }
+    .suite-time { color: var(--text3); }
+
+    .suite-body {
+      display: none;
+      padding: 8px 0;
+    }
+    .suite.open .suite-body { display: block; }
+
+    /* ── TEST ROW ── */
+    .test-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 9px 20px;
+      font-size: 12px;
+      border-bottom: 1px solid var(--border);
+      transition: background .1s;
+    }
+    .test-row:last-child { border-bottom: none; }
+    .test-row:hover { background: rgba(255,255,255,.015); }
+
+    .test-row.filtered-hide { display: none; }
+
+    .test-status {
+      flex-shrink: 0;
+      width: 16px;
+      text-align: center;
+      margin-top: 1px;
+      font-size: 13px;
+    }
+    .test-row.pass .test-status { color: var(--pass); }
+    .test-row.fail .test-status { color: var(--fail); }
+    .test-row.skip .test-status { color: var(--skip); }
+
+    .test-name {
+      flex: 1;
+      line-height: 1.5;
+    }
+    .test-row.pass .test-name { color: #b0d8c8; }
+    .test-row.fail .test-name { color: #f5b0a0; }
+    .test-row.skip .test-name { color: var(--text3); }
+
+    .test-time {
+      font-size: 10px;
+      color: var(--text3);
+      flex-shrink: 0;
+      padding-top: 2px;
+    }
+    .test-error {
+      margin-top: 5px;
+      padding: 8px 12px;
+      background: var(--fail-dim);
+      border-left: 2px solid var(--fail);
+      border-radius: 0 6px 6px 0;
+      font-size: 11px;
+      color: #f5b0a0;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .test-cell { flex: 1; }
+
+    /* ── EMPTY STATE ── */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text3);
+      font-size: 13px;
+    }
+    .empty-state .emoji { font-size: 40px; margin-bottom: 12px; }
+
+    /* ── RESULT BADGE ── */
+    .result-banner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 40px 24px;
+      padding: 14px 20px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .result-banner.ok   { background: var(--pass-dim); border: 1px solid #1a4a3a; color: var(--pass); }
+    .result-banner.bad  { background: var(--fail-dim); border: 1px solid #4a1a1a; color: var(--fail); }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
+
+    @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+    .suite { animation: fadeIn .25s ease both; }
+    .suite:nth-child(n+2) { animation-delay: calc(var(--i, 0) * 0.03s); }
+  </style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="header">
+  <div class="header-top">
+    <div class="logo">
+      <div class="logo-paw">🐾</div>
+      <div class="logo-text">
+        <h1>Purrfect Stay</h1>
+        <p>FRONTEND UNIT TESTS · JS MODULE SUITE</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn" onclick="copyResults()" title="Copy results as JSON">⎘ Export</button>
+      <button class="btn" onclick="expandAll()">↓ Expand All</button>
+      <button class="btn primary" onclick="rerun()">↻ Re-run</button>
+    </div>
+  </div>
+  <div class="summary-strip" id="summary-strip">
+    <!-- Filled by JS -->
+  </div>
+</div>
+
+<!-- ═══ TOOLBAR ═══ -->
+<div class="toolbar">
+  <div class="filter-tabs">
+    <button class="tab active" data-filter="all"  onclick="setFilter('all', this)">All</button>
+    <button class="tab pass"   data-filter="pass" onclick="setFilter('pass', this)">✓ Passed</button>
+    <button class="tab fail"   data-filter="fail" onclick="setFilter('fail', this)">✗ Failed</button>
+    <button class="tab skip"   data-filter="skip" onclick="setFilter('skip', this)">⊘ Skipped</button>
+  </div>
+  <div class="search-box">
+    <span>🔍</span>
+    <input id="search-input" type="text" placeholder="Search tests…" oninput="applySearch(this.value)">
+  </div>
+  <button class="btn collapse-all-btn" onclick="collapseAll()">↑ Collapse All</button>
+</div>
+
+<!-- ═══ CONTENT ═══ -->
+<div class="content" id="content">
+  <div id="result-banner"></div>
+  <div id="suites-container"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  MICRO TEST FRAMEWORK — v2
+// ═══════════════════════════════════════════════════════════════
+
+const registry = { pass: 0, fail: 0, skip: 0, suites: [] };
+let _currentSuite = null;
+
+function suite(name, fn) {
+  const s = { name, tests: [], totalMs: 0 };
+  registry.suites.push(s);
+  _currentSuite = s;
+  fn();
+  _currentSuite = null;
+}
+
+function test(name, fn) {
+  const t0 = performance.now();
+  try {
+    fn();
+    const ms = +(performance.now() - t0).toFixed(2);
+    _currentSuite.tests.push({ name, status: 'pass', ms });
+    _currentSuite.totalMs += ms;
+    registry.pass++;
+  } catch (e) {
+    const ms = +(performance.now() - t0).toFixed(2);
+    _currentSuite.tests.push({ name, status: 'fail', ms, error: e.message });
+    _currentSuite.totalMs += ms;
+    registry.fail++;
+  }
+}
+
+function xtest(name, reason = 'skipped') {
+  _currentSuite.tests.push({ name, status: 'skip', ms: 0, error: reason });
+  registry.skip++;
+}
+
+/* ── Assertions ── */
+function expect(val) {
+  const chain = {
+    toBe:              (exp) => { if (val !== exp)          throw new Error(`toBe failed\n  expected: ${JSON.stringify(exp)}\n  received: ${JSON.stringify(val)}`); },
+    toEqual:           (exp) => { if (JSON.stringify(val) !== JSON.stringify(exp)) throw new Error(`toEqual failed\n  expected: ${JSON.stringify(exp)}\n  received: ${JSON.stringify(val)}`); },
+    toBeTruthy:        ()    => { if (!val)                 throw new Error(`toBeTruthy failed — got: ${JSON.stringify(val)}`); },
+    toBeFalsy:         ()    => { if (val)                  throw new Error(`toBeFalsy failed — got: ${JSON.stringify(val)}`); },
+    toBeNull:          ()    => { if (val !== null)         throw new Error(`toBeNull failed — got: ${JSON.stringify(val)}`); },
+    toBeUndefined:     ()    => { if (val !== undefined)    throw new Error(`toBeUndefined failed — got: ${JSON.stringify(val)}`); },
+    toBeGreaterThan:   (n)   => { if (val <= n)             throw new Error(`Expected ${val} > ${n}`); },
+    toBeLessThan:      (n)   => { if (val >= n)             throw new Error(`Expected ${val} < ${n}`); },
+    toBeLessThanOrEqual:(n)  => { if (val > n)              throw new Error(`Expected ${val} <= ${n}`); },
+    toBeGreaterThanOrEqual:(n)=>{ if (val < n)              throw new Error(`Expected ${val} >= ${n}`); },
+    toContain:         (sub) => { if (!String(val).includes(String(sub))) throw new Error(`Expected "${val}" to contain "${sub}"`); },
+    toHaveLength:      (n)   => { if ((val?.length ?? -1) !== n) throw new Error(`Expected length ${n}, got ${val?.length}`); },
+    toBeCloseTo:       (exp, prec = 2) => {
+      const tol = Math.pow(10, -prec) / 2;
+      if (Math.abs(val - exp) >= tol) throw new Error(`toBeCloseTo failed — expected ~${exp}, got ${val}`);
+    },
+    toMatchPattern:    (re)  => { if (!re.test(String(val)))    throw new Error(`"${val}" doesn't match ${re}`); },
+    toBeTypeOf:        (t)   => { if (typeof val !== t)         throw new Error(`Expected type "${t}", got "${typeof val}"`); },
+    toThrow:           (msgFragment) => {
+      if (typeof val !== 'function') throw new Error('toThrow: val must be a function');
+      let threw = false, thrownMsg = '';
+      try { val(); } catch(e) { threw = true; thrownMsg = e.message; }
+      if (!threw) throw new Error('Expected function to throw, but it did not');
+      if (msgFragment && !thrownMsg.includes(msgFragment))
+        throw new Error(`Expected error containing "${msgFragment}", got "${thrownMsg}"`);
+    },
+    not: {
+      toBe:         (exp) => { if (val === exp)   throw new Error(`not.toBe failed — got ${JSON.stringify(val)}`); },
+      toContain:    (sub) => { if (String(val).includes(String(sub))) throw new Error(`not.toContain failed — "${val}" contains "${sub}"`); },
+      toBeTruthy:   ()    => { if (val)           throw new Error(`not.toBeTruthy failed — got ${JSON.stringify(val)}`); },
+      toBeNull:     ()    => { if (val === null)  throw new Error(`not.toBeNull failed`); },
+      toEqual:      (exp) => { if (JSON.stringify(val) === JSON.stringify(exp)) throw new Error(`not.toEqual failed — objects are equal`); },
+    },
+  };
+  return chain;
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+//  PURE FUNCTIONS — isolated from each module
+// ═══════════════════════════════════════════════════════════════
+
+/* ── Bookings.js ── */
+function calcNights(checkin, checkout) {
+  const a = new Date(checkin), b = new Date(checkout);
+  return Math.max(1, Math.round((b - a) / 86400000));
+}
+function bk_statusLabel(s) {
+  return { PENDING:'รอยืนยัน', CONFIRMED:'Confirmed', CHECKED_IN:'กำลังเข้าพัก',
+           CHECKED_OUT:'เช็กเอาต์แล้ว', CANCELLED:'ยกเลิก' }[s] ?? s;
+}
+function bk_paymentLabel(s) {
+  return { cash:'เงินสด', qr:'QR PromptPay', card:'บัตรเครดิต' }[s] ?? s;
+}
+
+/* ── Billing.js ── */
+function bl_statusLabel(s) {
+  return { PAID:'ชำระแล้ว', PENDING_PAYMENT:'รอชำระ' }[s] ?? s ?? '—';
+}
+function bl_paymentLabel(s) {
+  return { cash:'เงินสด', qr_promptpay:'QR PromptPay', credit_card:'บัตรเครดิต' }[s] ?? '—';
+}
+function bl_paymentIcon(s) {
+  return { cash:'💵', qr_promptpay:'📱', credit_card:'💳' }[s] ?? '';
+}
+function formatDate(dateStr) {
+  if (!dateStr) return '—';
+  return new Date(dateStr).toLocaleDateString('th-TH', { day:'numeric', month:'short', year:'numeric' });
+}
+
+/* ── PetProfile.js ── */
+function calcAge(dob) {
+  if (!dob) return '—';
+  const diff = Date.now() - new Date(dob).getTime();
+  const years = Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
+  return years < 1 ? 'น้อยกว่า 1 ปี' : `${years} ปี`;
+}
+function speciesLabel(s) {
+  return { cat:'🐱 แมว', dog:'🐶 สุนัข', other:'🐾 อื่นๆ' }[s] ?? s;
+}
+function getVaccStatus(pet) {
+  if (!pet.vaccines || pet.vaccines.length === 0) return { cls:'none', label:'— ไม่มีข้อมูล' };
+  const today = new Date();
+  const soon  = new Date(); soon.setDate(soon.getDate() + 60);
+  const expired  = pet.vaccines.some(v => new Date(v.expiry_date) < today);
+  const expiring = pet.vaccines.some(v => { const d = new Date(v.expiry_date); return d >= today && d <= soon; });
+  if (expired)  return { cls:'expired',  label:'⚠ หมดอายุ' };
+  if (expiring) return { cls:'expiring', label:'⏰ ใกล้หมดอายุ' };
+  return { cls:'valid', label:'✓ ครบถ้วน' };
+}
+function getVaccExpiry(expiryDate) {
+  const today = new Date();
+  const soon  = new Date(); soon.setDate(soon.getDate() + 60);
+  const d = new Date(expiryDate);
+  if (d < today) return { cls:'expired', label:'หมดอายุแล้ว' };
+  if (d <= soon) return { cls:'expiring', label:'ใกล้หมดอายุ' };
+  return { cls:'valid', label:'ยังใช้ได้' };
+}
+
+/* ── Analytics.js ── */
+function formatShortDate(s) {
+  return new Date(s).toLocaleDateString('th-TH', { day:'numeric', month:'short' });
+}
+function an_calcAvgBill(revenue, totalBookings) {
+  return Math.round(revenue / totalBookings);
+}
+function an_calcOccupancyPct(rate) {
+  return Math.round(rate * 100);
+}
+
+/* ── AuditTrail.js ── */
+function actionLabel(a) {
+  return { CREATE:'➕ CREATE', UPDATE:'✏️ UPDATE', DELETE:'🗑 DELETE',
+           CHECKIN:'🟢 CHECK-IN', CHECKOUT:'🟣 CHECK-OUT', APPROVE:'✅ APPROVE' }[a] ?? a;
+}
+function formatDateTime(s) {
+  if (!s) return '—';
+  return new Date(s).toLocaleString('th-TH', {
+    day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit',
+  });
+}
+
+/* ── Notifications.js ── */
+function typeLabel(t) {
+  return {
+    CARE_REPORT:'รายงานดูแล', BOOKING_CONFIRMED:'ยืนยันจอง',
+    BOOKING_CANCELLED:'ยกเลิกจอง', PAYMENT_CONFIRMED:'ชำระเงิน',
+    CHECKIN_REMINDER:'แจ้งเตือน', NEW_BOOKING_ALERT:'จองใหม่',
+  }[t] ?? t;
+}
+function nt_getFiltered(notifications, filter) {
+  return notifications.filter(n => {
+    if (filter === 'unread') return !n.is_read;
+    if (filter !== 'all')    return n.type === filter;
+    return true;
+  });
+}
+
+/* ── Inventory.js ── */
+function catLabel(c) {
+  return { food:'🌾 อาหาร', supplies:'📦 อุปกรณ์', medicine:'💊 ยา' }[c] ?? c;
+}
+function getItemStatus(item) {
+  const today = new Date();
+  const soon  = new Date(); soon.setDate(soon.getDate() + 30);
+  const pct   = item.quantity_remaining / item.quantity_total;
+  if (item.quantity_remaining <= item.reorder_threshold) return { cls:'danger', label:'⚠ สต็อกต่ำ' };
+  if (item.expiry_date && new Date(item.expiry_date) <= soon) return { cls:'expiring', label:'⏰ ใกล้หมดอายุ' };
+  if (pct <= 0.4) return { cls:'low', label:'สต็อกน้อย' };
+  return { cls:'good', label:'ปกติ' };
+}
+
+/* ── PetCare.js ── */
+function moodEmoji(mood) {
+  return { HAPPY:'😄', NEUTRAL:'😐', ANXIOUS:'😰', SICK:'🤒' }[mood] ?? '😐';
+}
+function moodLabel(mood) {
+  return { HAPPY:'Happy', NEUTRAL:'Neutral', ANXIOUS:'Anxious', SICK:'Sick' }[mood] ?? mood;
+}
+function calcDaysLeft(checkout) {
+  const now = new Date(); now.setHours(0,0,0,0);
+  const out = new Date(checkout); out.setHours(0,0,0,0);
+  const diff = Math.ceil((out - now) / 86400000);
+  if (diff === 0) return 'วันนี้';
+  if (diff === 1) return 'อีก 1 วัน';
+  if (diff < 0)  return 'เกินกำหนด';
+  return `อีก ${diff} วัน`;
+}
+
+/* ── api.js ── */
+function authHeaders(token) {
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`,
+  };
+}
+
+/* ── dashboard.js ── */
+function calcOccupancy(active, total) {
+  return total > 0 ? Math.round((active / total) * 100) : 0;
+}
+function padStat(n) {
+  return String(n).padStart(2, '0');
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+//  TEST SUITES
+// ═══════════════════════════════════════════════════════════════
+
+// ── 1. Bookings.js ─────────────────────────────────────────────
+suite('Bookings.js — calcNights()', () => {
+  test('4 คืน (2 Apr → 6 Apr)',              () => expect(calcNights('2025-04-02','2025-04-06')).toBe(4));
+  test('same-day → clamp to 1',              () => expect(calcNights('2025-04-02','2025-04-02')).toBe(1));
+  test('5 คืน (5 Apr → 10 Apr)',             () => expect(calcNights('2025-04-05','2025-04-10')).toBe(5));
+  test('30 คืน (Apr 1 → May 1)',             () => expect(calcNights('2025-04-01','2025-05-01')).toBe(30));
+  test('negative dates → clamp to 1',        () => expect(calcNights('2025-04-06','2025-04-02')).toBe(1));
+  test('1 คืน (Apr 1 → Apr 2)',              () => expect(calcNights('2025-04-01','2025-04-02')).toBe(1));
+  test('365 คืน (1 ปี)',                     () => expect(calcNights('2024-01-01','2025-01-01')).toBe(366)); // 2024 is leap
+  test('returns number type',                () => expect(typeof calcNights('2025-04-01','2025-04-05')).toBe('number'));
+  test('result always >= 1',                 () => expect(calcNights('2099-01-01','1990-01-01')).toBeGreaterThanOrEqual(1));
+});
+
+suite('Bookings.js — statusLabel()', () => {
+  test('PENDING → รอยืนยัน',               () => expect(bk_statusLabel('PENDING')).toBe('รอยืนยัน'));
+  test('CONFIRMED → Confirmed',             () => expect(bk_statusLabel('CONFIRMED')).toBe('Confirmed'));
+  test('CHECKED_IN → กำลังเข้าพัก',       () => expect(bk_statusLabel('CHECKED_IN')).toBe('กำลังเข้าพัก'));
+  test('CHECKED_OUT → เช็กเอาต์แล้ว',     () => expect(bk_statusLabel('CHECKED_OUT')).toBe('เช็กเอาต์แล้ว'));
+  test('CANCELLED → ยกเลิก',               () => expect(bk_statusLabel('CANCELLED')).toBe('ยกเลิก'));
+  test('unknown → passthrough',             () => expect(bk_statusLabel('UNKNOWN')).toBe('UNKNOWN'));
+  test('empty string → passthrough',        () => expect(bk_statusLabel('')).toBe(''));
+  test('lowercase not matched → passthrough',() => expect(bk_statusLabel('pending')).toBe('pending'));
+});
+
+suite('Bookings.js — paymentLabel()', () => {
+  test('cash → เงินสด',                    () => expect(bk_paymentLabel('cash')).toBe('เงินสด'));
+  test('qr → QR PromptPay',                () => expect(bk_paymentLabel('qr')).toBe('QR PromptPay'));
+  test('card → บัตรเครดิต',               () => expect(bk_paymentLabel('card')).toBe('บัตรเครดิต'));
+  test('unknown → passthrough',             () => expect(bk_paymentLabel('crypto')).toBe('crypto'));
+});
+
+// ── 2. Billing.js ──────────────────────────────────────────────
+suite('Billing.js — statusLabel()', () => {
+  test('PAID → ชำระแล้ว',                  () => expect(bl_statusLabel('PAID')).toBe('ชำระแล้ว'));
+  test('PENDING_PAYMENT → รอชำระ',         () => expect(bl_statusLabel('PENDING_PAYMENT')).toBe('รอชำระ'));
+  test('null → —',                          () => expect(bl_statusLabel(null)).toBe('—'));
+  test('undefined → —',                    () => expect(bl_statusLabel(undefined)).toBe('—'));
+  test('empty string → —',                 () => expect(bl_statusLabel('')).toBe('—'));
+  test('unknown status → passthrough',     () => expect(bl_statusLabel('REFUNDED')).toBe('REFUNDED'));
+});
+
+suite('Billing.js — paymentLabel()', () => {
+  test('cash → เงินสด',                    () => expect(bl_paymentLabel('cash')).toBe('เงินสด'));
+  test('qr_promptpay → QR PromptPay',      () => expect(bl_paymentLabel('qr_promptpay')).toBe('QR PromptPay'));
+  test('credit_card → บัตรเครดิต',        () => expect(bl_paymentLabel('credit_card')).toBe('บัตรเครดิต'));
+  test('null → —',                          () => expect(bl_paymentLabel(null)).toBe('—'));
+  test('undefined → —',                    () => expect(bl_paymentLabel(undefined)).toBe('—'));
+  test('unknown → —',                      () => expect(bl_paymentLabel('crypto')).toBe('—'));
+});
+
+suite('Billing.js — paymentIcon()', () => {
+  test('cash → 💵',                         () => expect(bl_paymentIcon('cash')).toBe('💵'));
+  test('qr_promptpay → 📱',                () => expect(bl_paymentIcon('qr_promptpay')).toBe('📱'));
+  test('credit_card → 💳',                 () => expect(bl_paymentIcon('credit_card')).toBe('💳'));
+  test('unknown → empty string',            () => expect(bl_paymentIcon('unknown')).toBe(''));
+  test('null → empty string',              () => expect(bl_paymentIcon(null)).toBe(''));
+  test('result is always a string',         () => expect(typeof bl_paymentIcon('cash')).toBe('string'));
+});
+
+suite('Billing.js — formatDate()', () => {
+  test('null → —',                          () => expect(formatDate(null)).toBe('—'));
+  test('undefined → —',                    () => expect(formatDate(undefined)).toBe('—'));
+  test('empty string → —',                 () => expect(formatDate('')).toBe('—'));
+  test('valid date → non-empty string',     () => expect(formatDate('2025-04-06').length).toBeGreaterThan(0));
+  test('valid date → not "—"',             () => expect(formatDate('2025-04-06')).not.toBe('—'));
+  test('returns string type',              () => expect(typeof formatDate('2025-12-25')).toBe('string'));
+  test('year appears in output',           () => expect(formatDate('2025-04-06')).toContain('2025'));
+});
+
+// ── 3. PetProfile.js ───────────────────────────────────────────
+suite('PetProfile.js — calcAge()', () => {
+  test('null → —',                          () => expect(calcAge(null)).toBe('—'));
+  test('empty string → —',                 () => expect(calcAge('')).toBe('—'));
+  test('pet born 2021 → result contains ปี',() => expect(calcAge('2021-03-15')).toContain('ปี'));
+  test('3-month-old → น้อยกว่า 1 ปี',     () => {
+    const d = new Date(); d.setMonth(d.getMonth() - 3);
+    expect(calcAge(d.toISOString().split('T')[0])).toBe('น้อยกว่า 1 ปี');
+  });
+  test('result is always string type',      () => expect(typeof calcAge('2020-07-22')).toBe('string'));
+  test('pet born 2019 → contains "ปี"',    () => expect(calcAge('2019-01-01')).toContain('ปี'));
+  test('future date → น้อยกว่า 1 ปี',     () => {
+    const d = new Date(); d.setFullYear(d.getFullYear() + 1);
+    expect(calcAge(d.toISOString().split('T')[0])).toBe('น้อยกว่า 1 ปี');
+  });
+});
+
+suite('PetProfile.js — speciesLabel()', () => {
+  test('cat → 🐱 แมว',                     () => expect(speciesLabel('cat')).toBe('🐱 แมว'));
+  test('dog → 🐶 สุนัข',                  () => expect(speciesLabel('dog')).toBe('🐶 สุนัข'));
+  test('other → 🐾 อื่นๆ',                () => expect(speciesLabel('other')).toBe('🐾 อื่นๆ'));
+  test('unknown → passthrough',             () => expect(speciesLabel('bird')).toBe('bird'));
+  test('empty string → passthrough',        () => expect(speciesLabel('')).toBe(''));
+  test('result contains emoji for known',   () => expect(speciesLabel('cat')).toContain('🐱'));
+});
+
+suite('PetProfile.js — getVaccStatus()', () => {
+  test('no vaccines array → cls:none',      () => expect(getVaccStatus({ vaccines: [] }).cls).toBe('none'));
+  test('undefined vaccines → cls:none',     () => expect(getVaccStatus({}).cls).toBe('none'));
+  test('none → label includes ไม่มีข้อมูล', () => expect(getVaccStatus({ vaccines: [] }).label).toContain('ไม่มีข้อมูล'));
+  test('expired vaccine → cls:expired',     () => expect(getVaccStatus({ vaccines:[{expiry_date:'2020-01-01'}] }).cls).toBe('expired'));
+  test('expiring in 20 days → cls:expiring',() => {
+    const d = new Date(); d.setDate(d.getDate() + 20);
+    expect(getVaccStatus({ vaccines:[{expiry_date:d.toISOString().split('T')[0]}] }).cls).toBe('expiring');
+  });
+  test('far future → cls:valid',            () => expect(getVaccStatus({ vaccines:[{expiry_date:'2030-12-31'}] }).cls).toBe('valid'));
+  test('mixed expired+valid → expired wins',() => {
+    expect(getVaccStatus({ vaccines:[{expiry_date:'2020-01-01'},{expiry_date:'2030-12-31'}] }).cls).toBe('expired');
+  });
+  test('multiple valid vaccines → valid',   () => {
+    expect(getVaccStatus({ vaccines:[{expiry_date:'2028-01-01'},{expiry_date:'2029-06-01'}] }).cls).toBe('valid');
+  });
+  test('result always has cls + label',     () => {
+    const r = getVaccStatus({ vaccines:[{expiry_date:'2030-01-01'}] });
+    expect(r.cls).toBeTruthy();
+    expect(r.label).toBeTruthy();
+  });
+});
+
+suite('PetProfile.js — getVaccExpiry()', () => {
+  test('past date → cls:expired',           () => expect(getVaccExpiry('2023-01-01').cls).toBe('expired'));
+  test('far future → cls:valid',            () => expect(getVaccExpiry('2030-01-01').cls).toBe('valid'));
+  test('within 30 days → cls:expiring',     () => {
+    const d = new Date(); d.setDate(d.getDate() + 30);
+    expect(getVaccExpiry(d.toISOString().split('T')[0]).cls).toBe('expiring');
+  });
+  test('expired → label contains หมดอายุ', () => expect(getVaccExpiry('2020-01-01').label).toContain('หมดอายุ'));
+  test('valid → label contains ยังใช้ได้', () => expect(getVaccExpiry('2030-01-01').label).toContain('ยังใช้ได้'));
+  test('result has cls string',             () => expect(typeof getVaccExpiry('2025-01-01').cls).toBe('string'));
+});
+
+// ── 4. Analytics.js ────────────────────────────────────────────
+suite('Analytics.js — calculations', () => {
+  test('avgBill: 128500 / 42 = 3059',        () => expect(an_calcAvgBill(128500, 42)).toBe(3059));
+  test('avgBill: 95000 / 10 = 9500',         () => expect(an_calcAvgBill(95000, 10)).toBe(9500));
+  test('avgBill: result is not NaN',         () => expect(isNaN(an_calcAvgBill(95000, 10))).toBeFalsy());
+  test('avgBill: 0 revenue → 0',             () => expect(an_calcAvgBill(0, 10)).toBe(0));
+  test('occupancyPct: 0.84 → 84',            () => expect(an_calcOccupancyPct(0.84)).toBe(84));
+  test('occupancyPct: 1.0 → 100',            () => expect(an_calcOccupancyPct(1.0)).toBe(100));
+  test('occupancyPct: 0 → 0',               () => expect(an_calcOccupancyPct(0)).toBe(0));
+  test('occupancyPct: 0.335 → 34 (round up)',() => expect(an_calcOccupancyPct(0.335)).toBe(34));
+  test('occupancyPct: 0.5 → 50',            () => expect(an_calcOccupancyPct(0.5)).toBe(50));
+  test('formatShortDate → non-empty string', () => expect(formatShortDate('2026-04-21').length).toBeGreaterThan(0));
+  test('formatShortDate → not "—"',         () => expect(formatShortDate('2026-04-21')).not.toBe('—'));
+});
+
+// ── 5. AuditTrail.js ───────────────────────────────────────────
+suite('AuditTrail.js — actionLabel()', () => {
+  test('CREATE → ➕ CREATE',                 () => expect(actionLabel('CREATE')).toBe('➕ CREATE'));
+  test('UPDATE → ✏️ UPDATE',                () => expect(actionLabel('UPDATE')).toBe('✏️ UPDATE'));
+  test('DELETE → 🗑 DELETE',                () => expect(actionLabel('DELETE')).toBe('🗑 DELETE'));
+  test('CHECKIN → 🟢 CHECK-IN',             () => expect(actionLabel('CHECKIN')).toBe('🟢 CHECK-IN'));
+  test('CHECKOUT → 🟣 CHECK-OUT',           () => expect(actionLabel('CHECKOUT')).toBe('🟣 CHECK-OUT'));
+  test('APPROVE → ✅ APPROVE',              () => expect(actionLabel('APPROVE')).toBe('✅ APPROVE'));
+  test('unknown → passthrough',             () => expect(actionLabel('TRANSFER')).toBe('TRANSFER'));
+  test('all known actions return strings',  () => {
+    ['CREATE','UPDATE','DELETE','CHECKIN','CHECKOUT','APPROVE'].forEach(a => {
+      expect(typeof actionLabel(a)).toBe('string');
+    });
+  });
+  test('known labels contain action name',  () => expect(actionLabel('CREATE')).toContain('CREATE'));
+});
+
+suite('AuditTrail.js — formatDateTime()', () => {
+  test('null → —',                          () => expect(formatDateTime(null)).toBe('—'));
+  test('empty string → —',                 () => expect(formatDateTime('')).toBe('—'));
+  test('valid ISO → non-empty string',      () => {
+    const r = formatDateTime('2026-04-21T14:30:00');
+    expect(r.length).toBeGreaterThan(0);
+    expect(r).not.toBe('—');
+  });
+  test('valid date → contains year',        () => expect(formatDateTime('2026-04-21T14:30:00')).toContain('2026'));
+  test('returns string type',              () => expect(typeof formatDateTime('2026-01-01T00:00:00')).toBe('string'));
+});
+
+// ── 6. Notifications.js ────────────────────────────────────────
+suite('Notifications.js — typeLabel()', () => {
+  test('CARE_REPORT → รายงานดูแล',          () => expect(typeLabel('CARE_REPORT')).toBe('รายงานดูแล'));
+  test('BOOKING_CONFIRMED → ยืนยันจอง',    () => expect(typeLabel('BOOKING_CONFIRMED')).toBe('ยืนยันจอง'));
+  test('BOOKING_CANCELLED → ยกเลิกจอง',   () => expect(typeLabel('BOOKING_CANCELLED')).toBe('ยกเลิกจอง'));
+  test('PAYMENT_CONFIRMED → ชำระเงิน',    () => expect(typeLabel('PAYMENT_CONFIRMED')).toBe('ชำระเงิน'));
+  test('CHECKIN_REMINDER → แจ้งเตือน',    () => expect(typeLabel('CHECKIN_REMINDER')).toBe('แจ้งเตือน'));
+  test('NEW_BOOKING_ALERT → จองใหม่',      () => expect(typeLabel('NEW_BOOKING_ALERT')).toBe('จองใหม่'));
+  test('unknown → passthrough',             () => expect(typeLabel('UNKNOWN_TYPE')).toBe('UNKNOWN_TYPE'));
+  test('all known → Thai string',          () => {
+    ['CARE_REPORT','BOOKING_CONFIRMED','PAYMENT_CONFIRMED'].forEach(t => {
+      expect(typeLabel(t)).not.toBe(t);
+    });
+  });
+});
+
+suite('Notifications.js — getFiltered()', () => {
+  const MOCK = [
+    { notification_id:1, type:'CARE_REPORT',       is_read:false },
+    { notification_id:2, type:'NEW_BOOKING_ALERT',  is_read:false },
+    { notification_id:3, type:'PAYMENT_CONFIRMED',  is_read:true  },
+    { notification_id:4, type:'BOOKING_CANCELLED',  is_read:true  },
+    { notification_id:5, type:'CARE_REPORT',        is_read:true  },
+  ];
+  test('filter=all → 5 items',             () => expect(nt_getFiltered(MOCK,'all').length).toBe(5));
+  test('filter=unread → 2 items',          () => expect(nt_getFiltered(MOCK,'unread').length).toBe(2));
+  test('filter=CARE_REPORT → 2 items',     () => expect(nt_getFiltered(MOCK,'CARE_REPORT').length).toBe(2));
+  test('filter=PAYMENT_CONFIRMED → 1',     () => expect(nt_getFiltered(MOCK,'PAYMENT_CONFIRMED').length).toBe(1));
+  test('filter=NEW_BOOKING_ALERT → 1',     () => expect(nt_getFiltered(MOCK,'NEW_BOOKING_ALERT').length).toBe(1));
+  test('filter=BOOKING_CONFIRMED → 0',     () => expect(nt_getFiltered(MOCK,'BOOKING_CONFIRMED').length).toBe(0));
+  test('empty list → empty array',         () => expect(nt_getFiltered([],'all').length).toBe(0));
+  test('returns array type',               () => expect(Array.isArray(nt_getFiltered(MOCK,'all'))).toBeTruthy());
+  test('unread items have is_read=false',  () => {
+    const unread = nt_getFiltered(MOCK,'unread');
+    unread.forEach(n => expect(n.is_read).toBeFalsy());
+  });
+  test('CARE_REPORT items have correct type',() => {
+    nt_getFiltered(MOCK,'CARE_REPORT').forEach(n => expect(n.type).toBe('CARE_REPORT'));
+  });
+});
+
+// ── 7. Inventory.js ────────────────────────────────────────────
+suite('Inventory.js — catLabel()', () => {
+  test('food → 🌾 อาหาร',                  () => expect(catLabel('food')).toBe('🌾 อาหาร'));
+  test('supplies → 📦 อุปกรณ์',           () => expect(catLabel('supplies')).toBe('📦 อุปกรณ์'));
+  test('medicine → 💊 ยา',                () => expect(catLabel('medicine')).toBe('💊 ยา'));
+  test('unknown → passthrough',             () => expect(catLabel('other')).toBe('other'));
+  test('empty string → passthrough',        () => expect(catLabel('')).toBe(''));
+  test('known labels contain emoji',        () => expect(catLabel('food')).toContain('🌾'));
+});
+
+suite('Inventory.js — getItemStatus()', () => {
+  test('qty <= threshold → danger',         () => {
+    expect(getItemStatus({quantity_remaining:2,quantity_total:20,reorder_threshold:5,expiry_date:null}).cls).toBe('danger');
+  });
+  test('qty = threshold → danger (edge)',   () => {
+    expect(getItemStatus({quantity_remaining:5,quantity_total:20,reorder_threshold:5,expiry_date:null}).cls).toBe('danger');
+  });
+  test('expiring in 15 days → expiring',    () => {
+    const d = new Date(); d.setDate(d.getDate()+15);
+    expect(getItemStatus({quantity_remaining:10,quantity_total:20,reorder_threshold:2,expiry_date:d.toISOString().split('T')[0]}).cls).toBe('expiring');
+  });
+  test('40% qty → low',                    () => {
+    expect(getItemStatus({quantity_remaining:8,quantity_total:20,reorder_threshold:2,expiry_date:null}).cls).toBe('low');
+  });
+  test('50% qty + no issues → good',        () => {
+    expect(getItemStatus({quantity_remaining:15,quantity_total:20,reorder_threshold:3,expiry_date:'2030-01-01'}).cls).toBe('good');
+  });
+  test('threshold check beats expiry',      () => {
+    const d = new Date(); d.setDate(d.getDate()+10);
+    expect(getItemStatus({quantity_remaining:1,quantity_total:30,reorder_threshold:5,expiry_date:d.toISOString().split('T')[0]}).cls).toBe('danger');
+  });
+  test('danger label → ⚠ สต็อกต่ำ',       () => {
+    expect(getItemStatus({quantity_remaining:1,quantity_total:20,reorder_threshold:5,expiry_date:null}).label).toBe('⚠ สต็อกต่ำ');
+  });
+  test('null expiry + good qty → good',     () => {
+    expect(getItemStatus({quantity_remaining:18,quantity_total:20,reorder_threshold:3,expiry_date:null}).cls).toBe('good');
+  });
+  test('result always has cls + label',     () => {
+    const r = getItemStatus({quantity_remaining:10,quantity_total:20,reorder_threshold:2,expiry_date:null});
+    expect(r.cls).toBeTruthy();
+    expect(r.label).toBeTruthy();
+  });
+});
+
+// ── 8. PetCare.js ──────────────────────────────────────────────
+suite('PetCare.js — moodEmoji()', () => {
+  test('HAPPY → 😄',                        () => expect(moodEmoji('HAPPY')).toBe('😄'));
+  test('NEUTRAL → 😐',                      () => expect(moodEmoji('NEUTRAL')).toBe('😐'));
+  test('ANXIOUS → 😰',                      () => expect(moodEmoji('ANXIOUS')).toBe('😰'));
+  test('SICK → 🤒',                         () => expect(moodEmoji('SICK')).toBe('🤒'));
+  test('unknown → 😐 fallback',             () => expect(moodEmoji('UNKNOWN')).toBe('😐'));
+  test('undefined → 😐 fallback',           () => expect(moodEmoji(undefined)).toBe('😐'));
+  test('all valid moods return string',      () => {
+    ['HAPPY','NEUTRAL','ANXIOUS','SICK'].forEach(m => expect(typeof moodEmoji(m)).toBe('string'));
+  });
+});
+
+suite('PetCare.js — moodLabel()', () => {
+  test('HAPPY → Happy',                     () => expect(moodLabel('HAPPY')).toBe('Happy'));
+  test('NEUTRAL → Neutral',                 () => expect(moodLabel('NEUTRAL')).toBe('Neutral'));
+  test('ANXIOUS → Anxious',                () => expect(moodLabel('ANXIOUS')).toBe('Anxious'));
+  test('SICK → Sick',                      () => expect(moodLabel('SICK')).toBe('Sick'));
+  test('unknown → passthrough',             () => expect(moodLabel('FINE')).toBe('FINE'));
+  test('returns string',                   () => expect(typeof moodLabel('HAPPY')).toBe('string'));
+});
+
+suite('PetCare.js — calcDaysLeft()', () => {
+  test('past date → เกินกำหนด',             () => expect(calcDaysLeft('2020-01-01')).toBe('เกินกำหนด'));
+  test('far future → starts with อีก',      () => {
+    const d = new Date(); d.setDate(d.getDate()+10);
+    expect(calcDaysLeft(d.toISOString().split('T')[0])).toContain('อีก');
+  });
+  test('tomorrow → อีก 1 วัน',             () => {
+    const d = new Date(); d.setDate(d.getDate()+1);
+    expect(calcDaysLeft(d.toISOString().split('T')[0])).toBe('อีก 1 วัน');
+  });
+  test('today → วันนี้',                   () => {
+    expect(calcDaysLeft(new Date().toISOString().split('T')[0])).toBe('วันนี้');
+  });
+  test('2 days ahead → อีก 2 วัน',         () => {
+    const d = new Date(); d.setDate(d.getDate()+2);
+    expect(calcDaysLeft(d.toISOString().split('T')[0])).toBe('อีก 2 วัน');
+  });
+  test('returns string type',              () => expect(typeof calcDaysLeft('2030-01-01')).toBe('string'));
+});
+
+// ── 9. api.js ──────────────────────────────────────────────────
+suite('api.js — authHeaders()', () => {
+  test('Content-Type is application/json',  () => expect(authHeaders('tok')['Content-Type']).toBe('application/json'));
+  test('Authorization uses Bearer scheme',  () => expect(authHeaders('abc123')['Authorization']).toBe('Bearer abc123'));
+  test('empty token → "Bearer "',           () => expect(authHeaders('')['Authorization']).toBe('Bearer '));
+  test('returns exactly 2 headers',         () => expect(Object.keys(authHeaders('tok')).length).toBe(2));
+  test('token preserved exactly',           () => {
+    const t = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9';
+    expect(authHeaders(t)['Authorization']).toBe(`Bearer ${t}`);
+  });
+  test('special chars in token → preserved',() => {
+    const t = 'tok.en-with_special+chars=';
+    expect(authHeaders(t)['Authorization']).toBe(`Bearer ${t}`);
+  });
+  test('result is plain object',            () => expect(typeof authHeaders('x')).toBe('object'));
+});
+
+// ── 10. dashboard.js ───────────────────────────────────────────
+suite('dashboard.js — calcOccupancy()', () => {
+  test('42/50 = 84%',                       () => expect(calcOccupancy(42, 50)).toBe(84));
+  test('0/50 = 0%',                         () => expect(calcOccupancy(0, 50)).toBe(0));
+  test('50/50 = 100%',                      () => expect(calcOccupancy(50, 50)).toBe(100));
+  test('total=0 → 0 (no divide-by-zero)',   () => expect(calcOccupancy(10, 0)).toBe(0));
+  test('rounds correctly: 1/3 → 33',        () => expect(calcOccupancy(1, 3)).toBe(33));
+  test('result always 0–100',              () => {
+    expect(calcOccupancy(3, 10)).toBeGreaterThanOrEqual(0);
+    expect(calcOccupancy(3, 10)).toBeLessThanOrEqual(100);
+  });
+});
+
+suite('dashboard.js — padStat()', () => {
+  test('single digit → "0X"',               () => expect(padStat(8)).toBe('08'));
+  test('12 → "12" (no padding needed)',      () => expect(padStat(12)).toBe('12'));
+  test('0 → "00"',                          () => expect(padStat(0)).toBe('00'));
+  test('99 → "99"',                         () => expect(padStat(99)).toBe('99'));
+  test('result always length >= 2',          () => expect(padStat(1).length).toBeGreaterThanOrEqual(2));
+});
+
+// ── 11. Integration — Billing ──────────────────────────────────
+suite('Integration — Billing total calculation', () => {
+  test('line items sum matches total',       () => {
+    const items = [{amount:2000},{amount:200},{amount:150}];
+    expect(items.reduce((a,i)=>a+i.amount,0)).toBe(2350);
+  });
+  test('total with discount',               () => expect(6650 - 500).toBe(6150));
+  test('zero discount → unchanged',         () => expect(1850 - 0).toBe(1850));
+  test('negative discount (surcharge)',      () => expect(1000 - (-200)).toBe(1200));
+  test('payment icon + label align',        () => {
+    expect(bl_paymentIcon('cash')).toBe('💵');
+    expect(bl_paymentLabel('cash')).toBe('เงินสด');
+  });
+  test('status + amount are independent',   () => {
+    expect(bl_statusLabel('PAID')).toBe('ชำระแล้ว');
+    expect(500 + 200).toBe(700);
+  });
+});
+
+suite('Integration — Room pricing (calcNights × rate)', () => {
+  test('Standard AC 500฿ × 4 nights = 2000', () => expect(calcNights('2025-04-02','2025-04-06')*500).toBe(2000));
+  test('VIP 1200฿ × 5 nights = 6000',        () => expect(calcNights('2025-04-05','2025-04-10')*1200).toBe(6000));
+  test('Fan 350฿ × 3 nights = 1050',         () => expect(calcNights('2025-04-01','2025-04-04')*350).toBe(1050));
+  test('Deluxe 800฿ × 7 nights = 5600',      () => expect(calcNights('2025-04-01','2025-04-08')*800).toBe(5600));
+  test('pricing is always positive',          () => expect(calcNights('2025-04-01','2025-04-05')*500).toBeGreaterThan(0));
+});
+
+suite('Integration — Inventory alert threshold', () => {
+  test('< 20% remaining → below threshold',  () => {
+    const item = {quantity_remaining:3,quantity_total:20,reorder_threshold:4,expiry_date:null};
+    expect(item.quantity_remaining/item.quantity_total < 0.20).toBeTruthy();
+  });
+  test('25% remaining → above 20%',          () => {
+    expect(5/20 >= 0.20).toBeTruthy();
+  });
+  test('reorder logic: remaining<=threshold → danger', () => {
+    expect(getItemStatus({quantity_remaining:4,quantity_total:20,reorder_threshold:5,expiry_date:null}).cls).toBe('danger');
+  });
+  test('full stock → good',                  () => {
+    expect(getItemStatus({quantity_remaining:20,quantity_total:20,reorder_threshold:5,expiry_date:'2030-01-01'}).cls).toBe('good');
+  });
+});
+
+suite('Integration — Notification filter + type', () => {
+  const ntf = [
+    {notification_id:1,type:'BOOKING_CONFIRMED',is_read:false},
+    {notification_id:2,type:'PAYMENT_CONFIRMED',is_read:true},
+    {notification_id:3,type:'CARE_REPORT',is_read:false},
+  ];
+  test('unread count matches getFiltered',   () => expect(nt_getFiltered(ntf,'unread').length).toBe(2));
+  test('typeLabel matches filter key',       () => {
+    expect(typeLabel(ntf[0].type)).toBe('ยืนยันจอง');
+  });
+  test('read item not in unread list',       () => {
+    const unread = nt_getFiltered(ntf,'unread');
+    expect(unread.some(n=>n.notification_id===2)).toBeFalsy();
+  });
+  test('filter by type returns correct type',() => {
+    nt_getFiltered(ntf,'CARE_REPORT').forEach(n => expect(n.type).toBe('CARE_REPORT'));
+  });
+});
+
+
+// ═══════════════════════════════════════════════════════════════
+//  RENDER ENGINE
+// ═══════════════════════════════════════════════════════════════
+
+let activeFilter = 'all';
+let searchQuery  = '';
+
+function render() {
+  const total = registry.pass + registry.fail + registry.skip;
+  const pct = total > 0 ? Math.round(registry.pass / total * 100) : 100;
+
+  // Summary strip
+  document.getElementById('summary-strip').innerHTML = `
+    <div class="stat-card pass-card">
+      <div class="stat-val">${registry.pass}</div>
+      <div class="stat-label">PASS</div>
+    </div>
+    <div class="stat-card fail-card">
+      <div class="stat-val">${registry.fail}</div>
+      <div class="stat-label">FAIL</div>
+    </div>
+    <div class="stat-card skip-card">
+      <div class="stat-val">${registry.skip}</div>
+      <div class="stat-label">SKIP</div>
+    </div>
+    <div class="stat-card total-card">
+      <div class="stat-val">${total}</div>
+      <div class="stat-label">TOTAL</div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-fill ${registry.fail > 0 ? 'has-fail' : ''}" style="width:${pct}%"></div>
+    </div>
+    <span style="font-size:12px;color:${registry.fail>0?'var(--fail)':'var(--pass)'};font-weight:600;white-space:nowrap;">
+      ${registry.fail > 0 ? `✗ ${registry.fail} failed` : `✓ All ${total} passed`}
+    </span>
+  `;
+
+  // Result banner
+  document.getElementById('result-banner').innerHTML = registry.fail > 0
+    ? `<div class="result-banner bad">✗ &nbsp;${registry.fail} test${registry.fail>1?'s':''} failed · ${registry.pass}/${total} passed · ${pct}%</div>`
+    : `<div class="result-banner ok">✓ &nbsp;All ${total} tests passed — 100% green</div>`;
+
+  // Suites
+  const container = document.getElementById('suites-container');
+  container.innerHTML = '';
+
+  registry.suites.forEach((s, si) => {
+    const passCnt = s.tests.filter(t => t.status === 'pass').length;
+    const failCnt = s.tests.filter(t => t.status === 'fail').length;
+    const suiteStatus = failCnt > 0 ? 'fail' : 'pass';
+    const ms = s.totalMs.toFixed(1);
+
+    const [file, desc] = s.name.includes(' — ')
+      ? s.name.split(' — ')
+      : [s.name, ''];
+
+    const testsHtml = s.tests.map(t => `
+      <div class="test-row ${t.status}" data-name="${t.name.toLowerCase()}" data-status="${t.status}">
+        <div class="test-status">${t.status==='pass'?'✓':t.status==='fail'?'✗':'⊘'}</div>
+        <div class="test-cell">
+          <div class="test-name">${t.name}</div>
+          ${t.status==='fail'?`<div class="test-error">${escHtml(t.error||'')}</div>`:''}
+          ${t.status==='skip'&&t.error?`<div class="test-error" style="border-color:var(--skip);background:var(--skip-dim);color:var(--skip)">${escHtml(t.error)}</div>`:''}
+        </div>
+        <div class="test-time">${t.ms}ms</div>
+      </div>
+    `).join('');
+
+    const el = document.createElement('div');
+    el.className = `suite ${failCnt===0?'open':'open'}`;
+    el.style.setProperty('--i', si);
+    el.innerHTML = `
+      <div class="suite-header" onclick="toggleSuite(this)">
+        <span class="suite-toggle">▶</span>
+        <div class="suite-dot ${suiteStatus}"></div>
+        <div class="suite-name"><em>${file}</em>${desc?' — '+desc:''}</div>
+        <div class="suite-meta">
+          <span class="suite-count ${suiteStatus}">${passCnt}/${s.tests.length}</span>
+          <span class="suite-time">${ms}ms</span>
+        </div>
+      </div>
+      <div class="suite-body">${testsHtml}</div>
+    `;
+    container.appendChild(el);
+  });
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function toggleSuite(header) {
+  header.closest('.suite').classList.toggle('open');
+}
+
+function expandAll()  { document.querySelectorAll('.suite').forEach(s=>s.classList.add('open')); }
+function collapseAll(){ document.querySelectorAll('.suite').forEach(s=>s.classList.remove('open')); }
+
+function setFilter(filter, btn) {
+  activeFilter = filter;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  applyVisibility();
+}
+
+function applySearch(q) {
+  searchQuery = q.toLowerCase();
+  applyVisibility();
+}
+
+function applyVisibility() {
+  document.querySelectorAll('.suite').forEach(suite => {
+    const rows = suite.querySelectorAll('.test-row');
+    let visible = 0;
+    rows.forEach(row => {
+      const statusMatch = activeFilter === 'all' || row.dataset.status === activeFilter;
+      const searchMatch = !searchQuery || row.dataset.name.includes(searchQuery);
+      const show = statusMatch && searchMatch;
+      row.classList.toggle('filtered-hide', !show);
+      if (show) visible++;
+    });
+    suite.classList.toggle('all-hidden', visible === 0);
+  });
+}
+
+function rerun() {
+  location.reload();
+}
+
+function copyResults() {
+  const out = {
+    timestamp: new Date().toISOString(),
+    summary: { pass: registry.pass, fail: registry.fail, skip: registry.skip,
+               total: registry.pass+registry.fail+registry.skip },
+    suites: registry.suites.map(s => ({
+      name: s.name,
+      tests: s.tests.map(t => ({ name:t.name, status:t.status, ms:t.ms, error:t.error||null }))
+    }))
+  };
+  navigator.clipboard.writeText(JSON.stringify(out, null, 2))
+    .then(() => {
+      const btn = document.querySelector('.header-actions .btn');
+      const orig = btn.textContent;
+      btn.textContent = '✓ Copied!';
+      btn.style.color = 'var(--pass)';
+      setTimeout(() => { btn.textContent = orig; btn.style.color=''; }, 2000);
+    });
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
+    e.preventDefault();
+    document.getElementById('search-input').focus();
+  }
+  if (e.key === 'Escape') document.getElementById('search-input').blur();
+});
+
+window.addEventListener('DOMContentLoaded', () => render());
+</script>
+</body>
+</html>

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audit Trail — Purrfect Stay</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Serif+Display:ital@0;1&family=Syne:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages/AuditTrail.css">
+</head>
+<body>
+
+<aside id="sidebar-root"></aside>
+<main class="main">
+  <div id="topbar-root"></div>
+  <div class="content">
+
+    <!-- FILTER TOOLBAR -->
+    <div class="at-toolbar">
+      <span class="at-toolbar-label">Staff:</span>
+      <select class="at-select" id="filter-staff">
+        <option value="">ทั้งหมด</option>
+        <option value="1">สมชาย มั่นคง</option>
+        <option value="2">มาลี สุขสันต์</option>
+        <option value="3">นริน พรหมดี</option>
+      </select>
+
+      <span class="at-toolbar-label">Action:</span>
+      <select class="at-select" id="filter-action">
+        <option value="">ทุก Action</option>
+        <option value="CREATE">CREATE</option>
+        <option value="UPDATE">UPDATE</option>
+        <option value="DELETE">DELETE</option>
+        <option value="CHECKIN">CHECK-IN</option>
+        <option value="CHECKOUT">CHECK-OUT</option>
+        <option value="APPROVE">APPROVE</option>
+      </select>
+
+      <span class="at-toolbar-label">ตั้งแต่:</span>
+      <input class="at-date-input" type="date" id="filter-from" value="2026-04-01">
+      <span class="at-toolbar-label">ถึง:</span>
+      <input class="at-date-input" type="date" id="filter-to"   value="2026-04-30">
+
+      <div class="at-search-wrap">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input class="at-search" type="text" placeholder="ค้นหาชื่อ, คำอธิบาย, Record ID..." id="filter-search" oninput="applyFilters()">
+      </div>
+
+      <button class="at-apply-btn" onclick="applyFilters()">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 4h18M7 12h10M11 20h2"/></svg>
+        กรอง
+      </button>
+    </div>
+
+    <!-- STAT CHIPS -->
+    <div class="at-stats-row">
+      <div class="at-stat">
+        <div class="at-stat-icon">📋</div>
+        <div class="at-stat-body">
+          <div class="at-stat-val" id="stat-total">—</div>
+          <div class="at-stat-label">รายการทั้งหมด</div>
+        </div>
+      </div>
+      <div class="at-stat">
+        <div class="at-stat-icon">➕</div>
+        <div class="at-stat-body">
+          <div class="at-stat-val" id="stat-create">—</div>
+          <div class="at-stat-label">CREATE</div>
+        </div>
+      </div>
+      <div class="at-stat">
+        <div class="at-stat-icon">✏️</div>
+        <div class="at-stat-body">
+          <div class="at-stat-val" id="stat-update">—</div>
+          <div class="at-stat-label">UPDATE</div>
+        </div>
+      </div>
+      <div class="at-stat">
+        <div class="at-stat-icon">🗑</div>
+        <div class="at-stat-body">
+          <div class="at-stat-val" id="stat-delete">—</div>
+          <div class="at-stat-label">DELETE</div>
+        </div>
+      </div>
+      <div class="at-stat">
+        <div class="at-stat-icon">🏨</div>
+        <div class="at-stat-body">
+          <div class="at-stat-val" id="stat-checkin">—</div>
+          <div class="at-stat-label">CHECK-IN/OUT</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLE CARD -->
+    <div class="at-card">
+      <div class="at-card-header">
+        <div class="at-card-title">📜 Audit Logs</div>
+        <div class="at-card-count" id="at-count">— รายการ</div>
+      </div>
+
+      <div class="at-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#ID</th>
+              <th>ผู้ดำเนินการ</th>
+              <th>Action</th>
+              <th>ตาราง</th>
+              <th>Record ID</th>
+              <th>คำอธิบาย</th>
+              <th>เวลา</th>
+            </tr>
+          </thead>
+          <tbody id="audit-tbody"></tbody>
+        </table>
+        <div style="text-align:center;padding:48px;color:var(--at-text-3);font-size:13px;display:none" id="at-empty">
+          📋 ไม่พบรายการที่ตรงกับเงื่อนไข
+        </div>
+      </div>
+
+      <div class="at-table-footer">
+        <span id="at-showing">—</span>
+        <div class="at-pager" id="at-pager"></div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script src="js/components/sidebar.js"></script>
+<script src="js/components/navbar.js"></script>
+<script src="js/services/api.js"></script>
+<script src="js/pages/AuditTrail.js"></script>
+<script>
+  const currentUser = { name: 'สมชาย มั่นคง', role: 'Administrator' };
+  Sidebar.render({ activePage: 'audit', user: currentUser });
+  Navbar.render({
+    title: 'Audit Trail',
+    breadcrumb: 'Admin › Audit Trail (ADMIN ONLY)',
+    actionsHTML: `
+      <button class="btn-cancel" onclick="window.print()" style="display:flex;align-items:center;gap:6px">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+        Export / Print
+      </button>
+    `,
+  });
+</script>
+</body>
+</html>

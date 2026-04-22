@@ -1,0 +1,128 @@
+/* ============================================================
+   Notifications.css  — Page styles for Notification Management (FR7)
+   Design: indigo · blue · notification color coding
+   ============================================================ */
+:root {
+  --nt-indigo:   #4338CA;
+  --nt-indigo-s: #EEF2FF;
+  --nt-indigo-2: #6366F1;
+  --nt-green:    #15803D;
+  --nt-green-s:  #DCFCE7;
+  --nt-amber:    #B45309;
+  --nt-amber-s:  #FEF3C7;
+  --nt-red:      #B91C1C;
+  --nt-red-s:    #FEE2E2;
+  --nt-teal:     #0F766E;
+  --nt-teal-s:   #CCFBF1;
+  --nt-surface:  #FFFFFF;
+  --nt-border:   #E2E8F0;
+  --nt-text-1:   #0F172A;
+  --nt-text-2:   #475569;
+  --nt-text-3:   #94A3B8;
+  --nt-r:        16px;
+  --nt-r2:       10px;
+  --nt-shadow:   0 1px 4px rgba(0,0,0,.05), 0 4px 20px rgba(0,0,0,.06);
+}
+
+.content { padding: 28px 32px; flex: 1; }
+
+/* ── STATS ── */
+.nt-stats-row {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 14px; margin-bottom: 24px;
+}
+.nt-stat {
+  background: var(--nt-surface); border: 1px solid var(--nt-border);
+  border-radius: var(--nt-r); padding: 16px 18px;
+  display: flex; align-items: center; gap: 12px;
+  box-shadow: var(--nt-shadow); animation: fadeUp .4s ease both; transition: transform .15s;
+}
+.nt-stat:hover { transform: translateY(-1px); }
+.nt-stat-icon {
+  width: 40px; height: 40px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 18px;
+}
+.nt-stat-body {}
+.nt-stat-val { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; color: var(--nt-text-1); line-height: 1; }
+.nt-stat-label { font-size: 11px; color: var(--nt-text-3); text-transform: uppercase; letter-spacing: .4px; margin-top: 2px; }
+
+/* ── TOOLBAR ── */
+.nt-toolbar {
+  background: var(--nt-surface); border: 1px solid var(--nt-border);
+  border-radius: var(--nt-r); padding: 14px 20px;
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin-bottom: 20px; box-shadow: var(--nt-shadow);
+}
+.nt-filter-tabs { display: flex; gap: 0; flex-wrap: wrap; }
+.nt-tab {
+  padding: 8px 14px; font-size: 13px; font-weight: 500;
+  font-family: 'DM Sans', sans-serif; color: var(--nt-text-3);
+  background: none; border: none; border-bottom: 2px solid transparent;
+  cursor: pointer; transition: color .2s, border-color .2s; white-space: nowrap;
+}
+.nt-tab:hover { color: var(--nt-text-2); }
+.nt-tab.active { color: var(--nt-indigo); border-bottom-color: var(--nt-indigo); }
+.nt-spacer { flex: 1; }
+.nt-mark-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 14px; background: var(--nt-indigo); color: #fff;
+  border: none; border-radius: var(--nt-r2);
+  font-family: 'DM Sans', sans-serif; font-size: 12.5px; font-weight: 500;
+  cursor: pointer; transition: background .2s; white-space: nowrap;
+}
+.nt-mark-btn:hover { background: var(--nt-indigo-2); }
+
+/* ── NOTIFICATION LIST ── */
+.nt-list { display: flex; flex-direction: column; gap: 10px; }
+.nt-item {
+  background: var(--nt-surface); border: 1px solid var(--nt-border);
+  border-radius: var(--nt-r); padding: 16px 20px;
+  display: flex; align-items: flex-start; gap: 14px;
+  box-shadow: var(--nt-shadow); animation: fadeUp .35s ease both;
+  transition: background .15s, border-color .15s; cursor: pointer;
+}
+.nt-item:hover { background: #F8FAFC; border-color: #CBD5E1; }
+.nt-item.unread { border-left: 3.5px solid var(--nt-indigo); background: var(--nt-indigo-s); }
+.nt-item.unread:hover { background: #E8EBFF; }
+
+.nt-item-icon {
+  width: 42px; height: 42px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0; margin-top: 2px;
+}
+.nt-item-icon.CARE_REPORT        { background: var(--nt-teal-s); }
+.nt-item-icon.BOOKING_CONFIRMED  { background: var(--nt-green-s); }
+.nt-item-icon.BOOKING_CANCELLED  { background: var(--nt-red-s); }
+.nt-item-icon.PAYMENT_CONFIRMED  { background: var(--nt-green-s); }
+.nt-item-icon.CHECKIN_REMINDER   { background: var(--nt-amber-s); }
+.nt-item-icon.NEW_BOOKING_ALERT  { background: var(--nt-indigo-s); }
+
+.nt-item-body { flex: 1; min-width: 0; }
+.nt-item-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.nt-item-title { font-weight: 600; color: var(--nt-text-1); font-size: 13.5px; }
+.nt-type-badge {
+  display: inline-block; padding: 2px 7px; border-radius: 20px;
+  font-size: 10.5px; font-weight: 700; letter-spacing: .3px; white-space: nowrap;
+}
+.nt-type-badge.CARE_REPORT        { background: var(--nt-teal-s);   color: var(--nt-teal); }
+.nt-type-badge.BOOKING_CONFIRMED  { background: var(--nt-green-s);  color: var(--nt-green); }
+.nt-type-badge.BOOKING_CANCELLED  { background: var(--nt-red-s);    color: var(--nt-red); }
+.nt-type-badge.PAYMENT_CONFIRMED  { background: var(--nt-green-s);  color: var(--nt-green); }
+.nt-type-badge.CHECKIN_REMINDER   { background: var(--nt-amber-s);  color: var(--nt-amber); }
+.nt-type-badge.NEW_BOOKING_ALERT  { background: var(--nt-indigo-s); color: var(--nt-indigo); }
+
+.nt-item-body-text { font-size: 13px; color: var(--nt-text-2); line-height: 1.5; margin-bottom: 6px; }
+.nt-item-meta { display: flex; align-items: center; gap: 10px; font-size: 11.5px; color: var(--nt-text-3); }
+.nt-item-time {}
+.nt-unread-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--nt-indigo); flex-shrink: 0; margin-top: 6px;
+}
+
+.nt-empty {
+  text-align: center; padding: 64px; color: var(--nt-text-3);
+  background: var(--nt-surface); border: 1px solid var(--nt-border);
+  border-radius: var(--nt-r);
+}
+.nt-empty-icon { font-size: 40px; margin-bottom: 12px; }
+.nt-empty p { font-size: 14px; }

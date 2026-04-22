@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Billing — Purrfect Stay</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Serif+Display:ital@0;1&family=Syne:wght@600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages/Billing.css">
+</head>
+<body>
+
+<aside id="sidebar-root"></aside>
+
+<main class="main">
+  <div id="topbar-root"></div>
+
+  <div class="content">
+
+    <!-- ── STAT CARDS ── -->
+    <div class="bl-stats-row">
+      <div class="bl-stat green">
+        <div class="bl-stat-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <div class="bl-stat-body">
+          <div class="bl-stat-label">รายรับเดือนนี้</div>
+          <div class="bl-stat-value">฿128,500</div>
+          <div class="bl-stat-sub">↑ +12% จากเดือนก่อน</div>
+        </div>
+        <div class="bl-stat-ring"></div>
+      </div>
+
+      <div class="bl-stat blue">
+        <div class="bl-stat-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        </div>
+        <div class="bl-stat-body">
+          <div class="bl-stat-label">ใบเสร็จทั้งหมด</div>
+          <div class="bl-stat-value">42</div>
+          <div class="bl-stat-sub">เดือนเมษายน 2026</div>
+        </div>
+        <div class="bl-stat-ring"></div>
+      </div>
+
+      <div class="bl-stat amber">
+        <div class="bl-stat-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <div class="bl-stat-body">
+          <div class="bl-stat-label">รอชำระเงิน</div>
+          <div class="bl-stat-value">5</div>
+          <div class="bl-stat-sub">รวม ฿18,200</div>
+        </div>
+        <div class="bl-stat-ring"></div>
+      </div>
+
+      <div class="bl-stat teal">
+        <div class="bl-stat-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
+        </div>
+        <div class="bl-stat-body">
+          <div class="bl-stat-label">เฉลี่ยต่อบิล</div>
+          <div class="bl-stat-value">฿3,060</div>
+          <div class="bl-stat-sub">ค่าเฉลี่ยเดือนนี้</div>
+        </div>
+        <div class="bl-stat-ring"></div>
+      </div>
+    </div>
+
+    <!-- ── INVOICE TABLE CARD ── -->
+    <div class="bl-card">
+
+      <div class="bl-card-header">
+        <div class="bl-filter-tabs">
+          <button class="bl-tab active" onclick="filterInvoices('all', this)">
+            ทั้งหมด <span class="bl-tab-count" id="count-all">8</span>
+          </button>
+          <button class="bl-tab" onclick="filterInvoices('PENDING_PAYMENT', this)">
+            รอชำระ <span class="bl-tab-count" id="count-PENDING_PAYMENT">3</span>
+          </button>
+          <button class="bl-tab" onclick="filterInvoices('PAID', this)">
+            ชำระแล้ว <span class="bl-tab-count" id="count-PAID">5</span>
+          </button>
+        </div>
+
+        <div class="bl-tools">
+          <div class="bl-date-range">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            <input class="bl-date-input" type="date" value="2025-04-01">
+            <span>—</span>
+            <input class="bl-date-input" type="date" value="2025-04-30">
+          </div>
+          <div class="bl-search-wrap">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input class="bl-search" type="text" placeholder="ค้นหา Invoice หรือชื่อเจ้าของ..." oninput="searchInvoices(this.value)">
+          </div>
+        </div>
+      </div>
+
+      <div class="bl-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Invoice</th>
+              <th>สัตว์เลี้ยง / เจ้าของ</th>
+              <th>Booking ID</th>
+              <th>วันที่ออก</th>
+              <th>ยอดรวม</th>
+              <th>ชำระด้วย</th>
+              <th>สถานะ</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="invoices-tbody"></tbody>
+        </table>
+        <div class="bl-empty" id="bl-empty" style="display:none">
+          <div class="bl-empty-icon">🧾</div>
+          <p>ไม่พบรายการใบเสร็จ</p>
+        </div>
+      </div>
+
+      <div class="bl-table-footer">
+        <span id="bl-showing">แสดง 8 รายการ</span>
+        <div class="bl-pagination">
+          <button class="bl-page-btn" disabled>‹</button>
+          <button class="bl-page-btn active">1</button>
+          <button class="bl-page-btn">›</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- ══════════════════════════════
+     MODAL: INVOICE DETAIL
+══════════════════════════════ -->
+<div class="bl-modal-overlay" id="modal-detail">
+  <div class="bl-modal">
+    <div class="bl-modal-header">
+      <div>
+        <div class="bl-modal-title">รายละเอียดใบเสร็จ</div>
+        <div class="bl-modal-sub" id="det-subtitle">INV-0001</div>
+      </div>
+      <button class="bl-modal-close" onclick="closeModal('modal-detail')">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="bl-modal-body" id="det-body"></div>
+    <div class="bl-modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-detail')">ปิด</button>
+      <button class="btn-primary" id="det-pay-btn" onclick="openPayModal()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+        บันทึกการชำระเงิน
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════
+     MODAL: RECORD PAYMENT
+══════════════════════════════ -->
+<div class="bl-modal-overlay" id="modal-pay">
+  <div class="bl-modal bl-modal-sm">
+    <div class="bl-modal-header">
+      <div>
+        <div class="bl-modal-title">บันทึกการชำระเงิน</div>
+        <div class="bl-modal-sub" id="pay-subtitle">INV-0001</div>
+      </div>
+      <button class="bl-modal-close" onclick="closeModal('modal-pay')">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="bl-modal-body">
+      <div class="bl-pay-amount-box" id="pay-amount-box">
+        <div class="bl-pay-amount-label">ยอดชำระ</div>
+        <div class="bl-pay-amount-val" id="pay-amount-val">฿0</div>
+      </div>
+      <div class="bl-form-group" style="margin-top:20px">
+        <label class="bl-label">วิธีชำระเงิน</label>
+        <div class="bl-payment-opts">
+          <label class="bl-payment-opt">
+            <input type="radio" name="pay-method" value="cash" checked> 💵 เงินสด
+          </label>
+          <label class="bl-payment-opt">
+            <input type="radio" name="pay-method" value="qr_promptpay"> 📱 QR PromptPay
+          </label>
+          <label class="bl-payment-opt">
+            <input type="radio" name="pay-method" value="credit_card"> 💳 บัตรเครดิต
+          </label>
+        </div>
+      </div>
+      <div class="bl-form-group" style="margin-top:16px">
+        <label class="bl-label">หมายเหตุ (ไม่บังคับ)</label>
+        <input class="bl-input" type="text" placeholder="เช่น ใบเสร็จเล่มสีน้ำเงิน..." id="pay-note">
+      </div>
+    </div>
+    <div class="bl-modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-pay')">ยกเลิก</button>
+      <button class="btn-primary" onclick="confirmPayment()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+        ยืนยันการชำระเงิน
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="js/components/sidebar.js"></script>
+<script src="js/components/navbar.js"></script>
+<script src="js/pages/Billing.js"></script>
+<script src="js/services/api.js"></script>
+<script>
+  const currentUser = { name: 'สมชาย มั่นคง', role: 'Administrator' };
+  Sidebar.render({ activePage: 'billing', user: currentUser });
+  Navbar.render({
+    title: 'Billing',
+    breadcrumb: 'Admin › การเงิน (Billing)',
+    actionsHTML: `
+      <button class="btn-primary" onclick="exportReport()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+        </svg>
+        Export Report
+      </button>
+    `,
+  });
+</script>
+</body>
+</html>

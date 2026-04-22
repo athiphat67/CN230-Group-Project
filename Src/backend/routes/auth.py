@@ -12,7 +12,7 @@ def get_db_connection():
     return psycopg2.connect(current_app.config['SQLALCHEMY_DATABASE_URI'])
 
 # -------------------------------------------------------------
-# 1. Staff Login (ตรงตาม FR1.1)
+# 1. Staff Login (พร้อมระบบ Print Log สำหรับ Debug)
 # -------------------------------------------------------------
 @auth_bp.route('/login', methods=['POST'])
 def login():
@@ -21,8 +21,12 @@ def login():
         username = data.get('staff_username') 
         password = data.get('password') 
         
+        print(f"\n--- 🔍 [DEBUG] เริ่มการล็อกอินพนักงาน ---")
+        print(f"👉 Username ที่ส่งมา: '{username}'")
+        
         # ตรวจสอบเบื้องต้น
         if not username or not password:
+             print("❌ [DEBUG] ส่งข้อมูลมาไม่ครบ (ขาด username หรือ password)")
              return jsonify({
                  "error": True, 
                  "code": 400, 
@@ -34,36 +38,57 @@ def login():
         cur = conn.cursor()
         
         # ค้นหา Staff
-        cur.execute('SELECT staffid, passwordhash, role, firstname, lastname FROM staff WHERE staffusername = %s AND "isActive" = TRUE', (username,))
+        cur.execute('SELECT staffid, passwordhash, role, firstname, lastname FROM staff WHERE staffusername = %s', (username,))
         user = cur.fetchone()
         cur.close()
         conn.close()
 
         if user:
-            stored_hash = user[1].encode('utf-8')
-            input_password = password.encode('utf-8')
+            print(f"✅ [DEBUG] เจอพนักงานในระบบ! ID: {user[0]}, ชื่อ: {user[3]} {user[4]}")
+            print(f"🔑 [DEBUG] รหัส Hash ใน Database คือ: {user[1]}")
+            print(f"📏 [DEBUG] ความยาวของ Hash: {len(user[1])} ตัวอักษร")
             
-            # ตรวจสอบรหัสผ่าน
-            if bcrypt.checkpw(input_password, stored_hash):
-                secret_key = current_app.config.get('SECRET_KEY', 'purrfect-super-secret-key')
-                # สร้าง Payload สำหรับ Token
-                payload = {
-                    'staff_id': user[0],
-                    'role': user[2],
-                    'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=12)
-                }
-                token = jwt.encode(payload, secret_key, algorithm="HS256")
-
-                # ส่งกลับตามรูปแบบที่ Frontend ต้องการ
-                return jsonify({
-                    "access_token": token,
-                    "staff_id": user[0],
-                    "first_name": user[3],
-                    "last_name": user[4],
-                    "role": user[2]
-                }), 200
+            try:
+                stored_hash = user[1].encode('utf-8')
+                input_password = password.encode('utf-8')
                 
-        # หากไม่พบ User หรือรหัสผ่านผิด
+                # ตรวจสอบรหัสผ่าน
+                is_match = bcrypt.checkpw(input_password, stored_hash)
+                print(f"⚖️ [DEBUG] ผลการเทียบรหัสผ่าน (Match?): {is_match}")
+                
+                if is_match:
+                    print("✅ [DEBUG] รหัสผ่านถูกต้อง! กำลังสร้าง Token...")
+                    
+                    # ตรวจสอบว่าพนักงานมี Role หรือไม่
+                    role = user[2] if user[2] else 'STAFF'
+                    
+                    secret_key = current_app.config.get('SECRET_KEY', 'purrfect-super-secret-key')
+                    payload = {
+                        'staff_id': user[0],
+                        'role': role,
+                        'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=12)
+                    }
+                    
+                    token = jwt.encode(payload, secret_key, algorithm="HS256")
+                    
+                    print("✅ [DEBUG] ส่ง Token กลับให้ Frontend เรียบร้อย\n")
+                    return jsonify({
+                        "status": "success", 
+                        "message": "Login successful",
+                        "access_token": token,
+                        "staff_id": user[0],
+                        "first_name": user[3],
+                        "role": role 
+                    }), 200
+                else:
+                    print("❌ [DEBUG] รหัสผ่านไม่ตรงกัน!")
+            except Exception as bcrypt_err:
+                print(f"🔥 [DEBUG] เกิด Error ตอนเทียบ Hash (Hash อาจจะผิดฟอร์แมต): {bcrypt_err}")
+                
+        else:
+            print(f"❌ [DEBUG] หาพนักงานชื่อ '{username}' ไม่เจอในตาราง staff")
+
+        print("🚫 [DEBUG] ส่งสถานะ 401 Unauthorized กลับไป\n")
         return jsonify({
             "error": True, 
             "code": 401, 
@@ -72,6 +97,7 @@ def login():
         }), 401
         
     except Exception as e:
+         print(f"💥 [DEBUG] เซิร์ฟเวอร์ล่มระหว่างล็อกอิน: {e}\n")
          return jsonify({
             "error": True, 
             "code": 500, 
@@ -150,11 +176,13 @@ def register_customer():
         }), 201
 
     except psycopg2.IntegrityError as e:
+         print(f"🔥 Database Integrity Error: {e}") 
+         
          return jsonify({
             "error": True, 
             "code": 409, 
             "message": "Conflict", 
-            "detail": "Username or Email already exists"
+            "detail": "Username หรือ Email นี้มีผู้ใช้งานแล้ว"
         }), 409
     except Exception as e:
          return jsonify({
@@ -165,7 +193,7 @@ def register_customer():
         }), 500
 
 # -------------------------------------------------------------
-# 4. Customer Login (ดัดแปลง Error Response ให้ตรงสเปค)
+# 4. Customer Login 
 # -------------------------------------------------------------
 @auth_bp.route('/login/customer', methods=['POST'])
 def login_customer():
@@ -184,7 +212,7 @@ def login_customer():
 
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute('SELECT CustomerID, PasswordHash, FirstName FROM Customer WHERE CustomerUsername = %s', (username,))
+        cur.execute('SELECT CustomerID, PasswordHash, FirstName, LastName, CustomerEmail FROM Customer WHERE CustomerUsername = %s', (username,))
         user = cur.fetchone()
         cur.close()
         conn.close()
@@ -194,11 +222,26 @@ def login_customer():
             input_password = password.encode('utf-8')
             
             if bcrypt.checkpw(input_password, stored_hash):
-                 return jsonify({
+                # 🟢 เพิ่มการสร้าง JWT Token สำหรับ Customer 🟢
+                secret_key = current_app.config.get('SECRET_KEY', 'purrfect-super-secret-key')
+                payload = {
+                    'customer_id': user[0],
+                    'role': 'customer',
+                    'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=12)
+                }
+                token = jwt.encode(payload, secret_key, algorithm="HS256")
+
+                return jsonify({
                     "status": "success", 
                     "message": f"ล็อกอินสำเร็จ! ยินดีต้อนรับคุณ {user[2]}",
-                    "customer_id": user[0],
-                    "role": "CUSTOMER" 
+                    "access_token": token,  # <-- ส่ง Token กลับไปให้ Frontend
+                    "customer": {           # <-- ส่งข้อมูลผู้ใช้กลับไปให้ Frontend เก็บลง LocalStorage
+                        "customerid": user[0],
+                        "firstname": user[2],
+                        "lastname": user[3],
+                        "customeremail": user[4]
+                    },
+                    "role": "customer" 
                 }), 200
                 
         return jsonify({

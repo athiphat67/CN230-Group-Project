@@ -1,12 +1,9 @@
-/**
- * sidebar.js — Shared Sidebar Component
- * Purrfect Stay Admin Panel
- * อัปเดต v2: เพิ่ม PetProfile (FR2) + Notifications (FR7)
- */
 const Sidebar = {
-  render({ activePage = 'dashboard', user = {} }) {
+  render({ activePage = 'dashboard', user = {}, isSubPage = false }) {
     const root = document.getElementById('sidebar-root');
     if (!root) return;
+
+    root.className = 'sidebar';
 
     const nav = [
       {

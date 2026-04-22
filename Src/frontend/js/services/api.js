@@ -210,3 +210,48 @@ window.staffAPI = {
       : { status: 'error', message: res.data?.message || 'เกิดข้อผิดพลาด' };
   },
 };
+
+/* ─── CUSTOMER API (window.CustomerAPI) ──────────────── */
+window.CustomerAPI = {
+  /* --- Auth --- */
+  auth: {
+    // ใช้ endpoint เดียวกับ staff หรือแยกตามโครงสร้าง Backend ของคุณ
+    login: (username, password) => apiFetch('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ username, password }),
+    }),
+    getMe: () => apiFetch('/auth/me'),
+  },
+
+  /* --- Customer Profile --- */
+  customer: {
+    getMe: () => apiFetch('/customer/me'), // ดึงข้อมูลตัวเองจาก Token
+    update: (id, data) => apiFetch(`/customer/${id}`, { 
+      method: 'PUT', 
+      body: JSON.stringify(data) 
+    }),
+  },
+
+  /* --- Pets --- */
+  pets: {
+    getAll:  (params = {}) => apiFetch('/pets?' + new URLSearchParams(params)),
+    getById: (id)          => apiFetch(`/pets/${id}`),
+    create:  (data)        => apiFetch('/pets', { method: 'POST', body: JSON.stringify(data) }),
+    update:  (id, data)    => apiFetch(`/pets/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete:  (id)          => apiFetch(`/pets/${id}`, { method: 'DELETE' }),
+  },
+
+  /* --- Bookings --- */
+  bookings: {
+    getAll: (params = {}) => apiFetch('/bookings?' + new URLSearchParams(params)),
+    create: (data)        => apiFetch('/bookings', { method: 'POST', body: JSON.stringify(data) }),
+    getById: (id)         => apiFetch(`/bookings/${id}`),
+  },
+
+  /* --- Notifications --- */
+  notifications: {
+    getAll:      (params = {}) => apiFetch('/notifications?' + new URLSearchParams(params)),
+    markRead:    (id)          => apiFetch(`/notifications/${id}/read`, { method: 'PATCH' }),
+    markAllRead: ()           => apiFetch('/notifications/read-all', { method: 'PATCH' }),
+  }
+};

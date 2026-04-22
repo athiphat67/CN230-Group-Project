@@ -1,22 +1,23 @@
 /**
  * StaffManagement.js — Page logic for Staff Management
  * Purrfect Stay Admin Panel
- *
- * Handles: tab switching · modal open/close · staff filtering · leave approval
  */
+
+/* ── UTILS: Safe DOM Updater ── */
+function setVal(id, text) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = text;
+}
 
 /* ── TAB SWITCHING ── */
 function switchTab(tabName, btn) {
-  // Deactivate all tabs and buttons
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
 
-  // Activate selected
-  btn.classList.add('active');
+  if (btn) btn.classList.add('active');
   const target = document.getElementById('tab-' + tabName);
   if (target) target.classList.add('active');
 
-  // Show/hide search+filter tools (only relevant for staff list)
   const tools = document.querySelector('.tabs-tools');
   if (tools) {
     tools.style.visibility = (tabName === 'staff') ? 'visible' : 'hidden';
@@ -27,25 +28,23 @@ function switchTab(tabName, btn) {
   if(tabName === 'attendance') document.querySelectorAll('#tab-attendance tbody tr').forEach(r => r.style.display = '');
 }
 
-/* ── MODAL: Add New Staff ── */
+/* ── MODAL CONTROL ── */
 function openModal() {
   const overlay = document.getElementById('modal-add');
-  if (overlay) {
-    // 🟢 เคลียร์ค่า ID และรีเซ็ตฟอร์ม เผื่อว่าเพิ่งกดปิดโหมด Edit มา
-    document.getElementById('current-staff-id').value = '';
-    overlay.querySelector('.modal-title').textContent = 'Add New Staff';
-    
-    // ปลดล็อกช่อง Username และ Password ให้กรอกได้
-    const inputs = overlay.querySelectorAll('.form-input');
-    inputs.forEach(input => {
-      input.value = '';
-      input.disabled = false; 
-    });
+  if (!overlay) return;
 
-    overlay.classList.add('open');
-    const first = overlay.querySelector('input, select');
-    if (first) setTimeout(() => first.focus(), 50);
-  }
+  document.getElementById('current-staff-id').value = '';
+  overlay.querySelector('.modal-title').textContent = 'Add New Staff';
+  
+  const inputs = overlay.querySelectorAll('.form-input');
+  inputs.forEach(input => {
+    input.value = '';
+    input.disabled = false; 
+  });
+
+  overlay.classList.add('open');
+  const first = overlay.querySelector('input, select');
+  if (first) setTimeout(() => first.focus(), 50);
 }
 
 function closeModal() {
@@ -53,7 +52,6 @@ function closeModal() {
   if (overlay) overlay.classList.remove('open');
 }
 
-// Close modal on overlay background click
 document.addEventListener('DOMContentLoaded', () => {
   const overlay = document.getElementById('modal-add');
   if (overlay) {
@@ -61,38 +59,32 @@ document.addEventListener('DOMContentLoaded', () => {
       if (e.target === overlay) closeModal();
     });
   }
-
-  // Close modal on Escape key
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeModal();
   });
 });
 
-/* ── MODAL: Edit Staff ── */
-// 🟢 เพิ่มพารามิเตอร์ id เข้ามาด้วย
 function openEditModal(id, firstName, lastName, role, email, phone) {
   const overlay = document.getElementById('modal-add');
   if (!overlay) return;
 
-  // 🟢 เก็บ ID ไว้ใน input ที่ซ่อนไว้
   document.getElementById('current-staff-id').value = id;
   overlay.querySelector('.modal-title').textContent = 'Edit Staff';
 
   const inputs = overlay.querySelectorAll('.form-input');
   const select = overlay.querySelector('.form-select');
   
-  // 🟢 อิงตามลำดับ input ที่อยู่ใน HTML
-  inputs[0].value = firstName;
-  inputs[1].value = lastName;
-  inputs[2].value = 'ไม่สามารถแก้ Username ได้'; // สมมติ inputs[2] คือ Username
-  inputs[2].disabled = true; // ล็อกไม่ให้แก้ Username
-  inputs[3].value = email;
-  inputs[4].value = phone;
-  inputs[5].disabled = true; // ล็อกช่องวันที่เริ่มงาน
-  inputs[6].disabled = true; // ล็อกช่อง Password
+  inputs[0].value = firstName || '';
+  inputs[1].value = lastName || '';
+  inputs[2].value = 'ไม่สามารถแก้ Username ได้';
+  inputs[2].disabled = true; 
+  inputs[3].value = email || '';
+  inputs[4].value = phone || '';
+  inputs[5].disabled = true; 
   inputs[6].value = '********';
+  inputs[6].disabled = true;
 
-  select.value = role;
+  if (select) select.value = role;
 
   overlay.classList.add('open');
 }
@@ -112,67 +104,37 @@ function filterStaff(query) {
   });
 }
 
-/* ── LEAVE: Approve / Reject ── */
-function approveLeave(btn) {
-  const row = btn.closest('tr');
-  if (!row) return;
-
-  const statusCell = row.querySelector('.badge.pending');
-  if (!statusCell) return;
-
-  // Optimistic UI update — replace Pending badge with Approved
-  statusCell.className = 'badge approved';
-  statusCell.textContent = 'Approved';
-
-  // Replace action buttons cell with approver name
-  const actionCell = btn.closest('td');
-  if (actionCell) actionCell.innerHTML = '<span style="color:var(--text-3)">สมชาย มั่นคง</span>';
-
-  // Update leave count badge
-  const leaveCountEl = document.getElementById('leave-count');
-  if (leaveCountEl) {
-    const current = parseInt(leaveCountEl.textContent, 10);
-    if (!isNaN(current) && current > 0) leaveCountEl.textContent = current - 1;
-  }
-
-  // TODO: PATCH /api/leave/{leave_id} — replace with real API call from api.js
-}
-
-// ริชทำ -- เอาข้อมูล mock ออกแล้วเรียก API จริงแทน
-/* ── RENDER STAFF TABLE ── */
 /* ── RENDER STAFF TABLE ── */
 async function loadAndRenderStaff() {
   const tbody = document.getElementById('staff-tbody');
   if (!tbody) return;
 
-  const response = await window.staffAPI.getAllStaff();
-  const currentUser = {
-    name: localStorage.getItem('first_name') || 'ไม่ระบุตัวตน',
-    role: localStorage.getItem('role') || 'STAFF',
-  };
+  if (!window.API || !window.API.staff) {
+    console.error("API ยังไม่พร้อมใช้งาน ตรวจสอบว่าไฟล์ api.js โหลดสำเร็จหรือไม่");
+    return;
+  }
 
-  Sidebar.render({ activePage: 'staff', user: currentUser });
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-3);">กำลังโหลดข้อมูล...</td></tr>';
+
+  const response = await window.API.staff.getAll();
   
-  if (response.status !== 'success') {
+  if (!response.ok) {
     tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: red;">โหลดข้อมูลล้มเหลว</td></tr>';
     return;
   }
 
   const staffList = response.data.data || [];
   
-  // 🟢 1. อัปเดตการ์ดสถิติพนักงาน
   const total = staffList.length;
   const admins = staffList.filter(s => s.role === 'ADMIN').length;
   const staffs = total - admins;
   const onDuty = staffList.filter(s => s.is_on_duty).length;
 
-  document.getElementById('stat-total-staff').textContent = total;
-  document.getElementById('stat-sub-staff').textContent = `${admins} Admin · ${staffs} Staff`;
-  document.getElementById('stat-on-duty').textContent = onDuty;
-  
-  // 🟢 แก้ไข ID ให้ตรงกับใน HTML ตรงนี้ครับ
-  document.getElementById('stat-sub-on-duty').textContent = `${total - onDuty} offline today`;
-  document.getElementById('tab-count-staff').textContent = total;
+  setVal('stat-total-staff', total);
+  setVal('stat-sub-staff', `${admins} Admin · ${staffs} Staff`);
+  setVal('stat-on-duty', onDuty);
+  setVal('stat-sub-on-duty', `${total - onDuty} offline today`);
+  setVal('tab-count-staff', total);
 
   tbody.innerHTML = ''; 
 
@@ -194,8 +156,8 @@ async function loadAndRenderStaff() {
         <div class="staff-cell">
           <div class="avatar ${color}">${initial}</div>
           <div>
-            <div class="staff-name">${staff.first_name} ${staff.last_name}</div>
-            <div class="staff-email">${staff.staff_email}</div>
+            <div class="staff-name">${staff.first_name} ${staff.last_name || ''}</div>
+            <div class="staff-email">${staff.staff_email || '-'}</div>
           </div>
         </div>
       </td>
@@ -218,16 +180,6 @@ async function loadAndRenderStaff() {
   });
 }
 
-// โหลดข้อมูลทันทีเมื่อหน้าเว็บพร้อม
-document.addEventListener('DOMContentLoaded', loadAndRenderStaff);
-
-/**
- * SUBMIT NEW STAFF
- * ริชทำ — ดึงข้อมูลจากฟอร์มใน Modal แล้วส่งไปยัง API จริง
- * 1. ดึงค่าจากช่อง Input ต่างๆ ใน Modal
- * 2. เรียกใช้ API เพื่อบันทึกข้อมูล
- * 3. ตรวจสอบผลลัพธ์ และรีเฟรชตารางพนักงานใหม่ทันที!
- */
 /* ── SAVE STAFF (Unified Create & Update) ── */
 async function saveStaff() {
   const staffId = document.getElementById('current-staff-id').value;
@@ -239,18 +191,16 @@ async function saveStaff() {
     first_name: inputs[0].value,
     last_name: inputs[1].value,
     staff_username: inputs[2].value,
-    role: select.value,
     staff_email: inputs[3].value,
     phone_number: inputs[4].value,
     hire_date: inputs[5].value || new Date().toISOString().split('T')[0],
-    password: inputs[6].value
+    password: inputs[6].value,
+    role: select.value
   };
 
   let response;
 
   if (staffId) {
-    // 🟢 ถ้ามี ID = โหมด Edit (Update)
-    // ส่งไปเฉพาะค่าที่อัปเดตได้
     const updateData = {
       first_name: staffData.first_name,
       last_name: staffData.last_name,
@@ -260,7 +210,6 @@ async function saveStaff() {
     };
     response = await window.API.staff.update(staffId, updateData);
   } else {
-    // 🟢 ถ้าไม่มี ID = โหมด Add (Create)
     if (!staffData.staff_username || !staffData.password || !staffData.first_name) {
       alert("กรุณากรอกข้อมูลสำคัญให้ครบถ้วน (ชื่อ, Username, Password)");
       return;
@@ -280,26 +229,25 @@ async function saveStaff() {
 /* ── DEACTIVATE STAFF ── */
 async function deactivateStaff(id) {
   if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการระงับการใช้งานพนักงานคนนี้?")) return;
-  
   const response = await window.API.staff.deactivate(id);
   if (response.ok) {
     alert("ปิดการใช้งานพนักงานเรียบร้อยแล้ว");
-    loadAndRenderStaff(); // โหลดตารางใหม่เพื่อให้พนักงานคนนี้หายไป (เพราะ query backend จับเฉพาะ "isActive"=TRUE)
+    loadAndRenderStaff(); 
   } else {
     alert("เกิดข้อผิดพลาด: " + (response.data?.message || 'ไม่ทราบสาเหตุ'));
   }
 }
 
-/* ── ATTENDANCE: Load and Render ── */
-/* ── ATTENDANCE: Load and Render ── */
+/* ── ATTENDANCE ── */
 async function loadAndRenderAttendance() {
   const tbody = document.querySelector('#tab-attendance tbody');
   if (!tbody) return;
 
-  // 🟢 ประกาศตัวแปรดึงวันที่จากหน้าเว็บ
+  if (!window.API || !window.API.attendance) return;
+
   const dateInputs = document.querySelectorAll('.att-toolbar .date-input');
-  const fromDate = dateInputs[0].value;
-  const toDate = dateInputs[1].value;
+  const fromDate = dateInputs[0]?.value;
+  const toDate = dateInputs[1]?.value;
 
   tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">กำลังโหลดข้อมูล...</td></tr>';
 
@@ -311,12 +259,10 @@ async function loadAndRenderAttendance() {
   }
 
   const records = response.data.data || [];
-
   const absentCount = records.filter(r => r.status && r.status.toUpperCase() === 'ABSENT').length;
-  const statAbsent = document.getElementById('stat-absent');
-  if (statAbsent) statAbsent.textContent = absentCount;
-  const tabCountAtt = document.getElementById('tab-count-att');
-  if (tabCountAtt) tabCountAtt.textContent = records.length;
+  
+  setVal('stat-absent', absentCount);
+  setVal('tab-count-att', records.length);
 
   tbody.innerHTML = '';
 
@@ -327,16 +273,10 @@ async function loadAndRenderAttendance() {
 
   records.forEach(rec => {
     const initial = rec.first_name ? rec.first_name.charAt(0) : '?';
-    
     let badgeClass = 'ontime';
     let statusText = 'On Time';
-    if (rec.status.toLowerCase() === 'late') {
-      badgeClass = 'late';
-      statusText = 'Late';
-    } else if (rec.status.toLowerCase() === 'absent') {
-      badgeClass = 'absent';
-      statusText = 'Absent';
-    }
+    if (rec.status.toLowerCase() === 'late') { badgeClass = 'late'; statusText = 'Late'; }
+    else if (rec.status.toLowerCase() === 'absent') { badgeClass = 'absent'; statusText = 'Absent'; }
 
     const workDate = new Date(rec.work_date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
 
@@ -345,7 +285,7 @@ async function loadAndRenderAttendance() {
       <td>
         <div class="staff-cell">
           <div class="avatar teal">${initial}</div>
-          <div><div class="staff-name">${rec.first_name} ${rec.last_name}</div></div>
+          <div><div class="staff-name">${rec.first_name} ${rec.last_name || ''}</div></div>
         </div>
       </td>
       <td style="color:var(--text-2)">${workDate}</td>
@@ -358,22 +298,14 @@ async function loadAndRenderAttendance() {
   });
 }
 
-// ผูกฟังก์ชันเข้ากับปุ่ม "ค้นหา" ในแท็บ Attendance
-document.addEventListener('DOMContentLoaded', () => {
-  const searchBtn = document.querySelector('.att-toolbar .btn-primary');
-  if (searchBtn) {
-    searchBtn.addEventListener('click', loadAndRenderAttendance);
-  }
-});
-
-/* ── LEAVE: Load and Render ── */
+/* ── LEAVE REQUESTS ── */
 async function loadAndRenderLeave() {
   const tbody = document.querySelector('#tab-leave tbody');
   if (!tbody) return;
 
-  tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">กำลังโหลดข้อมูล...</td></tr>';
+  if (!window.API || !window.API.leave) return;
 
-  // ดึงข้อมูลการลาทั้งหมด
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">กำลังโหลดข้อมูล...</td></tr>';
   const response = await window.API.leave.getAll();
   
   if (!response.ok) {
@@ -384,10 +316,9 @@ async function loadAndRenderLeave() {
   const records = response.data.data || [];
   tbody.innerHTML = '';
   
-  // อัปเดตตัวเลขแจ้งเตือน (นับเฉพาะที่รออนุมัติ)
   const pendingCount = records.filter(r => r.status === 'PENDING').length;
-  document.getElementById('leave-count').textContent = pendingCount; // บนแท็บ
-  document.getElementById('stat-leave-pending').textContent = pendingCount; // บนการ์ดด้านบน
+  setVal('leave-count', pendingCount);
+  setVal('stat-leave-pending', pendingCount);
 
   if (records.length === 0) {
     tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-3);">ไม่มีรายการคำขอลา</td></tr>';
@@ -396,24 +327,19 @@ async function loadAndRenderLeave() {
 
   records.forEach(rec => {
     const initial = rec.first_name ? rec.first_name.charAt(0) : '?';
-    
-    // จัดการสีของ Badge
     let badgeClass = 'pending';
     let statusText = 'Pending';
     if (rec.status === 'APPROVED') { badgeClass = 'approved'; statusText = 'Approved'; }
     if (rec.status === 'REJECTED') { badgeClass = 'rejected'; statusText = 'Rejected'; }
 
-    // วันที่ลา
     const startDate = new Date(rec.start_date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
     const endDate = new Date(rec.end_date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
     
-    // แปลงประเภทการลา
     let leaveTypeTh = rec.leave_type;
     if(rec.leave_type === 'SICK_LEAVE') leaveTypeTh = 'ลาป่วย';
     if(rec.leave_type === 'PERSONAL_LEAVE') leaveTypeTh = 'ลากิจ';
     if(rec.leave_type === 'ANNUAL_LEAVE') leaveTypeTh = 'ลาพักร้อน';
 
-    // จัดการส่วนปุ่ม Action (ถ้าอนุมัติแล้วให้โชว์ชื่อคนอนุมัติ)
     let actionHTML = `<td style="color:var(--text-3)">${rec.approver_name || '-'}</td>`;
     if (rec.status === 'PENDING') {
       actionHTML = `
@@ -429,7 +355,7 @@ async function loadAndRenderLeave() {
       <td>
         <div class="staff-cell">
           <div class="avatar purple">${initial}</div>
-          <div><div class="staff-name">${rec.first_name} ${rec.last_name}</div></div>
+          <div><div class="staff-name">${rec.first_name} ${rec.last_name || ''}</div></div>
         </div>
       </td>
       <td style="color:var(--text-2)">${leaveTypeTh}</td>
@@ -442,31 +368,20 @@ async function loadAndRenderLeave() {
   });
 }
 
-/* ── LEAVE: Approve or Reject Action ── */
 async function handleLeaveAction(leaveId, newStatus) {
   if (!confirm(`คุณต้องการ ${newStatus} คำขอลานี้ใช่หรือไม่?`)) return;
-
-  // สมมติว่า Admin ที่กดอนุมัติคือ ID: 1 (เดี๋ยวตอนทำ Login เสร็จต้องเปลี่ยนเป็นดึงจาก Token)
   const approvedByAdminId = 1; 
-
   const response = await window.API.leave.approve(leaveId, approvedByAdminId, newStatus);
   if (response.ok) {
     alert("อัปเดตสถานะการลาสำเร็จ");
-    loadAndRenderLeave(); // โหลดตารางใหม่
+    loadAndRenderLeave(); 
   } else {
     alert("เกิดข้อผิดพลาด: " + (response.data?.message || ''));
   }
 }
 
-// 🟢 เพิ่ม event ให้ดึงข้อมูลเมื่อสลับแท็บ
-document.addEventListener('DOMContentLoaded', () => {
-  // ดึงข้อมูลเมื่อโหลดหน้าเว็บ
-  loadAndRenderLeave(); 
-});
-
-/* ── STAT CARD CLICK HANDLER (กรองข้อมูลจากกล่องสถิติ) ── */
+/* ── STAT CARD CLICK HANDLER ── */
 function clickStatCard(type) {
-  // ฟังก์ชันช่วยสลับแท็บ
   const triggerTab = (tabName) => {
      const btn = document.querySelector(`.tab-btn[onclick*="'${tabName}'"]`);
      if (btn) switchTab(tabName, btn);
@@ -474,12 +389,10 @@ function clickStatCard(type) {
 
   if (type === 'total') {
     triggerTab('staff');
-    // โชว์ทุกคน (เคลียร์ฟิลเตอร์)
     document.querySelectorAll('#staff-tbody tr').forEach(r => r.style.display = '');
   } 
   else if (type === 'onduty') {
     triggerTab('staff');
-    // กรองโชว์เฉพาะคนที่มี Badge Online
     document.querySelectorAll('#staff-tbody tr').forEach(r => {
       const isOnline = r.querySelector('.badge.online');
       r.style.display = isOnline ? '' : 'none';
@@ -487,7 +400,6 @@ function clickStatCard(type) {
   } 
   else if (type === 'leave') {
     triggerTab('leave');
-    // กรองโชว์เฉพาะรายการลาที่ยัง Pending
     document.querySelectorAll('#tab-leave tbody tr').forEach(r => {
       const isPending = r.querySelector('.badge.pending');
       r.style.display = isPending ? '' : 'none';
@@ -495,10 +407,20 @@ function clickStatCard(type) {
   } 
   else if (type === 'absent') {
     triggerTab('attendance');
-    // กรองโชว์เฉพาะคนที่สถานะ Absent
     document.querySelectorAll('#tab-attendance tbody tr').forEach(r => {
       const isAbsent = r.querySelector('.badge.absent');
       r.style.display = isAbsent ? '' : 'none';
     });
   }
 }
+
+/* ── INIT ── */
+document.addEventListener('DOMContentLoaded', () => {
+  loadAndRenderStaff();
+  loadAndRenderLeave();
+  
+  const searchBtn = document.getElementById('btn-search-attendance');
+  if (searchBtn) {
+    searchBtn.addEventListener('click', loadAndRenderAttendance);
+  }
+});

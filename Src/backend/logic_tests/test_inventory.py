@@ -24,28 +24,32 @@ def test_check_invoice(booking_id):
 
 def test_record_usage_supply(booking_id):
     print(f"\n🧴 CASE 1: เบิก SUPPLY (แชมพู ID=8) สำหรับการจอง ID: {booking_id}...")
-    payload = {"booking_id": booking_id, "item_id": 8, "quantity_used": 1}
+    # เปลี่ยนชื่อคีย์ตรงนี้
+    payload = {"booking_detail_id": booking_id, "item_id": 8, "quantity_used": 1}
     response = requests.post(f"{BASE_URL}/usage", json=payload)
     print("Status:", response.status_code)
     print("Response:", response.json())
 
 def test_record_usage_service(booking_id):
     print(f"\n🛀 CASE 2: บันทึก SERVICE (อาบน้ำสุนัขใหญ่ ID=11) สำหรับการจอง ID: {booking_id}...")
-    payload = {"booking_id": booking_id, "item_id": 11, "quantity_used": 1}
+    # เปลี่ยนชื่อคีย์ตรงนี้
+    payload = {"booking_detail_id": booking_id, "item_id": 11, "quantity_used": 1}
     response = requests.post(f"{BASE_URL}/usage", json=payload)
     print("Status:", response.status_code)
     print("Response:", response.json())
 
 def test_record_usage_out_of_stock(booking_id):
     print(f"\n⛔ CASE 3: เบิกเกินสต็อก -> ต้องได้ Error...")
-    payload = {"booking_id": booking_id, "item_id": 8, "quantity_used": 9999}
+    # เปลี่ยนชื่อคีย์ตรงนี้
+    payload = {"booking_detail_id": booking_id, "item_id": 8, "quantity_used": 9999}
     response = requests.post(f"{BASE_URL}/usage", json=payload)
     print("Status:", response.status_code, "(คาดหวัง 400)")
     print("Response:", response.json())
 
 def test_record_usage_inactive_booking():
     print(f"\n⛔ CASE 4: เบิกของใน Booking ที่ COMPLETED -> ต้องได้ Error...")
-    payload = {"booking_id": 1, "item_id": 8, "quantity_used": 1}  # Booking 1 = COMPLETED
+    # เปลี่ยนชื่อคีย์ตรงนี้ (และสมมติให้ ID ของน้องหมา/แมวใน Booking 1 เป็น 1)
+    payload = {"booking_detail_id": 1, "item_id": 8, "quantity_used": 1} 
     response = requests.post(f"{BASE_URL}/usage", json=payload)
     print("Status:", response.status_code, "(คาดหวัง 400)")
     print("Response:", response.json())

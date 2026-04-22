@@ -1,0 +1,20 @@
+# 1. เลือก Base Image สำหรับ Python
+FROM python:3.10-slim
+
+# 2. ตั้งค่าโฟลเดอร์ทำงานหลักใน Container
+WORKDIR /app
+
+# 3. ก๊อปปี้ requirements.txt เข้าไปก่อน (ไฟล์นี้อยู่ในระดับเดียวกับ dockerfile)
+COPY requirements.txt .
+
+# 4. ติดตั้ง Libraries ตามที่ระบุไว้
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 5. ก๊อปปี้ไฟล์ทั้งหมดในโฟลเดอร์ Src (รวมถึง backend, frontend, database) เข้าไปใน /app
+COPY . .
+
+# 6. เปิดพอร์ต 8080 (ให้ตรงกับที่คุณ map พอร์ตไว้ตอนรัน)
+EXPOSE 8080
+
+# 7. ชี้เป้าไปที่ไฟล์ app.py ที่อยู่ในโฟลเดอร์ backend
+CMD ["python", "backend/app.py"]

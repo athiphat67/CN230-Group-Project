@@ -31,6 +31,7 @@
 
 /* ── FILTER TOOLBAR ── */
 .at-toolbar {
+  width: 100%; box-sizing: border-box; /* บังคับกาง 100% */
   background: var(--at-surface); border: 1px solid var(--at-border);
   border-radius: var(--at-r); padding: 16px 20px;
   display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
@@ -69,6 +70,7 @@
 
 /* ── STAT CARDS ── */
 .at-stats-row {
+  width: 100%; box-sizing: border-box; /* บังคับกาง 100% */
   display: grid; grid-template-columns: repeat(5, 1fr);
   gap: 12px; margin-bottom: 20px;
 }
@@ -87,6 +89,7 @@
 
 /* ── TABLE CARD ── */
 .at-card {
+  width: 100%; box-sizing: border-box; /* บังคับกาง 100% */
   background: var(--at-surface); border: 1px solid var(--at-border);
   border-radius: var(--at-r); box-shadow: var(--at-shadow);
   animation: fadeUp .5s .1s ease both; overflow: hidden;

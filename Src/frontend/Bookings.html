@@ -602,6 +602,32 @@
   </div>
 </div>
 
+<div class="bk-modal-overlay" id="modal-add-service">
+  <div class="bk-modal bk-modal-sm">
+    <div class="bk-modal-header">
+      <div>
+        <div class="bk-modal-title">เพิ่มบริการเสริม</div>
+        <div class="bk-modal-sub" id="as-subtitle">—</div>
+      </div>
+      <button class="bk-modal-close" onclick="closeModal('modal-add-service')">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="bk-modal-body">
+      <div class="bk-addons-grid" id="as-services-grid" style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="color:var(--bk-text-3);font-size:13px">กำลังโหลด...</div>
+      </div>
+    </div>
+    <div class="bk-modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-add-service')">ยกเลิก</button>
+      <button class="btn-primary" id="as-confirm-btn" onclick="confirmAddService()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
+        ยืนยันการเพิ่ม
+      </button>
+    </div>
+  </div>
+</div>
+
 <script src="js/components/sidebar.js"></script>
 <script src="js/components/navbar.js"></script>
 <script src="js/services/api.js"></script>

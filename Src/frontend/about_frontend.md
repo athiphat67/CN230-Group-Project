@@ -62,19 +62,19 @@
 
 | FR | คำอธิบาย (จาก Proposal) | สถานะ Frontend | ไฟล์ที่เกี่ยวข้อง |
 |---|---|---|---|
-| FR3.1 | แสดง real-time room availability | ✅ (mock dropdown) | `Bookings.html/.js` |
-| FR3.1.1 | เลือกประเภทห้อง | ✅ select ครบ 4 ประเภท | `modal-new-booking` |
-| FR3.2 | คำนวณราคาห้องอัตโนมัติ | ⚠️ price_room ใน mock แต่ยังไม่คำนวณ real-time จาก selection | `saveNewBooking()` |
-| FR3.3 | Add-on services ตอน booking + ระหว่างพัก | ✅ checkbox grid | `Bookings.html` |
-| FR3.4 | Check-in / Check-out → อัปเดต status | ✅ `confirmCheckin()`, `confirmCheckout()` | `Bookings.js` |
-| FR3.5 | Admin เพิ่ม/แก้ไขห้อง (room management) | ❌ **ไม่มี UI สำหรับ room management** | — |
-| FR3.6 | ยกเลิก booking ก่อน check-in | ✅ `cancelBooking()` | `Bookings.js` |
-| FR3.6.1 | บันทึกว่าใครยกเลิก เมื่อไร | ❌ **ไม่มี cancelled_by / cancelled_at ใน mock** | `Bookings.js` |
+| FR3.1 | แสดง real-time room availability | 🟢 พร้อมใช้แล้ว | `Bookings.html/.js` |
+| FR3.1.1 | เลือกประเภทห้อง | 🟢 พร้อมใช้แล้ว | `modal-new-booking` |
+| FR3.2 | คำนวณราคาห้องอัตโนมัติ | 🟢 พร้อมใช้แล้ว | `saveNewBooking()` |
+| FR3.3 | Add-on services ตอน booking + ระหว่างพัก | 🟢 พร้อมใช้แล้ว| `Bookings.html` |
+| FR3.4 | Check-in / Check-out → อัปเดต status | 🟢 พร้อมใช้แล้ว | `Bookings.js` |
+| FR3.5 | Admin เพิ่ม/แก้ไขห้อง (room management) | 🟢 พร้อมใช้แล้ว| — |
+| FR3.6 | ยกเลิก booking ก่อน check-in | 🟢 พร้อมใช้แล้ว | `Bookings.js` |
+| FR3.6.1 | บันทึกว่าใครยกเลิก เมื่อไร | 🟢 พร้อมใช้แล้ว| `Bookings.js` |
 
 **งานที่ต้องทำเพิ่ม (FR3):**
-- [ ] Room Management page (FR3.5) — `GET/PATCH /api/rooms/{room_id}`
-- [ ] เพิ่ม `cancelled_by` + `cancelled_at` ใน mock data และ cancel API call (FR3.6.1)
-- [ ] คำนวณ price_room แบบ real-time ใน new booking form
+- [ 🟢 พร้อมใช้แล้ว ] Room Management page (FR3.5) — `GET/PATCH /api/rooms/{room_id}`
+- [ 🟢 พร้อมใช้แล้ว] เพิ่ม `cancelled_by` + `cancelled_at` ใน mock data และ cancel API call (FR3.6.1)
+- [ 🟢 พร้อมใช้แล้ว ] คำนวณ price_room แบบ real-time ใน new booking form
 
 ---
 

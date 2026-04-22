@@ -236,18 +236,22 @@ function renderTable() {
   if (!tbody) return;
 
   const filtered = getFiltered();
+  const page = window.Pagination
+    ? Pagination.paginate(filtered, { key: 'admin-inventory', pageSize: 10 })
+    : { pageItems: filtered, total: filtered.length, start: 0, end: filtered.length, totalPages: 1 };
 
   if (filtered.length === 0) {
     tbody.innerHTML = '';
     if (emptyEl) emptyEl.style.display = 'block';
     if (showEl)  showEl.textContent = 'ไม่พบรายการ';
+    window.Pagination?.render(page, { key: 'admin-inventory', infoId: 'iv-showing', label: 'รายการ', onChange: renderTable });
     return;
   }
 
   if (emptyEl) emptyEl.style.display = 'none';
-  if (showEl)  showEl.textContent = `แสดง ${filtered.length} รายการ`;
+  window.Pagination?.render(page, { key: 'admin-inventory', infoId: 'iv-showing', label: 'รายการ', onChange: renderTable });
 
-  tbody.innerHTML = filtered.map(item => {
+  tbody.innerHTML = page.pageItems.map(item => {
     const pct      = Math.min(100, Math.round((item.quantity_remaining / item.quantity_total) * 100));
     const barLevel = item.stock_status === 'OUT_OF_STOCK' ? 'danger'
                    : item.stock_status === 'LOW_STOCK'    ? 'low' : 'good';
@@ -327,6 +331,7 @@ function getFiltered() {
 
 function filterItems(filter, btn) {
   currentFilter = filter;
+  window.Pagination?.reset('admin-inventory');
   document.querySelectorAll('.iv-tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
   renderTable();
@@ -334,6 +339,7 @@ function filterItems(filter, btn) {
 
 function searchItems(q) {
   currentSearch = q;
+  window.Pagination?.reset('admin-inventory');
   renderTable();
 }
 

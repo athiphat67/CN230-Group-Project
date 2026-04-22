@@ -157,7 +157,17 @@ async function loadMyPetsToProfile() {
           return;
       }
 
-      container.innerHTML = pets.map(pet => `
+      const page = window.Pagination
+        ? Pagination.paginate(pets, { key: 'user-profile-pets', pageSize: 6 })
+        : { pageItems: pets, total: pets.length, start: 0, end: pets.length, totalPages: 1 };
+      window.Pagination?.render(page, {
+        key: 'user-profile-pets',
+        containerEl: ensureProfilePager(container),
+        label: 'pets',
+        onChange: loadMyPetsToProfile,
+      });
+
+      container.innerHTML = page.pageItems.map(pet => `
         <a href="PetProfile.html?petId=${pet.pet_id || pet.petid || pet.id}" style="display:flex; align-items:center; gap:12px; padding:12px 16px; border:1px solid var(--border); border-radius:var(--r); text-decoration:none; color:var(--text-1); background:var(--bg-alt); min-width: 200px;">
           <div style="font-size:24px;">${pet.species?.toLowerCase().includes('dog') ? '🐶' : pet.species?.toLowerCase().includes('cat') ? '🐱' : '🐾'}</div>
           <div>
@@ -167,6 +177,18 @@ async function loadMyPetsToProfile() {
         </a>
       `).join('');
   }
+}
+
+function ensureProfilePager(anchor) {
+  let pager = document.getElementById('profile-pet-list-pager');
+  if (!pager) {
+    pager = document.createElement('div');
+    pager.id = 'profile-pet-list-pager';
+    pager.className = 'pg-pagination';
+    pager.style.marginTop = '12px';
+    anchor.insertAdjacentElement('afterend', pager);
+  }
+  return pager;
 }
 
 // 🟢 อย่าลืมไปเพิ่มการเรียกใช้งาน loadMyPetsToProfile() ใน DOMContentLoaded ด้วยนะครับ!

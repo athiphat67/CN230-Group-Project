@@ -16,6 +16,8 @@ let sortKey = 'room_number';
 let sortDirection = 'asc';
 let editingRoomId = null;
 let statusOptions = [...DEFAULT_STATUS_OPTIONS];
+const ROOMS_PAGE_KEY = 'admin-rooms';
+const ROOMS_PAGE_SIZE = 10;
 
 document.addEventListener('DOMContentLoaded', async () => {
   bindModalBackdrops();
@@ -131,18 +133,22 @@ function renderTable() {
   if (!tbody || !emptyEl || !showingEl) return;
 
   const filtered = getFilteredRooms();
+  const page = window.Pagination
+    ? Pagination.paginate(filtered, { key: ROOMS_PAGE_KEY, pageSize: ROOMS_PAGE_SIZE })
+    : { pageItems: filtered, total: filtered.length, start: 0, end: filtered.length, totalPages: 1 };
 
   if (filtered.length === 0) {
     tbody.innerHTML = '';
     emptyEl.style.display = 'block';
     showingEl.textContent = 'No rooms found';
+    window.Pagination?.render(page, { key: ROOMS_PAGE_KEY, infoId: 'rooms-showing', label: 'rooms', onChange: renderTable });
     return;
   }
 
   emptyEl.style.display = 'none';
-  showingEl.textContent = `Showing ${filtered.length} of ${ROOMS.length} rooms`;
+  window.Pagination?.render(page, { key: ROOMS_PAGE_KEY, infoId: 'rooms-showing', label: 'rooms', onChange: renderTable });
 
-  tbody.innerHTML = filtered.map(room => `
+  tbody.innerHTML = page.pageItems.map(room => `
     <tr>
       <td>
         <div class="rm-room-cell">
@@ -208,6 +214,7 @@ function compareRooms(a, b) {
 
 function filterRooms(filter, btn) {
   currentFilter = filter;
+  window.Pagination?.reset(ROOMS_PAGE_KEY);
   document.querySelectorAll('.rm-tab').forEach(tab => tab.classList.remove('active'));
   btn?.classList.add('active');
   renderTable();
@@ -215,6 +222,7 @@ function filterRooms(filter, btn) {
 
 function searchRooms(value) {
   currentSearch = value;
+  window.Pagination?.reset(ROOMS_PAGE_KEY);
   renderTable();
 }
 
@@ -225,6 +233,7 @@ function sortRooms(key) {
     sortKey = key;
     sortDirection = 'asc';
   }
+  window.Pagination?.reset(ROOMS_PAGE_KEY);
   renderTable();
 }
 

@@ -75,7 +75,17 @@ async function loadMyPets(customer) {
             return;
         }
 
-        container.innerHTML = pets.map(pet => `
+        const page = window.Pagination
+            ? Pagination.paginate(pets, { key: 'reservation-pets', pageSize: 6 })
+            : { pageItems: pets, total: pets.length, start: 0, end: pets.length, totalPages: 1 };
+        window.Pagination?.render(page, {
+            key: 'reservation-pets',
+            containerEl: ensureReservationPager(container, 'reservation-pets-pager'),
+            label: 'pets',
+            onChange: () => loadMyPets(customer),
+        });
+
+        container.innerHTML = page.pageItems.map(pet => `
       <label class="pet-select-card">
         <input type="checkbox" value="${pet.pet_id || pet.petid || pet.id}" data-species="${pet.species}" onchange="handlePetSelection(this)">
         <div class="pet-select-card__inner">
@@ -106,7 +116,17 @@ function renderSuites() {
     const container = document.getElementById('suite-options');
     if (!container) return;
 
-    container.innerHTML = SUITE_CATALOG.map(suite => `
+    const page = window.Pagination
+        ? Pagination.paginate(SUITE_CATALOG, { key: 'reservation-suites', pageSize: 6 })
+        : { pageItems: SUITE_CATALOG, total: SUITE_CATALOG.length, start: 0, end: SUITE_CATALOG.length, totalPages: 1 };
+    window.Pagination?.render(page, {
+        key: 'reservation-suites',
+        containerEl: ensureReservationPager(container, 'reservation-suites-pager'),
+        label: 'rooms',
+        onChange: renderSuites,
+    });
+
+    container.innerHTML = page.pageItems.map(suite => `
     <button type="button"
       class="suite-option ${suite.id === selectedSuiteId ? 'selected' : ''}"
       data-suite-id="${suite.id}"
@@ -133,7 +153,17 @@ function renderAddons() {
     const container = document.getElementById('addon-list');
     if (!container) return;
 
-    container.innerHTML = ADDON_CATALOG.map(addon => `
+    const page = window.Pagination
+        ? Pagination.paginate(ADDON_CATALOG, { key: 'reservation-addons', pageSize: 6 })
+        : { pageItems: ADDON_CATALOG, total: ADDON_CATALOG.length, start: 0, end: ADDON_CATALOG.length, totalPages: 1 };
+    window.Pagination?.render(page, {
+        key: 'reservation-addons',
+        containerEl: ensureReservationPager(container, 'reservation-addons-pager'),
+        label: 'add-ons',
+        onChange: renderAddons,
+    });
+
+    container.innerHTML = page.pageItems.map(addon => `
     <label class="addon-item" data-addon-id="${addon.id}">
       <input type="checkbox" value="${addon.id}" onchange="toggleAddon(this)">
       <div class="addon-item__info">
@@ -154,6 +184,18 @@ function toggleAddon(checkbox) {
 }
 
 window.toggleAddon = toggleAddon;
+
+function ensureReservationPager(anchor, id) {
+    let pager = document.getElementById(id);
+    if (!pager) {
+        pager = document.createElement('div');
+        pager.id = id;
+        pager.className = 'pg-pagination';
+        pager.style.marginTop = '12px';
+        anchor.insertAdjacentElement('afterend', pager);
+    }
+    return pager;
+}
 
 /* ── BOOKING SUMMARY ──────────────────────────────── */
 function updateSummary() {

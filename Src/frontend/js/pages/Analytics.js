@@ -321,11 +321,21 @@ function renderTopAddons(data) {
   }
 
   const maxCount = Math.max(...addons.map(a => a.count), 1);
-  container.innerHTML = addons
-    .sort((a, b) => b.revenue - a.revenue)
+  const sorted = addons.sort((a, b) => b.revenue - a.revenue);
+  const page = window.Pagination
+    ? Pagination.paginate(sorted, { key: 'analytics-addons', pageSize: 5 })
+    : { pageItems: sorted, total: sorted.length, start: 0, end: sorted.length, totalPages: 1 };
+  window.Pagination?.render(page, {
+    key: 'analytics-addons',
+    containerEl: ensureAnalyticsPager(container, 'analytics-addons-pager'),
+    label: 'services',
+    onChange: () => renderTopAddons(data),
+  });
+
+  container.innerHTML = page.pageItems
     .map((addon, i) => `
       <div class="an-addon-row">
-        <div class="an-addon-rank">${i + 1}</div>
+        <div class="an-addon-rank">${page.start + i + 1}</div>
         <div class="an-addon-info">
           <div class="an-addon-label">${addon.service}</div>
           <div class="an-addon-bar-wrap">
@@ -340,6 +350,18 @@ function renderTopAddons(data) {
         </div>
       </div>
     `).join('');
+}
+
+function ensureAnalyticsPager(anchor, id) {
+  let pager = document.getElementById(id);
+  if (!pager) {
+    pager = document.createElement('div');
+    pager.id = id;
+    pager.className = 'pg-pagination';
+    pager.style.marginTop = '12px';
+    anchor.insertAdjacentElement('afterend', pager);
+  }
+  return pager;
 }
 
 /* ─── 6. REVENUE SPLIT DONUT ───────────────────────────────── */

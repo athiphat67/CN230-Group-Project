@@ -14,6 +14,8 @@ let detailCache    = {};          // { id_raw: detailObject } — avoid re-fetch
 let currentFilter  = 'all';
 let currentSearch  = '';
 let selectedInv    = null;        // currently selected invoice object
+const BILLING_PAGE_KEY = 'admin-billing';
+const BILLING_PAGE_SIZE = 10;
 
 /* ══════════════════════════════════════════
    INIT
@@ -96,18 +98,22 @@ function renderTable() {
   const emptyEl   = document.getElementById('bl-empty');
   const showingEl = document.getElementById('bl-showing');
   const filtered  = getFiltered();
+  const page = window.Pagination
+    ? Pagination.paginate(filtered, { key: BILLING_PAGE_KEY, pageSize: BILLING_PAGE_SIZE })
+    : { pageItems: filtered, total: filtered.length, start: 0, end: filtered.length, totalPages: 1 };
 
   if (filtered.length === 0) {
     tbody.innerHTML = '';
     emptyEl.style.display = 'block';
     showingEl.textContent = 'ไม่พบรายการ';
+    window.Pagination?.render(page, { key: BILLING_PAGE_KEY, containerId: 'bl-pager', infoId: 'bl-showing', label: 'รายการ', onChange: renderTable });
     return;
   }
 
   emptyEl.style.display = 'none';
-  showingEl.textContent = `แสดง ${filtered.length} รายการ`;
+  window.Pagination?.render(page, { key: BILLING_PAGE_KEY, containerId: 'bl-pager', infoId: 'bl-showing', label: 'รายการ', onChange: renderTable });
 
-  tbody.innerHTML = filtered.map(inv => `
+  tbody.innerHTML = page.pageItems.map(inv => `
     <tr data-id="${inv.id}">
       <td>
         <div class="bl-invoice-id">${inv.id}</div>
@@ -173,6 +179,7 @@ function getFiltered() {
 
 function filterInvoices(filter, btn) {
   currentFilter = filter;
+  window.Pagination?.reset(BILLING_PAGE_KEY);
   document.querySelectorAll('.bl-tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
   renderTable();
@@ -180,6 +187,7 @@ function filterInvoices(filter, btn) {
 
 function searchInvoices(q) {
   currentSearch = q;
+  window.Pagination?.reset(BILLING_PAGE_KEY);
   renderTable();
 }
 

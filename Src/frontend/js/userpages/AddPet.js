@@ -127,10 +127,26 @@ function renderVaccineTable() {
 
   if (vaccineEntries.length === 0) {
     tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--text-3);padding:16px;font-size:13px">No vaccinations added yet</td></tr>`;
+    window.Pagination?.render(
+      { pageItems: [], total: 0, start: 0, end: 0, totalPages: 1, page: 1 },
+      { key: 'add-pet-vaccines', containerEl: ensureVaccinePager(tbody), label: 'vaccinations', onChange: renderVaccineTable }
+    );
     return;
   }
 
-  tbody.innerHTML = vaccineEntries.map((v, i) => `
+  const page = window.Pagination
+    ? Pagination.paginate(vaccineEntries, { key: 'add-pet-vaccines', pageSize: 5 })
+    : { pageItems: vaccineEntries, total: vaccineEntries.length, start: 0, end: vaccineEntries.length, totalPages: 1 };
+  window.Pagination?.render(page, {
+    key: 'add-pet-vaccines',
+    containerEl: ensureVaccinePager(tbody),
+    label: 'vaccinations',
+    onChange: renderVaccineTable,
+  });
+
+  tbody.innerHTML = page.pageItems.map((v, pageIndex) => {
+    const i = page.start + pageIndex;
+    return `
     <tr>
       <td style="font-weight:600;color:var(--text-1)">${escHtml(v.vaccine_name)}</td>
       <td>${formatDate(v.administered_date)}</td>
@@ -143,7 +159,20 @@ function renderVaccineTable() {
         </button>
       </td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
+}
+
+function ensureVaccinePager(tbody) {
+  let pager = document.getElementById('vaccine-table-pager');
+  if (!pager) {
+    pager = document.createElement('div');
+    pager.id = 'vaccine-table-pager';
+    pager.className = 'pg-pagination';
+    pager.style.marginTop = '12px';
+    tbody.closest('.vital-card__body')?.appendChild(pager);
+  }
+  return pager;
 }
 
 function updateVaccineRecord() {

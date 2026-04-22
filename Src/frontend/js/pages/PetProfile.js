@@ -16,6 +16,8 @@ let currentSearch = '';
 let selectedPetId = null;
 let editingPetId = null;
 let activeModalTab = 'basic';
+const PETS_PAGE_KEY = 'admin-pets';
+const PETS_PAGE_SIZE = 10;
 
 /* ══════════════════════════════════════════
    INIT
@@ -55,18 +57,22 @@ function renderTable() {
   const showEl  = document.getElementById('pp-showing');
 
   const filtered = getFiltered();
+  const page = window.Pagination
+    ? Pagination.paginate(filtered, { key: PETS_PAGE_KEY, pageSize: PETS_PAGE_SIZE })
+    : { pageItems: filtered, total: filtered.length, start: 0, end: filtered.length, totalPages: 1 };
   updateCounts();
 
   if (filtered.length === 0) {
     tbody.innerHTML = '';
     emptyEl.style.display = 'block';
     showEl.textContent = 'ไม่พบรายการ';
+    window.Pagination?.render(page, { key: PETS_PAGE_KEY, infoId: 'pp-showing', label: 'รายการ', onChange: renderTable });
     return;
   }
   emptyEl.style.display = 'none';
-  showEl.textContent = `แสดง ${filtered.length} รายการ`;
+  window.Pagination?.render(page, { key: PETS_PAGE_KEY, infoId: 'pp-showing', label: 'รายการ', onChange: renderTable });
 
-  tbody.innerHTML = filtered.map(pet => {
+  tbody.innerHTML = page.pageItems.map(pet => {
     const age = calcAge(pet.dob);
     const vaccStatus = getVaccStatus(pet);
     const alerts = [];
@@ -163,6 +169,7 @@ function getFiltered() {
 
 function filterPets(filter, btn) {
   currentFilter = filter;
+  window.Pagination?.reset(PETS_PAGE_KEY);
   document.querySelectorAll('.pp-tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
   renderTable();
@@ -170,6 +177,7 @@ function filterPets(filter, btn) {
 
 function searchPets(q) {
   currentSearch = q;
+  window.Pagination?.reset(PETS_PAGE_KEY);
   renderTable();
 }
 

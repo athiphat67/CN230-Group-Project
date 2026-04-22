@@ -81,13 +81,19 @@ function renderActiveStays() {
     s.room?.toLowerCase().includes(q) || 
     s.breed?.toLowerCase().includes(q)
   );
+  const page = window.Pagination
+    ? Pagination.paginate(filtered, { key: 'petcare-stays', pageSize: 5 })
+    : { pageItems: filtered, total: filtered.length, start: 0, end: filtered.length, totalPages: 1 };
 
   if (filtered.length === 0) {
     list.innerHTML = `<div style="text-align:center;padding:40px;color:var(--pc-text-3);font-size:13px">ไม่พบรายการ</div>`;
+    window.Pagination?.render(page, { key: 'petcare-stays', containerEl: ensurePagerAfter(list, 'pc-stays-pager'), label: 'รายการ', onChange: renderActiveStays });
     return;
   }
 
-  list.innerHTML = filtered.map((s, i) => {
+  window.Pagination?.render(page, { key: 'petcare-stays', containerEl: ensurePagerAfter(list, 'pc-stays-pager'), label: 'รายการ', onChange: renderActiveStays });
+
+  list.innerHTML = page.pageItems.map((s, i) => {
     const daysLeft = calcDaysLeft(s.checkout);
     return `
       <div class="pc-stay-item" style="animation-delay:${i * 0.05}s">
@@ -111,6 +117,7 @@ function renderActiveStays() {
 
 function filterActiveStays(q) {
   currentStaySearch = q;
+  window.Pagination?.reset('petcare-stays');
   renderActiveStays();
 }
 
@@ -131,6 +138,9 @@ function renderReports() {
   const filtered = CARE_REPORTS.filter(r =>
     currentMoodFilter === 'all' || r.mood === currentMoodFilter
   );
+  const page = window.Pagination
+    ? Pagination.paginate(filtered, { key: 'petcare-reports', pageSize: 6 })
+    : { pageItems: filtered, total: filtered.length, start: 0, end: filtered.length, totalPages: 1 };
 
   if (filtered.length === 0) {
     list.innerHTML = `
@@ -139,10 +149,13 @@ function renderReports() {
         <p>ไม่พบรายงานสำหรับตัวกรองนี้</p>
       </div>
     `;
+    window.Pagination?.render(page, { key: 'petcare-reports', containerEl: ensurePagerAfter(list, 'pc-reports-pager'), label: 'รายการ', onChange: renderReports });
     return;
   }
 
-  list.innerHTML = filtered.map((r, i) => `
+  window.Pagination?.render(page, { key: 'petcare-reports', containerEl: ensurePagerAfter(list, 'pc-reports-pager'), label: 'รายการ', onChange: renderReports });
+
+  list.innerHTML = page.pageItems.map((r, i) => `
     <div class="pc-report-card" style="animation-delay:${i * 0.06}s" onclick="openViewReport(${r.report_id})">
       <div class="pc-report-card-top">
         <div class="pc-report-pet">
@@ -180,9 +193,22 @@ function renderReports() {
 
 function filterMood(mood, btn) {
   currentMoodFilter = mood;
+  window.Pagination?.reset('petcare-reports');
   document.querySelectorAll('.pc-mood-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   renderReports();
+}
+
+function ensurePagerAfter(anchor, id) {
+  let pager = document.getElementById(id);
+  if (!pager) {
+    pager = document.createElement('div');
+    pager.id = id;
+    pager.className = 'pg-pagination';
+    pager.style.marginTop = '12px';
+    anchor.insertAdjacentElement('afterend', pager);
+  }
+  return pager;
 }
 
 /* ══════════════════════════════════════════

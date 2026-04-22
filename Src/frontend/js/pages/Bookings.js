@@ -16,6 +16,8 @@ let BOOKINGS = [];
 let currentFilter = 'all';
 let currentSearch = '';
 let pendingActionId = null;
+const BOOKINGS_PAGE_KEY = 'admin-bookings';
+const BOOKINGS_PAGE_SIZE = 8;
 
 // New Booking form state
 let nb_customerId = null;
@@ -116,18 +118,22 @@ function renderTable() {
   if (!tbody) return;
 
   const filtered = getFiltered();
+  const page = window.Pagination
+    ? Pagination.paginate(filtered, { key: BOOKINGS_PAGE_KEY, pageSize: BOOKINGS_PAGE_SIZE })
+    : { pageItems: filtered, total: filtered.length, start: 0, end: filtered.length, totalPages: 1 };
 
   if (filtered.length === 0) {
     tbody.innerHTML = '';
     if (emptyEl) emptyEl.style.display = 'block';
     if (showingEl) showingEl.textContent = 'ไม่พบรายการ';
+    window.Pagination?.render(page, { key: BOOKINGS_PAGE_KEY, infoId: 'bk-showing', label: 'รายการ', onChange: renderTable });
     return;
   }
 
   if (emptyEl) emptyEl.style.display = 'none';
-  if (showingEl) showingEl.textContent = `แสดง ${filtered.length} รายการ`;
+  window.Pagination?.render(page, { key: BOOKINGS_PAGE_KEY, infoId: 'bk-showing', label: 'รายการ', onChange: renderTable });
 
-  tbody.innerHTML = filtered.map(b => {
+  tbody.innerHTML = page.pageItems.map(b => {
     const nights = calcNights(b.checkin, b.checkout);
     const addonsHtml = b.addons.length
       ? b.addons.map(a => `<span class="bk-addon-tag">${a}</span>`).join('')
@@ -210,6 +216,7 @@ function getFiltered() {
 
 function filterBookings(filter, btn) {
   currentFilter = filter;
+  window.Pagination?.reset(BOOKINGS_PAGE_KEY);
   document.querySelectorAll('.bk-tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
   loadFromAPI();
@@ -217,6 +224,7 @@ function filterBookings(filter, btn) {
 
 function searchBookings(q) {
   currentSearch = q;
+  window.Pagination?.reset(BOOKINGS_PAGE_KEY);
   renderTable();
 }
 

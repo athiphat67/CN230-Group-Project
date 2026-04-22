@@ -48,7 +48,17 @@ async function renderAllPetsList(customer) {
   if (res.ok) {
     const pets = Array.isArray(res.data) ? res.data : (res.data?.data || []);
     
-    let html = pets.map(pet => `
+    const page = window.Pagination
+      ? Pagination.paginate(pets, { key: 'user-all-pets', pageSize: 8 })
+      : { pageItems: pets, total: pets.length, start: 0, end: pets.length, totalPages: 1 };
+    window.Pagination?.render(page, {
+      key: 'user-all-pets',
+      containerEl: ensurePetProfilePager(statsGrid),
+      label: 'pets',
+      onChange: () => renderAllPetsList(customer),
+    });
+    
+    let html = page.pageItems.map(pet => `
       <a href="PetProfile.html?petId=${pet.pet_id || pet.petid || pet.id}" style="background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md); padding:20px; text-align:center; text-decoration:none; color:var(--text-1); transition:all 0.2s; box-shadow:var(--shadow-sm); display:block;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
         <div style="font-size:40px; margin-bottom:12px;">${speciesEmoji(pet.species)}</div>
         <div style="font-weight:700; font-size:16px;">${pet.name}</div>
@@ -66,6 +76,18 @@ async function renderAllPetsList(customer) {
     
     statsGrid.innerHTML = html;
   }
+}
+
+function ensurePetProfilePager(anchor) {
+  let pager = document.getElementById('all-pets-pager');
+  if (!pager) {
+    pager = document.createElement('div');
+    pager.id = 'all-pets-pager';
+    pager.className = 'pg-pagination';
+    pager.style.marginTop = '12px';
+    anchor.insertAdjacentElement('afterend', pager);
+  }
+  return pager;
 }
 // ... (ฟังก์ชัน loadPetProfile เดิมปล่อยไว้เหมือนเดิมได้เลยครับ)
 
@@ -233,10 +255,24 @@ function renderVaccinations(vaccines, isVaccinated) {
       <p style="color:var(--text-3);font-size:13px;text-align:center;padding:20px">
         ${isVaccinated ? 'Vaccination records not digitized yet.' : 'No vaccination records on file.'}
       </p>`;
+    window.Pagination?.render(
+      { pageItems: [], total: 0, start: 0, end: 0, totalPages: 1, page: 1 },
+      { key: 'user-pet-vaccines', containerEl: ensurePetProfilePager(container), label: 'vaccines', onChange: () => renderVaccinations(vaccines, isVaccinated) }
+    );
     return;
   }
 
-  container.innerHTML = vaccines.map(v => {
+  const page = window.Pagination
+    ? Pagination.paginate(vaccines, { key: 'user-pet-vaccines', pageSize: 5 })
+    : { pageItems: vaccines, total: vaccines.length, start: 0, end: vaccines.length, totalPages: 1 };
+  window.Pagination?.render(page, {
+    key: 'user-pet-vaccines',
+    containerEl: ensurePetProfilePager(container),
+    label: 'vaccines',
+    onChange: () => renderVaccinations(vaccines, isVaccinated),
+  });
+
+  container.innerHTML = page.pageItems.map(v => {
     const expiry   = new Date(v.expiry_date);
     const now      = new Date();
     const daysLeft = Math.ceil((expiry - now) / 86400000);

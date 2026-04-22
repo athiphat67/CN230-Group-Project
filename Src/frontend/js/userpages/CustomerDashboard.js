@@ -73,7 +73,8 @@ async function loadMyPets(customer) {
             return;
         }
 
-        container.innerHTML = pets.map(pet => `
+        const page = paginateCustomerList(pets, 'user-dashboard-pets', 4, container, loadMyPets.bind(null, customer));
+        container.innerHTML = page.pageItems.map(pet => `
       <a href="PetProfile.html?petId=${pet.pet_id || pet.petid || pet.id}" class="family-pet-card" style="display:flex; align-items:center; gap:12px; padding:12px; border-bottom:1px solid var(--border); text-decoration:none;">
         <div class="family-pet-photo" style="width:48px; height:48px; border-radius:var(--r); background:var(--primary-light); display:flex; align-items:center; justify-content:center; font-size:24px;">
           ${speciesEmoji(pet.species)}
@@ -169,7 +170,8 @@ async function loadActiveReservations(customer) {
                 })
             );
 
-            listEl.innerHTML = detailedBookings.map(b => renderReservationCard(b)).join('');
+            const page = paginateCustomerList(detailedBookings, 'user-dashboard-reservations', 3, listEl, loadActiveReservations.bind(null, customer));
+            listEl.innerHTML = page.pageItems.map(b => renderReservationCard(b)).join('');
         } else {
             listEl.innerHTML = '<div style="color:var(--danger); padding:20px;">ไม่สามารถโหลดข้อมูลการจองได้</div>';
         }
@@ -199,7 +201,33 @@ async function loadNotifications() {
         return;
     }
 
-    listEl.innerHTML = notifications.map(n => renderNotifItem(n)).join('');
+    const page = paginateCustomerList(notifications, 'user-dashboard-notifications', 5, listEl, loadNotifications);
+    listEl.innerHTML = page.pageItems.map(n => renderNotifItem(n)).join('');
+}
+
+function paginateCustomerList(items, key, pageSize, anchor, onChange) {
+    const meta = window.Pagination
+        ? Pagination.paginate(items, { key, pageSize })
+        : { pageItems: items, total: items.length, start: 0, end: items.length, totalPages: 1 };
+    window.Pagination?.render(meta, {
+        key,
+        containerEl: ensureCustomerPager(anchor, `${key}-pager`),
+        label: 'items',
+        onChange,
+    });
+    return meta;
+}
+
+function ensureCustomerPager(anchor, id) {
+    let pager = document.getElementById(id);
+    if (!pager) {
+        pager = document.createElement('div');
+        pager.id = id;
+        pager.className = 'pg-pagination';
+        pager.style.marginTop = '12px';
+        anchor.insertAdjacentElement('afterend', pager);
+    }
+    return pager;
 }
 
 function renderNotifItem(n) {

@@ -6,6 +6,8 @@
 /* ── STATE ── */
 let currentFilter = 'all';
 let NOTIFICATIONS = []; // เคลียร์ Mock Data ออก และรอรับค่าจาก API
+const NOTIFICATIONS_PAGE_KEY = 'admin-notifications';
+const NOTIFICATIONS_PAGE_SIZE = 8;
 
 /* ── INIT ── */
 document.addEventListener('DOMContentLoaded', async () => {
@@ -62,15 +64,20 @@ function renderList() {
   const emptyEl   = document.getElementById('nt-empty');
 
   const filtered = getFiltered();
+  const page = window.Pagination
+    ? Pagination.paginate(filtered, { key: NOTIFICATIONS_PAGE_KEY, pageSize: NOTIFICATIONS_PAGE_SIZE })
+    : { pageItems: filtered, total: filtered.length, start: 0, end: filtered.length, totalPages: 1 };
 
   document.getElementById('nt-count').textContent = `${filtered.length} รายการ`;
 
   if (filtered.length === 0) {
     container.innerHTML = '';
     emptyEl.style.display = 'block';
+    window.Pagination?.render(page, { key: NOTIFICATIONS_PAGE_KEY, infoId: 'nt-count', label: 'รายการ', onChange: renderList });
     return;
   }
   emptyEl.style.display = 'none';
+  window.Pagination?.render(page, { key: NOTIFICATIONS_PAGE_KEY, infoId: 'nt-count', label: 'รายการ', onChange: renderList });
 
   const typeIcon = {
     CARE_REPORT:       '📋',
@@ -81,7 +88,7 @@ function renderList() {
     NEW_BOOKING_ALERT: '🔔',
   };
 
-  container.innerHTML = filtered.map((n, i) => `
+  container.innerHTML = page.pageItems.map((n, i) => `
     <div class="nt-item ${n.is_read ? '' : 'unread'}" style="animation-delay:${i * 0.04}s" onclick="markRead(${n.notification_id})">
       <div class="nt-item-icon ${n.type}">${typeIcon[n.type] ?? '🔔'}</div>
       <div class="nt-item-body">
@@ -112,6 +119,7 @@ function getFiltered() {
 /* ── FILTER ── */
 function filterNotifications(filter, btn) {
   currentFilter = filter;
+  window.Pagination?.reset(NOTIFICATIONS_PAGE_KEY);
   document.querySelectorAll('.nt-tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
   renderList();

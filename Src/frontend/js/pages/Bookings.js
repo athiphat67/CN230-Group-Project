@@ -18,11 +18,11 @@ let currentSearch = '';
 let pendingActionId = null;
 
 // New Booking form state
-let nb_customerId   = null;
-let nb_petId        = null;
-let nb_petSpecies   = '';
-let nb_roomId       = null;
-let nb_roomRate     = 0;
+let nb_customerId = null;
+let nb_petId = null;
+let nb_petSpecies = '';
+let nb_roomId = null;
+let nb_roomRate = 0;
 let _customerSearchTimer = null;
 
 /* ══════════════════════════════════════════
@@ -63,26 +63,30 @@ async function loadFromAPI() {
 function normalizeBooking(b) {
   const species = (b.pet_species || '').toLowerCase();
   return {
-    booking_id:   b.booking_id,
-    id:           `BK-${String(b.booking_id).padStart(4, '0')}`,
-    pet_id:       b.pet_id,
-    pet_name:     b.pet_name || '—',
-    pet_emoji:    species === 'cat' ? '🐱' : species === 'dog' ? '🐶' : '🐾',
-    breed:        b.breed || '—',
-    notes:        b.notes || '',
-    owner_id:     b.owner_id,
-    owner_name:   b.owner_name || '—',
-    owner_phone:  b.owner_phone || '—',
-    room_id:      b.room_id,
-    room:         b.room_number || '—',
-    room_type:    b.room_type || '—',
-    checkin:      (b.checkin_date  || '').split(' ')[0],
-    checkout:     (b.checkout_date || '').split(' ')[0],
-    addons:       Array.isArray(b.addons) ? b.addons.filter(Boolean) : [],
-    status:       b.status || 'PENDING',
-    price_room:   parseFloat(b.price_room)   || 0,
+    booking_id: b.booking_id,
+    id: `BK-${String(b.booking_id).padStart(4, '0')}`,
+    pet_id: b.pet_id,
+    pet_name: b.pet_name || '—',
+    pet_emoji: species === 'cat' ? '🐱' : species === 'dog' ? '🐶' : '🐾',
+    breed: b.breed || '—',
+    notes: b.notes || '',
+    owner_id: b.owner_id,
+    owner_name: b.owner_name || '—',
+    owner_phone: b.owner_phone || '—',
+    room_id: b.room_id,
+    room: b.room_number || '—',
+    room_type: b.room_type || '—',
+    checkin: (b.checkin_date || '').split(' ')[0],
+    checkout: (b.checkout_date || '').split(' ')[0],
+    addons: Array.isArray(b.addons) ? b.addons.filter(Boolean) : [],
+    status: b.status || 'PENDING',
+    price_room: parseFloat(b.price_room) || 0,
     price_addons: parseFloat(b.price_addons) || 0,
     booking_detail_id: b.booking_detail_id,
+
+    // 💡 [เพิ่มใหม่] สำหรับ FR3.6.1
+    cancelled_by: b.cancelled_by || null,
+    cancelled_at: b.cancelled_at ? formatDate(b.cancelled_at) : null,
   };
 }
 
@@ -106,8 +110,8 @@ function setTableLoading(loading) {
    RENDER TABLE
 ══════════════════════════════════════════ */
 function renderTable() {
-  const tbody     = document.getElementById('bookings-tbody');
-  const emptyEl   = document.getElementById('bk-empty');
+  const tbody = document.getElementById('bookings-tbody');
+  const emptyEl = document.getElementById('bk-empty');
   const showingEl = document.getElementById('bk-showing');
   if (!tbody) return;
 
@@ -115,16 +119,16 @@ function renderTable() {
 
   if (filtered.length === 0) {
     tbody.innerHTML = '';
-    if (emptyEl)   emptyEl.style.display = 'block';
+    if (emptyEl) emptyEl.style.display = 'block';
     if (showingEl) showingEl.textContent = 'ไม่พบรายการ';
     return;
   }
 
-  if (emptyEl)   emptyEl.style.display = 'none';
+  if (emptyEl) emptyEl.style.display = 'none';
   if (showingEl) showingEl.textContent = `แสดง ${filtered.length} รายการ`;
 
   tbody.innerHTML = filtered.map(b => {
-    const nights     = calcNights(b.checkin, b.checkout);
+    const nights = calcNights(b.checkin, b.checkout);
     const addonsHtml = b.addons.length
       ? b.addons.map(a => `<span class="bk-addon-tag">${a}</span>`).join('')
       : `<span class="bk-no-addon">—</span>`;
@@ -155,21 +159,32 @@ function renderTable() {
           </span>
         </td>
         <td>
-          <div class="bk-action-btns">
-            <button class="bk-btn-view" title="ดูรายละเอียด" onclick="openDetail(${b.booking_id})">
-              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-              </svg>
-            </button>
-            ${(b.status === 'CONFIRMED' || b.status === 'PENDING')
-              ? `<button class="bk-btn-checkin" onclick="openCheckin(${b.booking_id})">Check-in</button>
-                 <button class="bk-btn-cancel"  onclick="cancelBooking(${b.booking_id})">ยกเลิก</button>`
-              : ''}
-            ${b.status === 'CHECKED_IN'
-              ? `<button class="bk-btn-checkout" onclick="openCheckout(${b.booking_id})">Check-out</button>`
-              : ''}
-          </div>
+          <div class="bk-detail-box" style="margin-bottom:16px">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div class="bk-detail-box-label">✨ Add-on Services</div>
+                ${b.status === 'CHECKED_IN' ? `
+                  <button onclick="openAddServiceModal(${b.booking_id})" style="background:var(--bk-blue-s);color:var(--bk-blue);border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;transition:opacity 0.2s;">
+                    + เพิ่มบริการ
+                  </button>
+                ` : ''}
+              </div>
+              ${b.addons.length
+                ? `<div class="bk-addon-tags" style="padding-top:8px">${b.addons.map(a => `<span class="bk-addon-tag">${a}</span>`).join('')}</div>`
+                : `<div style="font-size:13px; color:var(--bk-text-3); margin-top:8px;">— ไม่มี —</div>`}
+            </div>
+
+            ${b.notes ? `
+            <div class="bk-detail-box" style="margin-bottom:16px">
+              <div class="bk-detail-box-label">📝 หมายเหตุ</div>
+              <p style="font-size:13px;color:var(--bk-text-2);margin-top:4px;line-height:1.6">${b.notes}</p>
+            </div>` : ''}
+
+            ${b.status === 'CANCELLED' ? `
+            <div class="bk-detail-box" style="margin-bottom:16px; background-color: #FEF2F2; border: 1.5px solid #FCA5A5;">
+              <div class="bk-detail-box-label" style="color: #DC2626;">❌ ข้อมูลการยกเลิก</div>
+              <div class="bk-detail-item"><span class="bk-detail-item-label" style="color:#B91C1C;">ยกเลิกโดย</span><span class="bk-detail-item-val">${b.cancelled_by || 'ผู้ดูแลระบบ'}</span></div>
+              <div class="bk-detail-item"><span class="bk-detail-item-label" style="color:#B91C1C;">เวลาที่ยกเลิก</span><span class="bk-detail-item-val">${b.cancelled_at || '—'}</span></div>
+            </div>` : ''}
         </td>
       </tr>
     `;
@@ -225,7 +240,7 @@ function openDetail(bookingId) {
   document.getElementById('det-subtitle').textContent = `${b.id} · ${b.pet_name}`;
 
   const nights = calcNights(b.checkin, b.checkout);
-  const total  = b.price_room + b.price_addons;
+  const total = b.price_room + b.price_addons;
 
   document.getElementById('det-body').innerHTML = `
     <div class="bk-detail-grid">
@@ -332,7 +347,7 @@ function openCheckout(bookingId) {
   document.getElementById('co-subtitle').textContent = `${b.pet_name} — ห้อง ${b.room}`;
 
   const nights = calcNights(b.checkin, b.checkout);
-  const total  = b.price_room + b.price_addons;
+  const total = b.price_room + b.price_addons;
 
   document.getElementById('co-summary').innerHTML = `
     <div class="bk-price-row"><span>ค่าห้อง (${nights} คืน)</span><span>฿${b.price_room.toLocaleString()}</span></div>
@@ -350,7 +365,7 @@ async function confirmCheckout() {
   if (!b) { if (btn) { btn.disabled = false; btn.textContent = 'Check-out & ออกใบเสร็จ'; } return; }
 
   const method = document.querySelector('input[name="payment"]:checked')?.value ?? 'cash';
-  const res    = await window.API.bookings.checkout(b.booking_id, { payment_method: method });
+  const res = await window.API.bookings.checkout(b.booking_id, { payment_method: method });
 
   if (res.ok) {
     closeModal('modal-checkout');
@@ -389,17 +404,17 @@ async function cancelBooking(bookingId) {
 function openBookingModal() {
   // Reset state
   nb_customerId = null;
-  nb_petId      = null;
+  nb_petId = null;
   nb_petSpecies = '';
-  nb_roomId     = null;
-  nb_roomRate   = 0;
+  nb_roomId = null;
+  nb_roomRate = 0;
 
   // Reset STEP 1 — Customer
-  el('nb-customer-badge').style.display         = 'none';
-  el('nb-customer-input-area').style.display    = '';
-  el('nb-customer-search').value                = '';
-  el('nb-customer-results').innerHTML           = '';
-  el('nb-new-customer-form').style.display      = 'none';
+  el('nb-customer-badge').style.display = 'none';
+  el('nb-customer-input-area').style.display = '';
+  el('nb-customer-search').value = '';
+  el('nb-customer-results').innerHTML = '';
+  el('nb-new-customer-form').style.display = 'none';
   el('nb-toggle-customer-btn')?.classList.remove('active');
   setVal('nc-firstname', '');
   setVal('nc-lastname', '');
@@ -408,13 +423,13 @@ function openBookingModal() {
   setVal('nc-address', '');
 
   // Reset STEP 2 — Pet
-  el('nb-pet-step').style.display               = 'none';
-  el('nb-pet-badge').style.display              = 'none';
-  el('nb-pet-input-area').style.display         = '';
-  el('nb-pet-select').innerHTML                 = '<option value="">-- เลือกสัตว์เลี้ยง --</option>';
-  el('nb-pet-select-group').style.display       = '';
-  el('nb-pet-divider').style.display            = '';
-  el('nb-new-pet-form').style.display           = 'none';
+  el('nb-pet-step').style.display = 'none';
+  el('nb-pet-badge').style.display = 'none';
+  el('nb-pet-input-area').style.display = '';
+  el('nb-pet-select').innerHTML = '<option value="">-- เลือกสัตว์เลี้ยง --</option>';
+  el('nb-pet-select-group').style.display = '';
+  el('nb-pet-divider').style.display = '';
+  el('nb-new-pet-form').style.display = 'none';
   el('nb-toggle-pet-btn')?.classList.remove('active');
   setVal('np-name', '');
   setVal('np-breed', '');
@@ -426,12 +441,12 @@ function openBookingModal() {
   document.querySelectorAll('input[name="np-species"]').forEach(r => { r.checked = r.value === 'CAT'; });
 
   // Reset STEP 3 + 4
-  el('nb-room-step').style.display              = 'none';
-  el('nb-services-step').style.display          = 'none';
-  el('nb-price-preview').style.display          = 'none';
+  el('nb-room-step').style.display = 'none';
+  el('nb-services-step').style.display = 'none';
+  el('nb-price-preview').style.display = 'none';
   setVal('nb-checkin', '');
   setVal('nb-checkout', '');
-  el('nb-room-select').innerHTML                = '<option value="">-- กด "ค้นหาห้องว่าง" ก่อน --</option>';
+  el('nb-room-select').innerHTML = '<option value="">-- กด "ค้นหาห้องว่าง" ก่อน --</option>';
   document.querySelectorAll('#nb-services-grid input[type="checkbox"]').forEach(cb => { cb.checked = false; });
   setVal('nb-notes', '');
 
@@ -470,7 +485,7 @@ async function searchCustomers(q) {
   resultsDiv.innerHTML =
     res.data.data.slice(0, 8).map(c => `
       <div class="nb-customer-item"
-        onclick="selectCustomer(${c.customerid},'${escHtml(c.firstname + ' ' + c.lastname)}','${escHtml(c.phonenumber||'')}')">
+        onclick="selectCustomer(${c.customerid},'${escHtml(c.firstname + ' ' + c.lastname)}','${escHtml(c.phonenumber || '')}')">
         <div class="nb-customer-name">${c.firstname} ${c.lastname}</div>
         <div class="nb-customer-meta">${c.phonenumber || ''} · ${c.customeremail || ''}</div>
       </div>
@@ -487,7 +502,7 @@ async function selectCustomer(id, name, phone) {
 
   // Show badge, hide search area
   el('nb-customer-badge-text').textContent = `${name} · ${phone}`;
-  el('nb-customer-badge').style.display    = 'flex';
+  el('nb-customer-badge').style.display = 'flex';
   el('nb-customer-input-area').style.display = 'none';
 
   // Load this customer's pets
@@ -498,17 +513,17 @@ async function selectCustomer(id, name, phone) {
 function clearSelectedCustomer() {
   nb_customerId = null;
 
-  el('nb-customer-badge').style.display      = 'none';
+  el('nb-customer-badge').style.display = 'none';
   el('nb-customer-input-area').style.display = '';
   setVal('nb-customer-search', '');
-  el('nb-customer-results').innerHTML        = '';
-  el('nb-new-customer-form').style.display   = 'none';
+  el('nb-customer-results').innerHTML = '';
+  el('nb-new-customer-form').style.display = 'none';
   el('nb-toggle-customer-btn')?.classList.remove('active');
 
   // Also reset downstream steps
   _resetPetStep();
-  el('nb-pet-step').style.display    = 'none';
-  el('nb-room-step').style.display   = 'none';
+  el('nb-pet-step').style.display = 'none';
+  el('nb-room-step').style.display = 'none';
   el('nb-services-step').style.display = 'none';
   el('nb-price-preview').style.display = 'none';
 }
@@ -520,7 +535,7 @@ function clearSelectedCustomer() {
 /* Toggle inline new-customer form */
 function toggleNewCustomerForm() {
   const form = el('nb-new-customer-form');
-  const btn  = el('nb-toggle-customer-btn');
+  const btn = el('nb-toggle-customer-btn');
   const isOpen = form.style.display !== 'none';
 
   form.style.display = isOpen ? 'none' : '';
@@ -551,12 +566,12 @@ function jumpToNewCustomerForm() {
 /* Confirm creating a new customer via API */
 async function confirmNewCustomer() {
   const firstname = el('nc-firstname')?.value.trim();
-  const lastname  = el('nc-lastname')?.value.trim();
-  const phone     = el('nc-phone')?.value.trim();
+  const lastname = el('nc-lastname')?.value.trim();
+  const phone = el('nc-phone')?.value.trim();
 
   if (!firstname) { showToast('⚠️ กรุณากรอกชื่อ', 'warn'); return; }
-  if (!lastname)  { showToast('⚠️ กรุณากรอกนามสกุล', 'warn'); return; }
-  if (!phone)     { showToast('⚠️ กรุณากรอกเบอร์โทรศัพท์', 'warn'); return; }
+  if (!lastname) { showToast('⚠️ กรุณากรอกนามสกุล', 'warn'); return; }
+  if (!phone) { showToast('⚠️ กรุณากรอกเบอร์โทรศัพท์', 'warn'); return; }
 
   const btn = el('nc-confirm-btn');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ กำลังสร้าง...'; }
@@ -564,9 +579,9 @@ async function confirmNewCustomer() {
   const payload = {
     firstname,
     lastname,
-    phonenumber:   phone,
-    customeremail: el('nc-email')?.value.trim()   || null,
-    address:       el('nc-address')?.value.trim() || null,
+    phonenumber: phone,
+    customeremail: el('nc-email')?.value.trim() || null,
+    address: el('nc-address')?.value.trim() || null,
   };
 
   const res = await window.API.customers.create(payload);
@@ -576,7 +591,7 @@ async function confirmNewCustomer() {
   if (res.ok) {
     // Backend may return customerid under different keys — handle both
     const customerId = res.data?.customerid ?? res.data?.customer_id ?? res.data?.id;
-    const fullName   = `${firstname} ${lastname}`;
+    const fullName = `${firstname} ${lastname}`;
 
     showToast(`✅ สร้างลูกค้าใหม่: ${fullName} เรียบร้อย`);
     await selectCustomer(customerId, fullName, phone);
@@ -601,14 +616,14 @@ async function _loadPetsForCustomer(customerId) {
   if (Array.isArray(pets) && pets.length > 0) {
     petSel.innerHTML = '<option value="">-- เลือกสัตว์เลี้ยง --</option>' +
       pets.map(p =>
-        `<option value="${p.petid}" data-species="${(p.species||'').toLowerCase()}">${p.name} (${p.species||'—'}, ${p.breed||'—'})</option>`
+        `<option value="${p.petid}" data-species="${(p.species || '').toLowerCase()}">${p.name} (${p.species || '—'}, ${p.breed || '—'})</option>`
       ).join('');
     el('nb-pet-select-group').style.display = '';
-    el('nb-pet-divider').style.display      = '';
+    el('nb-pet-divider').style.display = '';
   } else {
     // No pets: hide dropdown and auto-open new pet form
     el('nb-pet-select-group').style.display = 'none';
-    el('nb-pet-divider').style.display      = 'none';
+    el('nb-pet-divider').style.display = 'none';
     if (el('nb-new-pet-form').style.display === 'none') {
       toggleNewPetForm();
     }
@@ -620,15 +635,15 @@ function onPetSelect() {
   const sel = el('nb-pet-select');
   const opt = sel.options[sel.selectedIndex];
 
-  nb_petId      = sel.value ? parseInt(sel.value) : null;
+  nb_petId = sel.value ? parseInt(sel.value) : null;
   nb_petSpecies = opt?.dataset?.species || '';
 
   if (!nb_petId) return;
 
   // Lock in: show badge, hide input area
-  el('nb-pet-badge-text').textContent    = `${opt.text}`;
-  el('nb-pet-badge').style.display       = 'flex';
-  el('nb-pet-input-area').style.display  = 'none';
+  el('nb-pet-badge-text').textContent = `${opt.text}`;
+  el('nb-pet-badge').style.display = 'flex';
+  el('nb-pet-input-area').style.display = 'none';
 
   // Proceed to date/room step
   el('nb-room-step').style.display = '';
@@ -637,20 +652,20 @@ function onPetSelect() {
 
 /* Clear pet selection → back to selection area */
 function clearSelectedPet() {
-  nb_petId      = null;
+  nb_petId = null;
   nb_petSpecies = '';
 
-  el('nb-pet-badge').style.display      = 'none';
+  el('nb-pet-badge').style.display = 'none';
   el('nb-pet-input-area').style.display = '';
   setVal('nb-pet-select', '');
 
   // Reset downstream
-  el('nb-room-step').style.display    = 'none';
+  el('nb-room-step').style.display = 'none';
   el('nb-services-step').style.display = 'none';
   el('nb-price-preview').style.display = 'none';
   setVal('nb-checkin', '');
   setVal('nb-checkout', '');
-  nb_roomId   = null;
+  nb_roomId = null;
   nb_roomRate = 0;
   el('nb-room-select').innerHTML = '<option value="">-- กด "ค้นหาห้องว่าง" ก่อน --</option>';
 }
@@ -662,7 +677,7 @@ function clearSelectedPet() {
 /* Toggle inline new-pet form */
 function toggleNewPetForm() {
   const form = el('nb-new-pet-form');
-  const btn  = el('nb-toggle-pet-btn');
+  const btn = el('nb-toggle-pet-btn');
   const isOpen = form.style.display !== 'none';
 
   form.style.display = isOpen ? 'none' : '';
@@ -671,7 +686,7 @@ function toggleNewPetForm() {
   // If opening: clear dropdown selection
   if (!isOpen) {
     setVal('nb-pet-select', '');
-    nb_petId      = null;
+    nb_petId = null;
     nb_petSpecies = '';
   }
 }
@@ -683,7 +698,7 @@ async function confirmNewPet() {
     return;
   }
 
-  const name    = el('np-name')?.value.trim();
+  const name = el('np-name')?.value.trim();
   const species = document.querySelector('input[name="np-species"]:checked')?.value || 'CAT';
 
   if (!name) { showToast('⚠️ กรุณากรอกชื่อสัตว์เลี้ยง', 'warn'); return; }
@@ -691,18 +706,18 @@ async function confirmNewPet() {
   const btn = el('np-confirm-btn');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ กำลังเพิ่ม...'; }
 
-  const breed   = el('np-breed')?.value.trim() || null;
+  const breed = el('np-breed')?.value.trim() || null;
   const payload = {
-    customerid:      nb_customerId,          // matches DB column name
+    customerid: nb_customerId,          // matches DB column name
     name,
     species,
     breed,
-    sex:              el('np-sex')?.value    || null,
-    dob:              el('np-dob')?.value    || null,
-    weight:           el('np-weight')?.value ? parseFloat(el('np-weight').value) : null,
+    sex: el('np-sex')?.value || null,
+    dob: el('np-dob')?.value || null,
+    weight: el('np-weight')?.value ? parseFloat(el('np-weight').value) : null,
     medicalcondition: el('np-medical')?.value.trim() || null,
-    allergy:          el('np-allergy')?.value.trim() || null,
-    isvaccinated:     false,
+    allergy: el('np-allergy')?.value.trim() || null,
+    isvaccinated: false,
   };
 
   const res = await window.API.pets.create(payload);
@@ -710,16 +725,16 @@ async function confirmNewPet() {
   if (btn) { btn.disabled = false; btn.textContent = 'เพิ่มสัตว์เลี้ยงนี้'; }
 
   if (res.ok) {
-    const petId  = res.data?.petid ?? res.data?.pet_id ?? res.data?.id;
-    nb_petId      = parseInt(petId);
+    const petId = res.data?.petid ?? res.data?.pet_id ?? res.data?.id;
+    nb_petId = parseInt(petId);
     nb_petSpecies = species.toLowerCase();
 
-    const emoji       = species === 'CAT' ? '🐱' : species === 'DOG' ? '🐶' : '🐾';
+    const emoji = species === 'CAT' ? '🐱' : species === 'DOG' ? '🐶' : '🐾';
     const displayText = `${emoji} ${name}${breed ? ` (${species}, ${breed})` : ` (${species})`}`;
 
     // Lock in: badge
-    el('nb-pet-badge-text').textContent   = displayText;
-    el('nb-pet-badge').style.display      = 'flex';
+    el('nb-pet-badge-text').textContent = displayText;
+    el('nb-pet-badge').style.display = 'flex';
     el('nb-pet-input-area').style.display = 'none';
 
     el('nb-room-step').style.display = '';
@@ -732,11 +747,11 @@ async function confirmNewPet() {
 
 /* Internal: reset pet step UI without hiding the step itself */
 function _resetPetStep() {
-  nb_petId      = null;
+  nb_petId = null;
   nb_petSpecies = '';
-  el('nb-pet-badge').style.display       = 'none';
-  el('nb-pet-input-area').style.display  = '';
-  el('nb-new-pet-form').style.display    = 'none';
+  el('nb-pet-badge').style.display = 'none';
+  el('nb-pet-input-area').style.display = '';
+  el('nb-new-pet-form').style.display = 'none';
   el('nb-toggle-pet-btn')?.classList.remove('active');
   setVal('nb-pet-select', '');
   setVal('np-name', '');
@@ -753,7 +768,7 @@ function _resetPetStep() {
    STEP 3 — ROOM AVAILABILITY
 ══════════════════════════════════════════ */
 async function findAvailableRooms() {
-  const checkin  = el('nb-checkin')?.value;
+  const checkin = el('nb-checkin')?.value;
   const checkout = el('nb-checkout')?.value;
 
   if (!checkin || !checkout) {
@@ -768,9 +783,9 @@ async function findAvailableRooms() {
   roomSel.innerHTML = '<option value="">กำลังค้นหาห้องว่าง...</option>';
 
   const res = await window.API.rooms.getAvailability({
-    checkin_date:  checkin,
+    checkin_date: checkin,
     checkout_date: checkout,
-    pet_type:      petType,
+    pet_type: petType,
   });
 
   if (res.ok && res.data.data?.length) {
@@ -787,9 +802,9 @@ async function findAvailableRooms() {
 }
 
 function onRoomSelect() {
-  const sel  = el('nb-room-select');
-  const opt  = sel.options[sel.selectedIndex];
-  nb_roomId   = sel.value ? parseInt(sel.value) : null;
+  const sel = el('nb-room-select');
+  const opt = sel.options[sel.selectedIndex];
+  nb_roomId = sel.value ? parseInt(sel.value) : null;
   nb_roomRate = parseFloat(opt?.dataset?.rate || 0);
   updatePricePreview();
 }
@@ -819,12 +834,12 @@ async function loadServicesGrid() {
 
 function serviceIcon(name) {
   const n = name.toLowerCase();
-  if (n.includes('อาบ'))                       return '🛁';
-  if (n.includes('ตัด') || n.includes('ขน'))   return '✂️';
-  if (n.includes('นวด') || n.includes('spa'))  return '💆';
+  if (n.includes('อาบ')) return '🛁';
+  if (n.includes('ตัด') || n.includes('ขน')) return '✂️';
+  if (n.includes('นวด') || n.includes('spa')) return '💆';
   if (n.includes('ตรวจ') || n.includes('หมอ')) return '🩺';
   if (n.includes('ถ่าย') || n.includes('รูป')) return '📸';
-  if (n.includes('ฝึก'))                       return '🎓';
+  if (n.includes('ฝึก')) return '🎓';
   return '⭐';
 }
 
@@ -832,13 +847,13 @@ function serviceIcon(name) {
    PRICE PREVIEW
 ══════════════════════════════════════════ */
 function updatePricePreview() {
-  const checkin  = el('nb-checkin')?.value;
+  const checkin = el('nb-checkin')?.value;
   const checkout = el('nb-checkout')?.value;
   if (!checkin || !checkout || !nb_roomId) {
     el('nb-price-preview').style.display = 'none'; return;
   }
 
-  const nights   = calcNights(checkin, checkout);
+  const nights = calcNights(checkin, checkout);
   const roomCost = nb_roomRate * nights;
 
   let addonsCost = 0;
@@ -847,9 +862,9 @@ function updatePricePreview() {
   });
 
   el('nb-price-preview').style.display = '';
-  el('pp-room').textContent   = `฿${roomCost.toLocaleString()}`;
+  el('pp-room').textContent = `฿${roomCost.toLocaleString()}`;
   el('pp-addons').textContent = `฿${addonsCost.toLocaleString()}`;
-  el('pp-total').textContent  = `฿${(roomCost + addonsCost).toLocaleString()}`;
+  el('pp-total').textContent = `฿${(roomCost + addonsCost).toLocaleString()}`;
   el('pp-nights').textContent = `(${nights} คืน × ฿${nb_roomRate.toLocaleString()})`;
 }
 
@@ -857,16 +872,16 @@ function updatePricePreview() {
    SAVE NEW BOOKING
 ══════════════════════════════════════════ */
 async function saveNewBooking() {
-  const checkin  = el('nb-checkin')?.value;
+  const checkin = el('nb-checkin')?.value;
   const checkout = el('nb-checkout')?.value;
-  const notes    = el('nb-notes')?.value || '';
+  const notes = el('nb-notes')?.value || '';
 
   if (!nb_customerId) { showToast('⚠️ กรุณาเลือกหรือสร้างลูกค้าก่อน', 'warn'); return; }
-  if (!nb_petId)       { showToast('⚠️ กรุณาเลือกหรือเพิ่มสัตว์เลี้ยงก่อน', 'warn'); return; }
+  if (!nb_petId) { showToast('⚠️ กรุณาเลือกหรือเพิ่มสัตว์เลี้ยงก่อน', 'warn'); return; }
   if (!checkin || !checkout) { showToast('⚠️ กรุณาเลือกวันที่ Check-in / Check-out', 'warn'); return; }
-  if (!nb_roomId)      { showToast('⚠️ กรุณาเลือกห้องพัก', 'warn'); return; }
+  if (!nb_roomId) { showToast('⚠️ กรุณาเลือกห้องพัก', 'warn'); return; }
 
-  const nights    = calcNights(checkin, checkout);
+  const nights = calcNights(checkin, checkout);
   const totalRate = nb_roomRate * nights;
 
   const services = [];
@@ -875,11 +890,11 @@ async function saveNewBooking() {
   });
 
   const payload = {
-    customer_id:   nb_customerId,
-    checkin_date:  checkin,
+    customer_id: nb_customerId,
+    checkin_date: checkin,
     checkout_date: checkout,
-    total_rate:    totalRate,
-    pets:          [{ pet_id: nb_petId, room_id: nb_roomId }],
+    total_rate: totalRate,
+    pets: [{ pet_id: nb_petId, room_id: nb_roomId }],
     services,
     notes,
   };
@@ -896,7 +911,7 @@ async function saveNewBooking() {
 
   if (res.ok) {
     closeModal('modal-new-booking');
-    showToast(`✅ สร้างการจอง BK-${String(res.data.booking_id).padStart(4,'0')} สำเร็จ!`);
+    showToast(`✅ สร้างการจอง BK-${String(res.data.booking_id).padStart(4, '0')} สำเร็จ!`);
     await loadFromAPI();
   } else {
     showToast('สร้างการจองไม่สำเร็จ: ' + (res.data?.detail || res.data?.message || ''), 'warn');
@@ -906,7 +921,7 @@ async function saveNewBooking() {
 /* ══════════════════════════════════════════
    MODAL HELPERS
 ══════════════════════════════════════════ */
-function openModal(id)  { document.getElementById(id)?.classList.add('open'); }
+function openModal(id) { document.getElementById(id)?.classList.add('open'); }
 function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
 
 function bindModalBackdrops() {
@@ -951,9 +966,78 @@ function showToast(msg, type = 'success') {
 }
 
 /* ══════════════════════════════════════════
+   ADD SERVICES DURING STAY (FR3.3)
+══════════════════════════════════════════ */
+let _activeBookingIdForService = null;
+
+async function openAddServiceModal(bookingId) {
+  const b = BOOKINGS.find(x => x.booking_id === bookingId);
+  if (!b) return;
+  
+  _activeBookingIdForService = bookingId;
+  document.getElementById('as-subtitle').textContent = `เพิ่มให้: ${b.pet_name} (ห้อง ${b.room})`;
+  
+  // ปิด modal Detail ชั่วคราว และเปิด modal Add Service
+  closeModal('modal-detail'); 
+  openModal('modal-add-service');
+
+  const grid = document.getElementById('as-services-grid');
+  grid.innerHTML = '<div style="color:var(--bk-text-3);font-size:13px">กำลังโหลด...</div>';
+
+  const res = await window.API.bookings.getServices();
+  if (!res.ok || !res.data.data?.length) {
+    grid.innerHTML = '<div style="color:var(--bk-text-3);font-size:13px">ไม่มีบริการเสริมในระบบ</div>';
+    return;
+  }
+
+  grid.innerHTML = res.data.data.map(s => `
+    <label class="bk-addon-item">
+      <input type="checkbox" value="${s.item_id}" data-price="${s.unit_price}">
+      <span class="bk-addon-icon">${serviceIcon(s.name)}</span>
+      ${s.name} (฿${parseFloat(s.unit_price).toLocaleString()})
+    </label>
+  `).join('');
+}
+
+async function confirmAddService() {
+  const checkboxes = document.querySelectorAll('#as-services-grid input[type="checkbox"]:checked');
+  if (checkboxes.length === 0) {
+    showToast('⚠️ กรุณาเลือกบริการอย่างน้อย 1 รายการ', 'warn');
+    return;
+  }
+
+  const services = Array.from(checkboxes).map(cb => ({
+    item_id: parseInt(cb.value),
+    quantity: 1,
+    unit_price: parseFloat(cb.dataset.price || 0)
+  }));
+
+  const btn = document.getElementById('as-confirm-btn');
+  btn.disabled = true; btn.textContent = '⏳ กำลังเพิ่ม...';
+
+  // หมายเหตุ: สันนิษฐานว่า Backend มี Endpoint สำหรับยิงเพิ่ม Service ตัวนี้
+  // อาจจะชื่อ window.API.bookings.addServices (ต้องไปเพิ่มใน api.js ด้วย)
+  const res = await window.API.bookings.addAddon(_activeBookingIdForService, { services });
+
+  btn.disabled = false; 
+  btn.innerHTML = `<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg> ยืนยันการเพิ่ม`;
+
+  if (res.ok) {
+    closeModal('modal-add-service');
+    showToast('✅ เพิ่มบริการเสริมเรียบร้อยแล้ว');
+    
+    // โหลดข้อมูล Table ใหม่ เพื่อให้ราคา/รายการอัปเดต แล้วเด้งกลับไปหน้า Detail Modal
+    await loadFromAPI(); 
+    openDetail(_activeBookingIdForService); 
+  } else {
+    showToast('เกิดข้อผิดพลาด: ' + (res.data?.message || 'ไม่สามารถเพิ่มบริการได้'), 'warn');
+  }
+}
+
+/* ══════════════════════════════════════════
    UTILS
 ══════════════════════════════════════════ */
-function el(id)       { return document.getElementById(id); }
+function el(id) { return document.getElementById(id); }
 function setVal(id, v) { const e = document.getElementById(id); if (e) e.value = v; }
 
 function calcNights(checkin, checkout) {
@@ -968,21 +1052,21 @@ function formatDate(dateStr) {
 
 function statusLabel(s) {
   return {
-    PENDING:     'รอยืนยัน',
-    CONFIRMED:   'Confirmed',
-    CHECKED_IN:  'กำลังเข้าพัก',
+    PENDING: 'รอยืนยัน',
+    CONFIRMED: 'Confirmed',
+    CHECKED_IN: 'กำลังเข้าพัก',
     CHECKED_OUT: 'เช็กเอาต์แล้ว',
-    CANCELLED:   'ยกเลิก',
+    CANCELLED: 'ยกเลิก',
   }[s] ?? s;
 }
 
 function paymentLabel(s) {
   return {
-    cash:         'เงินสด',
-    qr:           'QR PromptPay',
-    card:         'บัตรเครดิต',
+    cash: 'เงินสด',
+    qr: 'QR PromptPay',
+    card: 'บัตรเครดิต',
     qr_promptpay: 'QR PromptPay',
-    credit_card:  'บัตรเครดิต',
+    credit_card: 'บัตรเครดิต',
   }[s] ?? s;
 }
 

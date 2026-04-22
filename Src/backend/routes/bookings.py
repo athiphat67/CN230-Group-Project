@@ -78,6 +78,7 @@ def get_all_bookings(current_user):
             JOIN room          r  ON bd.roomid     = r.roomid
             JOIN customer      c  ON b.customerid  = c.customerid
             LEFT JOIN invoice  i  ON b.bookingid   = i.bookingid
+            LEFT JOIN staff    s  ON b.cancelledbystaffid = s.staffid
             WHERE 1=1
         """
         params = []
@@ -130,6 +131,8 @@ def get_all_bookings(current_user):
                 "price_addons": float(b['price_addons'] or 0),
                 "addons":       clean_addons,
                 "booking_detail_id": b['bookingdetailid'],
+                "cancelled_by": b.get('cancelled_by_name'),
+                "cancelled_at": b['cancelled_at'].strftime('%Y-%m-%d %H:%M') if b.get('cancelled_at') else None,
             })
 
         return jsonify({"status": "success", "data": result}), 200
@@ -228,6 +231,7 @@ def get_booking_by_id(current_user, booking_id):
             JOIN room          r  ON bd.roomid    = r.roomid
             JOIN customer      c  ON b.customerid = c.customerid
             LEFT JOIN invoice  i  ON b.bookingid  = i.bookingid
+            LEFT JOIN staff    s  ON b.cancelledbystaffid = s.staffid
             WHERE b.bookingid = %s
         """, (booking_id,))
         row = cur.fetchone()
@@ -259,6 +263,8 @@ def get_booking_by_id(current_user, booking_id):
                 "price_addons":      float(row['price_addons']  or 0),
                 "invoice_id":        f"INV-{str(row['invoiceid']).zfill(4)}" if row['invoiceid'] else None,
                 "booking_detail_id": row['bookingdetailid'],
+                "cancelled_by": row.get('cancelled_by_name'),
+                "cancelled_at": row['cancelled_at'].strftime('%Y-%m-%d %H:%M') if row.get('cancelled_at') else None,
             }
         }), 200
 
@@ -416,28 +422,40 @@ def add_addon(current_user, booking_id):
     conn = get_db_connection()
     cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     try:
-        data    = request.get_json()
-        item_id = data.get('item_id')
+        data = request.get_json()
+        services = data.get('services', [])
+        
+        # Fallback กรณีส่งมาแค่ชิ้นเดียวแบบเก่า
+        if not services and data.get('item_id'):
+            services = [{'item_id': data.get('item_id'), 'quantity': data.get('quantity', 1)}]
 
-        if not item_id:
-            return jsonify({"error": True, "message": "ต้องระบุ item_id"}), 400
+        if not services:
+            return jsonify({"error": True, "message": "ต้องระบุบริการเสริม (services)"}), 400
 
-        cur.execute("SELECT itemname, unitprice FROM inventoryitem WHERE itemid = %s", (item_id,))
-        item = cur.fetchone()
-        if not item:
-            return jsonify({"error": True, "message": "ไม่พบบริการ/สินค้า"}), 404
-
-        qty = data.get('quantity', 1)
+        total_added_cost = 0
         cur2 = conn.cursor()
-        cur2.execute("""
-            INSERT INTO bookingservice (bookingid, itemid, quantity, unitprice)
-            VALUES (%s, %s, %s, %s)
-        """, (booking_id, item_id, qty, item['unitprice']))
 
-        added_cost = float(item['unitprice']) * qty
-        cur2.execute("""
-            UPDATE invoice SET servicetotal = servicetotal + %s WHERE bookingid = %s
-        """, (added_cost, booking_id))
+        for svc in services:
+            item_id = svc.get('item_id')
+            qty = svc.get('quantity', 1)
+
+            cur.execute("SELECT itemname, unitprice FROM inventoryitem WHERE itemid = %s", (item_id,))
+            item = cur.fetchone()
+            if not item:
+                continue
+
+            cur2.execute("""
+                INSERT INTO bookingservice (bookingid, itemid, quantity, unitprice)
+                VALUES (%s, %s, %s, %s)
+            """, (booking_id, item_id, qty, item['unitprice']))
+
+            total_added_cost += float(item['unitprice']) * qty
+
+        # อัปเดตยอดรวมใน Invoice
+        if total_added_cost > 0:
+            cur2.execute("""
+                UPDATE invoice SET servicetotal = servicetotal + %s WHERE bookingid = %s
+            """, (total_added_cost, booking_id))
 
         conn.commit()
         cur.close()
@@ -445,9 +463,9 @@ def add_addon(current_user, booking_id):
         conn.close()
 
         return jsonify({
-            "status":     "success",
-            "message":    f"เพิ่มบริการ '{item['itemname']}' สำเร็จ",
-            "added_cost": added_cost,
+            "status": "success",
+            "message": f"เพิ่มบริการเสริมจำนวน {len(services)} รายการ สำเร็จ",
+            "added_cost": total_added_cost,
         }), 201
 
     except Exception as e:

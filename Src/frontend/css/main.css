@@ -42,6 +42,7 @@
   --sidebar-w: 240px;
 }
 
+
 body {
   font-family: 'DM Sans', sans-serif;
   background: var(--bg);
@@ -49,6 +50,19 @@ body {
   display: flex;
   min-height: 100vh;
   font-size: 14px;
+}
+
+html, body, #root, #app {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow-x: hidden !important;
+}
+
+.container, .app-container, .layout-wrapper, .main-layout {
+  width: 100% !important;
+  max-width: 100% !important;
 }
 
 /* ── ANIMATIONS ── */
@@ -63,4 +77,45 @@ body {
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(20px) scale(.97); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.content, #root, #app {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: 1 1 auto !important;
+    box-sizing: border-box !important;
+}
+
+.db-main-grid {
+    display: grid !important;
+    /* เปลี่ยนจาก 340px เป็น 1fr เพื่อให้กล่องขวายืดได้ (อัตราส่วน ซ้าย 2.5 : ขวา 1) */
+    grid-template-columns: 2.5fr 1fr !important; 
+    width: 100% !important;
+}
+
+/* 2. บังคับให้ "กล่องสถิติ (Stats)" ยืดขยายเติมเต็มพื้นที่ว่างทางขวาเสมอ */
+.stats-row, .db-stats-row, .bk-stats-row, .bl-stats-row, .iv-stats-row, 
+.pc-stats-row, .pp-stats-row, .at-stats-row, .nt-stats-row {
+    display: grid !important;
+    /* auto-fit จะช่วยคำนวณและยืดกล่องให้พอดีกับความกว้างจออัตโนมัติ */
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
+    width: 100% !important;
+}
+
+/* 3. บังคับให้ "ตารางข้อมูลและกล่องหลัก" กาง 100% ชิดขอบ */
+.tabs-container, .bk-card, .bl-card, .at-card, .iv-card, .pp-card, 
+.pc-panel, .pc-reports-panel, .nt-list, .db-table-card, .db-priority-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    display: block !important;
+}
+
+table {
+    width: 100% !important;
+    table-layout: auto !important;
+}
+
+.stats-row > *, .at-stats-row > *, .bl-stats-row > *, .bk-stats-row > *, .db-stats-row > *, .iv-stats-row > *, .nt-stats-row > *, .pc-stats-row > *, .pp-stats-row > * {
+  flex: 1 1 0 !important;
 }

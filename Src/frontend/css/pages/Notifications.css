@@ -69,6 +69,23 @@
 .nt-tab:hover { color: var(--nt-text-2); }
 .nt-tab.active { color: var(--nt-indigo); border-bottom-color: var(--nt-indigo); }
 .nt-spacer { flex: 1; }
+.nt-type-filter-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.nt-type-filter-wrap label {
+  font-size: 12px;
+  color: var(--nt-text-3);
+}
+.nt-type-filter {
+  border: 1px solid var(--nt-border);
+  border-radius: 10px;
+  padding: 7px 10px;
+  font-size: 12.5px;
+  color: var(--nt-text-2);
+  background: #fff;
+}
 .nt-mark-btn {
   display: flex; align-items: center; gap: 6px;
   padding: 8px 14px; background: var(--nt-indigo); color: #fff;
@@ -77,6 +94,12 @@
   cursor: pointer; transition: background .2s; white-space: nowrap;
 }
 .nt-mark-btn:hover { background: var(--nt-indigo-2); }
+.nt-mark-btn.secondary {
+  background: #fff;
+  color: var(--nt-indigo);
+  border: 1px solid #C7D2FE;
+}
+.nt-mark-btn.secondary:hover { background: #EEF2FF; }
 
 /* ── NOTIFICATION LIST ── */
 .nt-list { display: flex; flex-direction: column; gap: 10px; }
@@ -120,6 +143,21 @@
 .nt-item-body-text { font-size: 13px; color: var(--nt-text-2); line-height: 1.5; margin-bottom: 6px; }
 .nt-item-meta { display: flex; align-items: center; gap: 10px; font-size: 11.5px; color: var(--nt-text-3); }
 .nt-item-time {}
+.nt-item-actions { margin-top: 8px; }
+.nt-row-btn {
+  border: none;
+  background: var(--nt-indigo);
+  color: #fff;
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.nt-row-btn.secondary {
+  background: #fff;
+  color: var(--nt-indigo);
+  border: 1px solid #C7D2FE;
+}
 .nt-unread-dot {
   width: 8px; height: 8px; border-radius: 50%;
   background: var(--nt-indigo); flex-shrink: 0; margin-top: 6px;

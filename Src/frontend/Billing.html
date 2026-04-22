@@ -83,8 +83,14 @@
           <button class="bl-tab" onclick="filterInvoices('PENDING_PAYMENT', this)">
             รอชำระ <span class="bl-tab-count" id="count-PENDING_PAYMENT">3</span>
           </button>
+          <button class="bl-tab" onclick="filterInvoices('PARTIAL', this)">
+            ชำระบางส่วน <span class="bl-tab-count" id="count-PARTIAL">0</span>
+          </button>
           <button class="bl-tab" onclick="filterInvoices('PAID', this)">
             ชำระแล้ว <span class="bl-tab-count" id="count-PAID">5</span>
+          </button>
+          <button class="bl-tab" onclick="filterInvoices('CANCELLED', this)">
+            ยกเลิก <span class="bl-tab-count" id="count-CANCELLED">0</span>
           </button>
         </div>
 
@@ -126,11 +132,7 @@
 
       <div class="bl-table-footer">
         <span id="bl-showing">แสดง 8 รายการ</span>
-        <div class="bl-pagination">
-          <button class="bl-page-btn" disabled>‹</button>
-          <button class="bl-page-btn active">1</button>
-          <button class="bl-page-btn">›</button>
-        </div>
+        <div class="bl-pagination pg-pagination" id="bl-pager"></div>
       </div>
     </div>
 
@@ -178,8 +180,13 @@
     </div>
     <div class="bl-modal-body">
       <div class="bl-pay-amount-box" id="pay-amount-box">
-        <div class="bl-pay-amount-label">ยอดชำระ</div>
+        <div class="bl-pay-amount-label">ยอดรวมบิล</div>
         <div class="bl-pay-amount-val" id="pay-amount-val">฿0</div>
+        <div class="bl-pay-remain" id="pay-remaining-val">฿0</div>
+      </div>
+      <div class="bl-form-group" style="margin-top:16px">
+        <label class="bl-label">ยอดรับชำระครั้งนี้ (THB)</label>
+        <input class="bl-input" type="number" min="0" step="0.01" id="pay-amount-input" placeholder="0.00">
       </div>
       <div class="bl-form-group" style="margin-top:20px">
         <label class="bl-label">วิธีชำระเงิน</label>
@@ -213,6 +220,7 @@
 <script src="js/components/sidebar.js"></script>
 <script src="js/components/navbar.js"></script>
 <script src="js/services/api.js"></script>
+<script src="js/components/pagination.js"></script>
 <script src="js/pages/Billing.js"></script>
 
 <script>

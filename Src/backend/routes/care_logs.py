@@ -16,11 +16,19 @@ import psycopg2
 import psycopg2.extras
 from utils import token_required
 from datetime import datetime, timezone, timedelta
+from routes.notification_events import emit_notification
 
 care_logs_bp = Blueprint('care_logs', __name__)
 
 def get_db_connection():
     return psycopg2.connect(current_app.config['SQLALCHEMY_DATABASE_URI'])
+
+
+def _safe_emit(conn, **kwargs):
+    try:
+        emit_notification(conn, **kwargs)
+    except Exception:
+        pass
 
 # แก้ไขใน care_logs.py
 @care_logs_bp.route('', methods=['POST'])
@@ -93,8 +101,12 @@ def add_care_log(current_user):
         conn = get_db_connection()
         cur  = conn.cursor()
         cur.execute("""
-            SELECT bookingdetailid FROM bookingdetail 
-            WHERE bookingid = %s AND petid = %s 
+            SELECT bd.bookingdetailid
+            FROM bookingdetail bd
+            JOIN booking b ON bd.bookingid = b.bookingid
+            WHERE bd.bookingid = %s
+              AND bd.petid = %s
+              AND b.status::text = 'ACTIVE'
             LIMIT 1
         """, (booking_id, pet_id))
         
@@ -105,13 +117,14 @@ def add_care_log(current_user):
         booking_detail_id = result[0] # ได้ ID มาใช้งานแล้ว
 
         # 3. นำ booking_detail_id ที่หาได้ไป Insert ลง carelog
-        cur.execute("""
+        insert_sql = """
             INSERT INTO carelog
                 (bookingdetailid, foodstatus, pottystatus, medicationgiven,
                  staffnote, loggedby_staffid, mood, behavior_notes)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            RETURNING logid;   # <--- ต้องเติมบรรทัดนี้
-        """, (
+            RETURNING logid
+        """
+        insert_params = (
             booking_detail_id,
             data.get('food_status'),
             data.get('potty_status'),
@@ -120,9 +133,38 @@ def add_care_log(current_user):
             staff_id,
             data.get('mood'),
             data.get('behavior_notes')
-        ))
+        )
+        try:
+            cur.execute(insert_sql, insert_params)
+        except psycopg2.Error as db_err:
+            if getattr(db_err, "pgcode", None) == "23505":
+                conn.rollback()
+                cur.execute("""
+                    SELECT setval(
+                        'public.carelog_logid_seq',
+                        COALESCE((SELECT MAX(logid) FROM carelog), 0) + 1,
+                        false
+                    )
+                """)
+                conn.commit()
+                cur.execute(insert_sql, insert_params)
+            else:
+                raise
 
         new_log_id = cur.fetchone()[0]
+        conn.commit()
+        _safe_emit(
+            conn,
+            notif_type='CARE_REPORT',
+            title=f'บันทึกรายงานดูแล #{new_log_id}',
+            message='มีการสร้างรายงานการดูแลสัตว์เลี้ยงใหม่',
+            recipient_staff_id=None,
+            related_id=booking_id,
+            booking_id=booking_id,
+            actor_staff_id=staff_id,
+            target_id=new_log_id,
+            metadata={"event": "care_log_created", "pet_id": pet_id},
+        )
         conn.commit()
         cur.close()
         conn.close()
@@ -135,6 +177,79 @@ def add_care_log(current_user):
             "log_id":  new_log_id,
         }), 201
 
+    except Exception as e:
+        return jsonify({"error": True, "code": 500, "message": str(e)}), 500
+
+
+# ── 1.1 อัปเดตรายงาน (PATCH /api/care-reports/{report_id}) ───────────
+@care_logs_bp.route('/<int:report_id>', methods=['PATCH'])
+@token_required
+def update_care_log(current_user, report_id):
+    try:
+        data = request.get_json() or {}
+        staff_id = current_user.get('staff_id')
+
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("""
+            SELECT c.logid, bd.bookingid, bd.petid
+            FROM carelog c
+            JOIN bookingdetail bd ON c.bookingdetailid = bd.bookingdetailid
+            JOIN booking b ON bd.bookingid = b.bookingid
+            WHERE c.logid = %s
+              AND b.status::text = 'ACTIVE'
+            LIMIT 1
+        """, (report_id,))
+        row = cur.fetchone()
+        if not row:
+            cur.close()
+            conn.close()
+            return jsonify({"error": True, "code": 404, "message": "ไม่พบรายงาน หรือสัตว์เลี้ยงไม่ได้อยู่ในสถานะเข้าพัก"}), 404
+
+        cur2 = conn.cursor()
+        cur2.execute("""
+            UPDATE carelog
+            SET foodstatus = %s,
+                pottystatus = %s,
+                medicationgiven = %s,
+                staffnote = %s,
+                loggedby_staffid = %s,
+                mood = %s,
+                behavior_notes = %s
+            WHERE logid = %s
+        """, (
+            data.get('food_status'),
+            data.get('potty_status'),
+            data.get('medication_given', False),
+            data.get('staff_note'),
+            staff_id,
+            data.get('mood'),
+            data.get('behavior_notes'),
+            report_id
+        ))
+        conn.commit()
+        _safe_emit(
+            conn,
+            notif_type='CARE_REPORT',
+            title=f'อัปเดตรายงานดูแล #{report_id}',
+            message='มีการแก้ไขรายงานการดูแลสัตว์เลี้ยง',
+            recipient_staff_id=None,
+            related_id=row['bookingid'],
+            booking_id=row['bookingid'],
+            actor_staff_id=staff_id,
+            target_id=report_id,
+            metadata={"event": "care_log_updated", "pet_id": row['petid']},
+        )
+        conn.commit()
+        cur2.close()
+        cur.close()
+        conn.close()
+
+        return jsonify({
+            "status": "success",
+            "message": "อัปเดตรายงานการดูแลสำเร็จ",
+            "log_id": report_id
+        }), 200
     except Exception as e:
         return jsonify({"error": True, "code": 500, "message": str(e)}), 500
 
@@ -403,7 +518,8 @@ def get_active_stays(current_user):
             JOIN bookingdetail bd ON b.bookingid = bd.bookingid
             JOIN pet p ON bd.petid = p.petid
             LEFT JOIN room r ON bd.roomid = r.roomid
-            WHERE (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Bangkok')::date >= b.checkindate 
+            WHERE b.status::text = 'ACTIVE'
+              AND (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Bangkok')::date >= b.checkindate 
               AND (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Bangkok')::date <= b.checkoutdate
         """)
         

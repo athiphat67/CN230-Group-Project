@@ -241,8 +241,33 @@ td { padding: 14px 18px; vertical-align: middle; font-size: 13.5px; }
 .bl-status.PAID .bl-status-dot { background: var(--bl-green); }
 .bl-status.PENDING_PAYMENT { background: var(--bl-amber-s); color: var(--bl-amber); }
 .bl-status.PENDING_PAYMENT .bl-status-dot { background: var(--bl-amber); }
+.bl-status.PARTIAL { background: var(--bl-blue-s); color: var(--bl-blue); }
+.bl-status.PARTIAL .bl-status-dot { background: var(--bl-blue); }
+.bl-status.CANCELLED { background: var(--bl-coral-s); color: var(--bl-coral); }
+.bl-status.CANCELLED .bl-status-dot { background: var(--bl-coral); }
+.bl-remaining {
+  margin-top: 2px;
+  color: var(--bl-coral);
+  font-size: 11px;
+  font-weight: 600;
+}
 
 .bl-action-btns { display: flex; gap: 6px; align-items: center; }
+.bl-inline-select {
+  height: 30px;
+  border: 1px solid var(--bl-border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--bl-text-2);
+  font-size: 12px;
+  font-family: 'DM Sans', sans-serif;
+  padding: 0 8px;
+}
+.bl-inline-select:focus {
+  outline: none;
+  border-color: var(--bl-green);
+  box-shadow: 0 0 0 2px rgba(5,150,105,.12);
+}
 .bl-btn-view {
   width: 30px; height: 30px; border-radius: 8px;
   border: 1px solid var(--bl-border); background: #F9FAFB;
@@ -255,10 +280,22 @@ td { padding: 14px 18px; vertical-align: middle; font-size: 13.5px; }
   padding: 5px 12px; border-radius: 8px;
   border: 1px solid var(--bl-green);
   background: var(--bl-green-s); color: var(--bl-green);
+  min-width: 78px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-size: 12px; font-weight: 600; font-family: 'DM Sans', sans-serif;
   cursor: pointer; white-space: nowrap; transition: all .15s;
 }
 .bl-btn-pay:hover { background: var(--bl-green); color: #fff; }
+.bl-btn-pay-disabled {
+  border-color: var(--bl-border2);
+  background: #F3F4F6;
+  color: #9CA3AF;
+  cursor: default;
+  pointer-events: none;
+}
 .bl-btn-print {
   width: 30px; height: 30px; border-radius: 8px;
   border: 1px solid var(--bl-border); background: #F9FAFB;
@@ -396,6 +433,7 @@ tbody tr:nth-child(6) { animation-delay: .30s; }
 }
 .bl-pay-amount-label { font-size: 12px; color: var(--bl-green); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
 .bl-pay-amount-val { font-family: 'DM Serif Display', Georgia, serif; font-size: 36px; color: var(--bl-green); }
+.bl-pay-remain { margin-top: 4px; font-size: 12px; color: #DC2626; font-weight: 600; }
 
 .bl-form-group { display: flex; flex-direction: column; gap: 6px; }
 .bl-label { font-size: 12px; font-weight: 600; color: var(--bl-text-2); }

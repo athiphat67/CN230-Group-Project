@@ -14,6 +14,10 @@ let detailCache    = {};          // { id_raw: detailObject } — avoid re-fetch
 let currentFilter  = 'all';
 let currentSearch  = '';
 let selectedInv    = null;        // currently selected invoice object
+const BILLING_PAGE_KEY = 'admin-billing';
+const BILLING_PAGE_SIZE = 10;
+const BILLING_STATUS_OPTIONS = ['PENDING_PAYMENT', 'PARTIAL', 'PAID', 'CANCELLED'];
+const BILLING_METHOD_OPTIONS = ['cash', 'qr_promptpay', 'credit_card', 'bank_transfer'];
 
 /* ══════════════════════════════════════════
    INIT
@@ -48,9 +52,10 @@ async function loadInvoices() {
  * Map raw API response → local invoice object
  * API fields: invoice_id, invoice_id_raw, booking_id, owner_name, pet_names[],
  *             checkin_date, checkout_date, room_total, service_total, vet_cost,
- *             grand_total, deposit_paid, payment_status, payment_method, paid_at
+ *             grand_total, amount_paid, payment_status, payment_method, last_payment_date
  */
 function mapInvoice(raw) {
+  const status = raw.payment_status === 'UNPAID' ? 'PENDING_PAYMENT' : raw.payment_status;
   return {
     id:              raw.invoice_id,
     id_raw:          raw.invoice_id_raw,
@@ -59,18 +64,19 @@ function mapInvoice(raw) {
     pet_name:        (raw.pet_names || []).join(', ') || '—',
     pet_emoji:       '🐾',
     owner_name:      raw.owner_name,
-    issue_date:      raw.checkout_date || raw.paid_at?.slice(0, 10),
+    issue_date:      raw.checkout_date || raw.last_payment_date?.slice(0, 10),
     checkin_date:    raw.checkin_date,
     checkout_date:   raw.checkout_date,
     total_amount:    raw.grand_total  || 0,
+    amount_paid:     raw.amount_paid || 0,
+    remaining_amount: raw.remaining_amount ?? Math.max((raw.grand_total || 0) - (raw.amount_paid || 0), 0),
     room_total:      raw.room_total   || 0,
     service_total:   raw.service_total || 0,
     vet_cost:        raw.vet_cost     || 0,
-    deposit_paid:    raw.deposit_paid || 0,
     discount:        0,
-    payment_status:  raw.payment_status,
+    payment_status:  status,
     payment_method:  raw.payment_method,
-    paid_at:         raw.paid_at,
+    last_payment_date: raw.last_payment_date,
     line_items:      [],   // populated on demand from getById
   };
 }
@@ -96,18 +102,22 @@ function renderTable() {
   const emptyEl   = document.getElementById('bl-empty');
   const showingEl = document.getElementById('bl-showing');
   const filtered  = getFiltered();
+  const page = window.Pagination
+    ? Pagination.paginate(filtered, { key: BILLING_PAGE_KEY, pageSize: BILLING_PAGE_SIZE })
+    : { pageItems: filtered, total: filtered.length, start: 0, end: filtered.length, totalPages: 1 };
 
   if (filtered.length === 0) {
     tbody.innerHTML = '';
     emptyEl.style.display = 'block';
     showingEl.textContent = 'ไม่พบรายการ';
+    window.Pagination?.render(page, { key: BILLING_PAGE_KEY, containerId: 'bl-pager', infoId: 'bl-showing', label: 'รายการ', onChange: renderTable });
     return;
   }
 
   emptyEl.style.display = 'none';
-  showingEl.textContent = `แสดง ${filtered.length} รายการ`;
+  window.Pagination?.render(page, { key: BILLING_PAGE_KEY, containerId: 'bl-pager', infoId: 'bl-showing', label: 'รายการ', onChange: renderTable });
 
-  tbody.innerHTML = filtered.map(inv => `
+  tbody.innerHTML = page.pageItems.map(inv => `
     <tr data-id="${inv.id}">
       <td>
         <div class="bl-invoice-id">${inv.id}</div>
@@ -124,7 +134,12 @@ function renderTable() {
       </td>
       <td><span class="bl-booking-id">${inv.booking_id}</span></td>
       <td><span style="color:var(--bl-text-2);font-size:13px">${formatDate(inv.issue_date)}</span></td>
-      <td><div class="bl-amount">฿${inv.total_amount.toLocaleString()}</div></td>
+      <td>
+        <div class="bl-amount">฿${inv.total_amount.toLocaleString()}</div>
+        ${inv.payment_status === 'PARTIAL'
+          ? `<div class="bl-remaining">คงเหลือ ฿${Math.max(inv.remaining_amount || 0, 0).toLocaleString()}</div>`
+          : ''}
+      </td>
       <td><div class="bl-pay-method">${paymentIcon(inv.payment_method)} ${paymentLabel(inv.payment_method)}</div></td>
       <td>
         <span class="bl-status ${inv.payment_status}">
@@ -140,18 +155,29 @@ function renderTable() {
               <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
             </svg>
           </button>
-          ${inv.payment_status === 'PENDING_PAYMENT'
-            ? `<button class="bl-btn-pay" onclick="quickPay('${inv.id}')">รับชำระ</button>`
-            : ''}
           <button class="bl-btn-print" title="พิมพ์ใบเสร็จ" onclick="printInvoice('${inv.id}')">
             <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
             </svg>
           </button>
+          <select class="bl-inline-select" onchange="quickUpdateBilling('${inv.id}','payment_method',this.value)" title="แก้ไขวิธีชำระเงิน">
+            ${BILLING_METHOD_OPTIONS.map(method => `<option value="${method}" ${inv.payment_method === method ? 'selected' : ''}>${paymentLabel(method)}</option>`).join('')}
+          </select>
+          <select class="bl-inline-select" onchange="quickUpdateBilling('${inv.id}','payment_status',this.value)" title="แก้ไขสถานะการชำระเงิน">
+            ${BILLING_STATUS_OPTIONS.map(status => `<option value="${status}" ${inv.payment_status === status ? 'selected' : ''}>${statusLabel(status)}</option>`).join('')}
+          </select>
+          ${renderPayAction(inv)}
         </div>
       </td>
     </tr>
   `).join('');
+}
+
+function renderPayAction(inv) {
+  if (inv.payment_status !== 'PAID') {
+    return `<button class="bl-btn-pay" onclick="quickPay('${inv.id}')">รับชำระ</button>`;
+  }
+  return `<span class="bl-btn-pay bl-btn-pay-disabled" aria-disabled="true">รับชำระ</span>`;
 }
 
 /* ══════════════════════════════════════════
@@ -173,6 +199,7 @@ function getFiltered() {
 
 function filterInvoices(filter, btn) {
   currentFilter = filter;
+  window.Pagination?.reset(BILLING_PAGE_KEY);
   document.querySelectorAll('.bl-tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
   renderTable();
@@ -180,13 +207,18 @@ function filterInvoices(filter, btn) {
 
 function searchInvoices(q) {
   currentSearch = q;
+  window.Pagination?.reset(BILLING_PAGE_KEY);
   renderTable();
 }
 
 function updateCounts() {
   document.getElementById('count-all').textContent           = invoicesCache.length;
   document.getElementById('count-PENDING_PAYMENT').textContent = invoicesCache.filter(i => i.payment_status === 'PENDING_PAYMENT').length;
+  const countPartial = document.getElementById('count-PARTIAL');
+  if (countPartial) countPartial.textContent = invoicesCache.filter(i => i.payment_status === 'PARTIAL').length;
   document.getElementById('count-PAID').textContent          = invoicesCache.filter(i => i.payment_status === 'PAID').length;
+  const countCancelled = document.getElementById('count-CANCELLED');
+  if (countCancelled) countCancelled.textContent = invoicesCache.filter(i => i.payment_status === 'CANCELLED').length;
 }
 
 function updateStatCards() {
@@ -196,7 +228,7 @@ function updateStatCards() {
 
   // Filter paid invoices that belong to this month
   const paidThisMonth = paidAll.filter(i => {
-    const d = new Date(i.paid_at || i.issue_date);
+    const d = new Date(i.last_payment_date || i.issue_date);
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   });
 
@@ -232,8 +264,7 @@ async function openDetail(id) {
     <div style="text-align:center;padding:48px;color:var(--bl-text-2);font-size:14px">
       ⏳ กำลังโหลดรายละเอียด...
     </div>`;
-  document.getElementById('det-pay-btn').style.display =
-    inv.payment_status === 'PENDING_PAYMENT' ? '' : 'none';
+  document.getElementById('det-pay-btn').style.display = inv.payment_status === 'PAID' ? 'none' : '';
   openModal('modal-detail');
 
   try {
@@ -299,15 +330,20 @@ function buildDetailHTML(inv, detail) {
           <span class="bl-detail-row-label">วิธีชำระ</span>
           <span class="bl-detail-row-val">${paymentIcon(inv.payment_method)} ${paymentLabel(inv.payment_method)}</span>
         </div>
-        ${inv.paid_at ? `
+        ${inv.last_payment_date ? `
           <div class="bl-detail-row">
             <span class="bl-detail-row-label">เวลาชำระ</span>
-            <span class="bl-detail-row-val">${formatDateTime(inv.paid_at)}</span>
+            <span class="bl-detail-row-val">${formatDateTime(inv.last_payment_date)}</span>
           </div>` : ''}
-        ${(d.deposit_paid > 0) ? `
+        ${(inv.amount_paid > 0) ? `
           <div class="bl-detail-row">
-            <span class="bl-detail-row-label">มัดจำที่ชำระแล้ว</span>
-            <span class="bl-detail-row-val">฿${(d.deposit_paid || 0).toLocaleString()}</span>
+            <span class="bl-detail-row-label">ยอดที่ชำระแล้ว</span>
+            <span class="bl-detail-row-val">฿${(inv.amount_paid || 0).toLocaleString()}</span>
+          </div>` : ''}
+        ${(inv.remaining_amount > 0) ? `
+          <div class="bl-detail-row">
+            <span class="bl-detail-row-label">ยอดคงเหลือ</span>
+            <span class="bl-detail-row-val" style="color:#DC2626">฿${(inv.remaining_amount || 0).toLocaleString()}</span>
           </div>` : ''}
       </div>
     </div>
@@ -328,10 +364,10 @@ function buildDetailHTML(inv, detail) {
           <span class="bl-line-item-amount">฿${(d.vet_cost || 0).toLocaleString()}</span>
         </div>` : ''}
 
-      ${(d.deposit_paid > 0) ? `
+      ${(inv.amount_paid > 0) ? `
         <div class="bl-line-item" style="color:var(--bl-green,#059669)">
-          <span class="bl-line-item-desc">หักมัดจำ</span>
-          <span class="bl-line-item-amount">-฿${(d.deposit_paid || 0).toLocaleString()}</span>
+          <span class="bl-line-item-desc">หักยอดชำระแล้ว</span>
+          <span class="bl-line-item-amount">-฿${(inv.amount_paid || 0).toLocaleString()}</span>
         </div>` : ''}
 
       <div class="bl-total-row">
@@ -349,6 +385,9 @@ function openPayModal() {
   if (!selectedInv) return;
   document.getElementById('pay-subtitle').textContent = `${selectedInv.id} · ${selectedInv.pet_name}`;
   document.getElementById('pay-amount-val').textContent = `฿${selectedInv.total_amount.toLocaleString()}`;
+  document.getElementById('pay-remaining-val').textContent = `฿${Math.max(selectedInv.remaining_amount || 0, 0).toLocaleString()}`;
+  const amountInput = document.getElementById('pay-amount-input');
+  if (amountInput) amountInput.value = Math.max(selectedInv.remaining_amount || 0, 0);
   document.getElementById('pay-note').value = '';
   document.querySelector('input[name="pay-method"][value="cash"]').checked = true;
   closeModal('modal-detail');
@@ -364,20 +403,28 @@ function quickPay(id) {
 async function confirmPayment() {
   if (!selectedInv) return;
   const method = document.querySelector('input[name="pay-method"]:checked')?.value ?? 'cash';
+  const amountInput = document.getElementById('pay-amount-input');
+  const payAmount = Number(amountInput?.value || 0);
+  if (!Number.isFinite(payAmount) || payAmount <= 0) {
+    showToast('❌ กรุณากรอกยอดรับชำระที่มากกว่า 0', 'warn');
+    return;
+  }
   const btn = document.querySelector('#modal-pay .btn-primary');
   btn.disabled = true;
   btn.innerHTML = `<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4"/></svg> กำลังบันทึก...`;
 
   try {
-    const res = await API.billing.pay(selectedInv.id_raw, { payment_method: method });
+    const res = await API.billing.update(selectedInv.id_raw, { payment_method: method, paid_amount: payAmount });
     if (!res.ok) throw new Error(res.data?.message || 'บันทึกการชำระไม่สำเร็จ');
 
     // Update local cache — no need to re-fetch list
     const cached = invoicesCache.find(x => x.id === selectedInv.id);
     if (cached) {
-      cached.payment_status = 'PAID';
-      cached.payment_method = method;
-      cached.paid_at = new Date().toISOString();
+      cached.payment_status = res.data?.payment_status || cached.payment_status;
+      cached.payment_method = res.data?.payment_method || method;
+      cached.amount_paid = Number(res.data?.amount_paid ?? cached.amount_paid ?? 0);
+      cached.remaining_amount = Number(res.data?.remaining_amount ?? Math.max(cached.total_amount - cached.amount_paid, 0));
+      cached.last_payment_date = res.data?.last_payment_date || cached.last_payment_date;
     }
     delete detailCache[selectedInv.id_raw]; // invalidate stale detail
 
@@ -385,7 +432,8 @@ async function confirmPayment() {
     updateStatCards();
     renderTable();
     closeModal('modal-pay');
-    showToast(`✅ บันทึกการชำระเงิน ${selectedInv.id} สำเร็จ · ฿${selectedInv.total_amount.toLocaleString()} (${paymentLabel(method)})`);
+    const remaining = Number(res.data?.remaining_amount ?? 0);
+    showToast(`✅ บันทึกรับชำระ ${selectedInv.id} สำเร็จ · คงเหลือ ฿${remaining.toLocaleString()}`);
   } catch (e) {
     showToast(`❌ ${e.message}`, 'warn');
   } finally {
@@ -395,6 +443,77 @@ async function confirmPayment() {
         <path d="M5 13l4 4L19 7"/>
       </svg>
       ยืนยันการชำระเงิน`;
+  }
+}
+
+async function quickUpdateBilling(id, field, value) {
+  const inv = invoicesCache.find(x => x.id === id);
+  if (!inv) return;
+
+  const payload = field === 'payment_method'
+    ? { payment_method: value }
+    : { payment_status: value };
+  const oldStatus = inv.payment_status;
+  const oldMethod = inv.payment_method;
+  const oldPaidAt = inv.last_payment_date;
+  const oldPaidAmount = inv.amount_paid;
+  const oldRemaining = inv.remaining_amount;
+
+  if (field === 'payment_method' && oldMethod === value) return;
+  if (field === 'payment_status' && oldStatus === value) return;
+
+  if (field === 'payment_method') inv.payment_method = value;
+  if (field === 'payment_status') {
+    inv.payment_status = value;
+  }
+  renderTable();
+
+  try {
+    if (field === 'payment_status' && value !== 'CANCELLED') {
+      const paidInput = prompt(
+        `กรอกยอดที่ชำระแล้ว (THB) สำหรับ ${inv.id}\nยอดรวม: ฿${inv.total_amount.toLocaleString()}`,
+        String(inv.paid_amount ?? 0)
+      );
+      if (paidInput === null) {
+        inv.payment_status = oldStatus;
+        inv.payment_method = oldMethod;
+        inv.last_payment_date = oldPaidAt;
+        inv.amount_paid = oldPaidAmount;
+        inv.remaining_amount = oldRemaining;
+        renderTable();
+        return;
+      }
+      const paidAmount = Number(paidInput);
+      if (!Number.isFinite(paidAmount) || paidAmount < 0) {
+        throw new Error('ยอดที่ชำระแล้วต้องเป็นตัวเลขตั้งแต่ 0 ขึ้นไป');
+      }
+      payload.paid_amount = paidAmount;
+    }
+
+    const res = await API.billing.update(inv.id_raw, payload);
+    if (!res.ok) throw new Error(res.data?.message || 'อัปเดตข้อมูลไม่สำเร็จ');
+
+    if (res.data?.payment_status) inv.payment_status = res.data.payment_status;
+    if (res.data?.payment_method) inv.payment_method = res.data.payment_method;
+    if (typeof res.data?.amount_paid === 'number') inv.amount_paid = res.data.amount_paid;
+    if (typeof res.data?.remaining_amount === 'number') inv.remaining_amount = res.data.remaining_amount;
+    inv.last_payment_date = res.data?.last_payment_date || inv.last_payment_date;
+
+    delete detailCache[inv.id_raw];
+    updateCounts();
+    updateStatCards();
+    renderTable();
+    showToast(`✅ อัปเดต ${inv.id} สำเร็จ`);
+  } catch (e) {
+    inv.payment_status = oldStatus;
+    inv.payment_method = oldMethod;
+    inv.last_payment_date = oldPaidAt;
+    inv.amount_paid = oldPaidAmount;
+    inv.remaining_amount = oldRemaining;
+    updateCounts();
+    updateStatCards();
+    renderTable();
+    showToast(`❌ ${e.message}`, 'warn');
   }
 }
 
@@ -436,15 +555,17 @@ function openPrintWindow(inv) {
       <td class="td-amount">฿${inv.vet_cost.toLocaleString()}</td>
     </tr>` : '';
 
-  const depositRow = (inv.deposit_paid > 0) ? `
+  const depositRow = (inv.amount_paid > 0) ? `
     <tr class="row-deposit">
-      <td class="td-desc">หักมัดจำที่ชำระแล้ว</td>
-      <td class="td-amount">-฿${inv.deposit_paid.toLocaleString()}</td>
+      <td class="td-desc">หักยอดที่ชำระแล้ว</td>
+      <td class="td-amount">-฿${(inv.amount_paid || 0).toLocaleString()}</td>
     </tr>` : '';
 
   const statusBadge = inv.payment_status === 'PAID'
     ? `<span class="badge paid">✓ ชำระแล้ว</span>`
-    : `<span class="badge pending">⏳ รอชำระ</span>`;
+    : (inv.payment_status === 'PARTIAL'
+      ? `<span class="badge partial">△ ชำระบางส่วน</span>`
+      : `<span class="badge pending">⏳ รอชำระ</span>`);
 
   const paymentBlock = inv.payment_status === 'PAID' ? `
     <div class="payment-section">
@@ -454,9 +575,19 @@ function openPrintWindow(inv) {
       </div>
       <div class="payment-col" style="text-align:right">
         <div class="payment-label">ชำระเมื่อ</div>
-        <div class="payment-val">${formatDateTime(inv.paid_at)}</div>
+        <div class="payment-val">${formatDateTime(inv.last_payment_date)}</div>
       </div>
-    </div>` : '';
+    </div>` : (inv.payment_status === 'PARTIAL' ? `
+    <div class="payment-section">
+      <div class="payment-col">
+        <div class="payment-label">ชำระแล้ว</div>
+        <div class="payment-val">฿${(inv.amount_paid || 0).toLocaleString()}</div>
+      </div>
+      <div class="payment-col" style="text-align:right">
+        <div class="payment-label">คงเหลือ</div>
+        <div class="payment-val" style="color:#DC2626">฿${(inv.remaining_amount || 0).toLocaleString()}</div>
+      </div>
+    </div>` : '');
 
   const printedAt = new Date().toLocaleString('th-TH', {
     day: 'numeric', month: 'long', year: 'numeric',
@@ -771,7 +902,7 @@ function exportReport() {
       inv.total_amount,
       paymentLabel(inv.payment_method),
       statusLabel(inv.payment_status),
-      inv.paid_at ? formatDateTime(inv.paid_at) : '',
+      inv.last_payment_date ? formatDateTime(inv.last_payment_date) : '',
     ]),
   ];
 
@@ -861,6 +992,6 @@ function formatDateTime(dtStr) {
   });
 }
 
-function statusLabel(s)  { return { PAID: 'ชำระแล้ว', PENDING_PAYMENT: 'รอชำระ' }[s] ?? s ?? '—'; }
-function paymentLabel(s) { return { cash: 'เงินสด', qr_promptpay: 'QR PromptPay', credit_card: 'บัตรเครดิต' }[s] ?? '—'; }
-function paymentIcon(s)  { return { cash: '💵', qr_promptpay: '📱', credit_card: '💳' }[s] ?? ''; }
+function statusLabel(s)  { return { PAID: 'ชำระแล้ว', PARTIAL: 'ชำระบางส่วน', PENDING_PAYMENT: 'รอชำระ', CANCELLED: 'ยกเลิก' }[s] ?? s ?? '—'; }
+function paymentLabel(s) { return { cash: 'เงินสด', qr_promptpay: 'QR PromptPay', credit_card: 'บัตรเครดิต', bank_transfer: 'โอนธนาคาร' }[s] ?? '—'; }
+function paymentIcon(s)  { return { cash: '💵', qr_promptpay: '📱', credit_card: '💳', bank_transfer: '🏦' }[s] ?? ''; }

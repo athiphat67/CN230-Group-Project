@@ -4,6 +4,8 @@
  */
 
 /* ── UTILS: Safe DOM Updater ── */
+let currentStaffQuery = '';
+
 function setVal(id, text) {
   const el = document.getElementById(id);
   if (el) el.textContent = text;
@@ -93,14 +95,12 @@ function openEditModal(id, firstName, lastName, role, email, phone) {
 function filterStaff(query) {
   const tbody = document.getElementById('staff-tbody');
   if (!tbody) return;
-
-  const rows = tbody.querySelectorAll('tr');
-  const q = query.toLowerCase().trim();
-
-  rows.forEach(row => {
+  currentStaffQuery = query.toLowerCase().trim();
+  window.Pagination?.reset('staff-list');
+  paginateTableRows(tbody, 'staff-list', 10, row => {
     const name  = row.querySelector('.staff-name')?.textContent.toLowerCase() ?? '';
     const email = row.querySelector('.staff-email')?.textContent.toLowerCase() ?? '';
-    row.style.display = (!q || name.includes(q) || email.includes(q)) ? '' : 'none';
+    return !currentStaffQuery || name.includes(currentStaffQuery) || email.includes(currentStaffQuery);
   });
 }
 
@@ -177,6 +177,11 @@ async function loadAndRenderStaff() {
       </td>
     `;
     tbody.appendChild(tr);
+  });
+  paginateTableRows(tbody, 'staff-list', 10, row => {
+    const name  = row.querySelector('.staff-name')?.textContent.toLowerCase() ?? '';
+    const email = row.querySelector('.staff-email')?.textContent.toLowerCase() ?? '';
+    return !currentStaffQuery || name.includes(currentStaffQuery) || email.includes(currentStaffQuery);
   });
 }
 
@@ -296,6 +301,7 @@ async function loadAndRenderAttendance() {
     `;
     tbody.appendChild(tr);
   });
+  paginateTableRows(tbody, 'attendance-list', 10);
 }
 
 /* ── LEAVE REQUESTS ── */
@@ -366,6 +372,37 @@ async function loadAndRenderLeave() {
     `;
     tbody.appendChild(tr);
   });
+  paginateTableRows(tbody, 'leave-list', 10);
+}
+
+function paginateTableRows(tbody, key, pageSize, predicate = () => true) {
+  if (!tbody || !window.Pagination) return;
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  const matchingRows = rows.filter(predicate);
+  const page = Pagination.paginate(matchingRows, { key, pageSize });
+
+  rows.forEach(row => { row.style.display = 'none'; });
+  page.pageItems.forEach(row => { row.style.display = ''; });
+
+  const anchor = tbody.closest('.table-container') || tbody.closest('.tab-content') || tbody.parentElement;
+  Pagination.render(page, {
+    key,
+    containerEl: ensureStaffPager(anchor, `${key}-pager`),
+    label: 'รายการ',
+    onChange: () => paginateTableRows(tbody, key, pageSize, predicate),
+  });
+}
+
+function ensureStaffPager(anchor, id) {
+  let pager = document.getElementById(id);
+  if (!pager) {
+    pager = document.createElement('div');
+    pager.id = id;
+    pager.className = 'pg-pagination';
+    pager.style.marginTop = '12px';
+    anchor?.appendChild(pager);
+  }
+  return pager;
 }
 
 async function handleLeaveAction(leaveId, newStatus) {

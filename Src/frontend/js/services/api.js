@@ -73,6 +73,8 @@ window.API = {
     getAll:      (params = {}) => apiFetch('/bookings?' + new URLSearchParams(params)),
     getById:     (id)          => apiFetch(`/bookings/${id}`),
     create:      (data)        => apiFetch('/bookings', { method: 'POST', body: JSON.stringify(data) }),
+    update:      (id, data)    => apiFetch(`/bookings/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    delete:      (id)          => apiFetch(`/bookings/${id}`, { method: 'DELETE' }),
     checkin:     (id)          => apiFetch(`/bookings/${id}/checkin`, { method: 'PATCH' }),
     checkout:    (id, data)    => apiFetch(`/bookings/${id}/checkout`, { method: 'PATCH', body: JSON.stringify(data) }),
     cancel:      (id, data)    => apiFetch(`/bookings/${id}/cancel`, { method: 'PATCH', body: JSON.stringify(data || {}) }),
@@ -83,8 +85,12 @@ window.API = {
   /* --- Rooms --- */
   rooms: {
     getAll:          ()         => apiFetch('/rooms'),
+    getById:         (id)       => apiFetch(`/rooms/${id}`),
+    getOptions:      ()         => apiFetch('/rooms/options'),
+    create:          (data)     => apiFetch('/rooms', { method: 'POST', body: JSON.stringify(data) }),
     getAvailability: (p)        => apiFetch('/rooms/availability?' + new URLSearchParams(p)),
     update:          (id, data) => apiFetch(`/rooms/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    delete:          (id)       => apiFetch(`/rooms/${id}`, { method: 'DELETE' }),
   },
 
   /* --- Billing --- */
@@ -92,6 +98,7 @@ window.API = {
     getAll:   (params = {}) => apiFetch('/billing?' + new URLSearchParams(params)),
     getById:  (id)          => apiFetch(`/billing/${id}`),
     preview:  (bookingId)   => apiFetch('/billing/preview', { method: 'POST', body: JSON.stringify({ booking_id: bookingId }) }),
+    update:   (id, data)    => apiFetch(`/billing/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
     pay:      (id, data)    => apiFetch(`/billing/${id}/pay`, { method: 'PATCH', body: JSON.stringify(data) }),
   },
 
@@ -100,6 +107,7 @@ window.API = {
     getAll:       (params = {}) => apiFetch('/care-reports?' + new URLSearchParams(params)),
     getActiveStays: ()          => apiFetch('/care-reports/active-stays'),
     create:       (data)        => apiFetch('/care-reports', { method: 'POST', body: JSON.stringify(data) }),
+    update:       (id, data)    => apiFetch(`/care-reports/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
     uploadPhotos: (id, formData) => fetch(`${BASE_URL}/care-reports/${id}/photos`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${getToken()}` },
@@ -146,9 +154,13 @@ window.API = {
 
   /* --- Notifications --- */
   notifications: {
-    getAll:     (params = {}) => apiFetch('/notifications?' + new URLSearchParams(params)),
-    markRead:   (id)          => apiFetch(`/notifications/${id}/read`, { method: 'PATCH' }),
-    markAllRead: ()           => apiFetch('/notifications/read-all', { method: 'PATCH' }),
+    getAll:       (params = {}) => apiFetch('/notifications?' + new URLSearchParams(params)),
+    create:       (data)        => apiFetch('/notifications', { method: 'POST', body: JSON.stringify(data) }),
+    markRead:     (id)          => apiFetch(`/notifications/${id}/read`, { method: 'PATCH', body: JSON.stringify({ is_read: true }) }),
+    markUnread:   (id)          => apiFetch(`/notifications/${id}/unread`, { method: 'PATCH' }),
+    setReadStatus:(id, isRead)  => apiFetch(`/notifications/${id}/read`, { method: 'PATCH', body: JSON.stringify({ is_read: !!isRead }) }),
+    markAllRead:  ()            => apiFetch('/notifications/read-all', { method: 'PATCH', body: JSON.stringify({ is_read: true }) }),
+    markAllUnread:()            => apiFetch('/notifications/read-all', { method: 'PATCH', body: JSON.stringify({ is_read: false }) }),
   },
 
   /* --- Dashboard (aggregate helper) --- */
@@ -209,4 +221,67 @@ window.staffAPI = {
       ? { status: 'success', message: 'เพิ่มพนักงานสำเร็จ', data: res.data }
       : { status: 'error', message: res.data?.message || 'เกิดข้อผิดพลาด' };
   },
+};
+
+/* ─── CUSTOMER API (window.CustomerAPI) ──────────────── */
+window.CustomerAPI = {
+  /* --- Auth --- */
+  auth: {
+    login: (username, password) => apiFetch('/auth/login/customer', {
+      method: 'POST',
+      body: JSON.stringify({ username, password }),
+    }),
+    logout: () => apiFetch('/auth/logout', { method: 'POST' }),
+  },
+
+  /* --- Customer Profile --- */
+  customer: {
+    getMe: () => apiFetch('/customers/me'),
+    getById: (id) => apiFetch(`/customers/${id}`),
+    update: (id, data) => apiFetch(`/customers/${id}`, { 
+      method: 'PUT', 
+      body: JSON.stringify(data) 
+    }),
+  },
+
+  /* --- Pets --- */
+  pets: {
+    getAll:  (params = {}) => apiFetch('/pets?' + new URLSearchParams(params)),
+    getById: (id)          => apiFetch(`/pets/${id}`),
+    create:  (data)        => apiFetch('/pets', { method: 'POST', body: JSON.stringify(data) }),
+    update:  (id, data)    => apiFetch(`/pets/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete:  (id)          => apiFetch(`/pets/${id}`, { method: 'DELETE' }),
+    getVaccines: (id)      => apiFetch(`/pets/${id}/vaccines`),
+    addVaccine:  (id, data) => apiFetch(`/pets/${id}/vaccines`, { method: 'POST', body: JSON.stringify(data) }),
+    getMealPlans:(id)       => apiFetch(`/pets/${id}/meal-plans`),
+    saveMealPlans:(id, data)=> apiFetch(`/pets/${id}/meal-plans`, { method: 'POST', body: JSON.stringify(data) }),
+  },
+
+  /* --- Bookings --- */
+  bookings: {
+    getAll: (params = {}) => apiFetch('/bookings?' + new URLSearchParams(params)),
+    create: (data)        => apiFetch('/bookings', { method: 'POST', body: JSON.stringify(data) }),
+    getById: (id)         => apiFetch(`/bookings/${id}`),
+    cancel: (id, data)    => apiFetch(`/bookings/${id}/cancel`, { method: 'PATCH', body: JSON.stringify(data || {}) }),
+    getServices: ()       => apiFetch('/bookings/services'),
+    getRooms: ()          => apiFetch('/rooms'),
+  },
+
+  // 🟢 เพิ่มโค้ด 4 บรรทัดนี้ลงไปครับ 🟢
+  /* --- Rooms --- */
+  rooms: {
+    getAvailability: (params) => apiFetch('/rooms/availability?' + new URLSearchParams(params)),
+  },
+
+  /* --- Notifications --- */
+  notifications: {
+    getAll:       (params = {}) => apiFetch('/notifications?' + new URLSearchParams(params)),
+    create:       (data)        => apiFetch('/notifications', { method: 'POST', body: JSON.stringify(data) }),
+    markRead:     (id)          => apiFetch(`/notifications/${id}/read`, { method: 'PATCH', body: JSON.stringify({ is_read: true }) }),
+    markUnread:   (id)          => apiFetch(`/notifications/${id}/unread`, { method: 'PATCH' }),
+    setReadStatus:(id, isRead)  => apiFetch(`/notifications/${id}/read`, { method: 'PATCH', body: JSON.stringify({ is_read: !!isRead }) }),
+    markAllRead:  ()            => apiFetch('/notifications/read-all', { method: 'PATCH', body: JSON.stringify({ is_read: true }) }),
+    markAllUnread:()            => apiFetch('/notifications/read-all', { method: 'PATCH', body: JSON.stringify({ is_read: false }) }),
+  }
+  
 };

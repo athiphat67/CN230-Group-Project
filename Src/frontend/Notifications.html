@@ -54,12 +54,19 @@
       <div class="nt-filter-tabs">
         <button class="nt-tab active" onclick="filterNotifications('all', this)">ทั้งหมด</button>
         <button class="nt-tab" onclick="filterNotifications('unread', this)">🔴 ยังไม่อ่าน</button>
-        <button class="nt-tab" onclick="filterNotifications('CARE_REPORT', this)">📋 รายงานดูแล</button>
-        <button class="nt-tab" onclick="filterNotifications('NEW_BOOKING_ALERT', this)">🔔 จองใหม่</button>
-        <button class="nt-tab" onclick="filterNotifications('BOOKING_CONFIRMED', this)">✅ ยืนยันจอง</button>
-        <button class="nt-tab" onclick="filterNotifications('BOOKING_CANCELLED', this)">❌ ยกเลิก</button>
-        <button class="nt-tab" onclick="filterNotifications('PAYMENT_CONFIRMED', this)">💰 ชำระเงิน</button>
-        <button class="nt-tab" onclick="filterNotifications('CHECKIN_REMINDER', this)">⏰ แจ้งเตือน</button>
+        <button class="nt-tab" onclick="filterNotifications('read', this)">✅ อ่านแล้ว</button>
+      </div>
+      <div class="nt-type-filter-wrap">
+        <label for="nt-type-filter">ประเภท:</label>
+        <select id="nt-type-filter" class="nt-type-filter">
+          <option value="all">ทั้งหมด</option>
+          <option value="CARE_REPORT">รายงานดูแล</option>
+          <option value="NEW_BOOKING_ALERT">จองใหม่</option>
+          <option value="BOOKING_CONFIRMED">ยืนยันจอง</option>
+          <option value="BOOKING_CANCELLED">ยกเลิก</option>
+          <option value="PAYMENT_CONFIRMED">ชำระเงิน</option>
+          <option value="CHECKIN_REMINDER">แจ้งเตือน</option>
+        </select>
       </div>
       <div class="nt-spacer"></div>
       <span id="nt-count" style="font-size:12.5px;color:var(--nt-text-3)">—</span>
@@ -67,6 +74,7 @@
         <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
         อ่านทั้งหมด
       </button>
+      <button class="nt-mark-btn secondary" onclick="markAllUnread()">ยังไม่อ่านทั้งหมด</button>
     </div>
 
     <!-- NOTIFICATION LIST -->
@@ -82,6 +90,7 @@
 <script src="js/components/sidebar.js"></script>
 <script src="js/components/navbar.js"></script>
 <script src="js/services/api.js"></script>
+<script src="js/components/pagination.js"></script>
 <script src="js/pages/Notifications.js"></script>
 <script>
   const currentUser = { name: 'สมชาย มั่นคง', role: 'Administrator' };

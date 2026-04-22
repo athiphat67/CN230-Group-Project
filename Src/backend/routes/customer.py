@@ -116,6 +116,14 @@ def get_customer_pets(current_user, id):
     except Exception as e:
         return jsonify({"error": True, "message": str(e)}), 500
 
+@customer_bp.route('/me', methods=['GET'])
+@token_required
+def get_current_customer(current_user):
+    customer_id = current_user.get('customer_id')
+    if not customer_id:
+        return jsonify({"error": True, "code": 403, "message": "Customer token required"}), 403
+    return get_customer_by_id.__wrapped__(current_user, customer_id)
+
 # ── 2. READ (Get One by ID) ───────────────────────────────────
 @customer_bp.route('/<int:id>', methods=['GET'])
 @token_required

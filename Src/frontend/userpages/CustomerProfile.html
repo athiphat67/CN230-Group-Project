@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile — PetSerenity</title>
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/userpages/CustomerProfile.css">
+</head>
+
+<body>
+    <aside id="sidebar-root"></aside>
+
+    <div class="page-wrapper">
+        <div class="container">
+
+            <header class="profile-header animate-fade-in-up">
+                <h1 class="profile-header__title"
+                    style="font-family: 'Cormorant Garamond', serif; font-size: 2.2rem; color: var(--text-1);">My
+                    Profile</h1>
+                <p class="profile-header__sub">
+                    Manage your personal information to ensure the best care for your pets.
+                </p>
+            </header>
+
+            <div class="profile-layout">
+
+                <aside class="animate-fade-in-up delay-1">
+                    <div class="profile-sidebar-card">
+
+                        <div class="profile-avatar-section">
+                            <div class="profile-avatar-wrap">
+                                <div class="profile-avatar" id="profile-initials"></div>
+                                <div class="profile-avatar-change" title="Change Photo">
+                                    <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z">
+                                        </path>
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <h2 class="profile-display-name" id="profile-display-name">Loading...</h2>
+                            <p class="profile-member-since" id="profile-username">@username</p>
+                        </div>
+
+                        <button class="btn btn-primary profile-edit-btn" onclick="startEdit()">
+                            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
+                                style="width: 16px; height: 16px; margin-right: 6px;">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
+                                </path>
+                            </svg>
+                            Edit Profile
+                        </button>
+
+                        <div class="security-section">
+                            <h3 class="security-title">Security Status</h3>
+                            <div class="security-item">
+                                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                Identity Verified
+                            </div>
+                            <div class="security-item">
+                                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+                                    </path>
+                                </svg>
+                                2FA Enabled
+                            </div>
+                        </div>
+
+                    </div>
+                </aside>
+
+                <main class="profile-content animate-fade-in-up delay-2">
+
+                    <div class="profile-section-card" id="personal-section">
+                        <div class="profile-section-card__header">
+                            <h3 class="profile-section-card__title">
+                                <div class="profile-section-icon profile-section-icon--blue">👤</div>
+                                Personal Details
+                            </h3>
+                        </div>
+
+                        <div class="profile-section-card__body">
+
+                            <div class="view-mode">
+                                <div class="detail-grid">
+                                    <div>
+                                        <div class="detail-field__label">First Name</div>
+                                        <div class="detail-field__value" id="view-firstname">—</div>
+                                    </div>
+                                    <div>
+                                        <div class="detail-field__label">Last Name</div>
+                                        <div class="detail-field__value" id="view-lastname">—</div>
+                                    </div>
+                                    <div>
+                                        <div class="detail-field__label">Email Address</div>
+                                        <div class="detail-field__value" id="view-email">—</div>
+                                    </div>
+                                    <div>
+                                        <div class="detail-field__label">Phone Number</div>
+                                        <div class="detail-field__value" id="view-phone">—</div>
+                                    </div>
+                                    <div style="grid-column: 1 / -1;">
+                                        <div class="detail-field__label">Address</div>
+                                        <div class="detail-field__value" id="view-address">—</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="edit-mode">
+                                <div class="form-grid"
+                                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                                    <div class="form-group">
+                                        <label class="form-label">First Name</label>
+                                        <input type="text" id="edit-firstname" class="form-control">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Last Name</label>
+                                        <input type="text" id="edit-lastname" class="form-control">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Email Address</label>
+                                        <input type="email" id="edit-email" class="form-control">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Phone Number</label>
+                                        <input type="text" id="edit-phone" class="form-control">
+                                    </div>
+                                    <div class="form-group" style="grid-column: 1 / -1;">
+                                        <label class="form-label">Address</label>
+                                        <textarea id="edit-address" class="form-control" rows="2"></textarea>
+                                    </div>
+                                </div>
+
+                                <div style="display: flex; gap: 12px; margin-top: 24px; justify-content: flex-end;">
+                                    <button class="btn btn-outline" onclick="cancelEdit()">Cancel</button>
+                                    <button class="btn btn-primary" id="save-personal-btn" onclick="savePersonal()">Save
+                                        Changes</button>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="profile-section-card" style="margin-top: 24px;">
+                        <div class="profile-section-card__header">
+                            <h3 class="profile-section-card__title">
+                                <div class="profile-section-icon profile-section-icon--blue">🐾</div>
+                                Your Family
+                            </h3>
+                        </div>
+                        <div class="profile-section-card__body">
+                            <div id="profile-pet-list" style="display: flex; flex-wrap: wrap; gap: 12px;">
+                                <div class="spinner spinner--sm"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts — ใช้ usersidebar.js แทน sidebar.js -->
+    <script src="../js/main.js"></script>
+    <script src="../js/services/api.js"></script>
+    <script src="../js/components/usersidebar.js"></script>
+    <script src="../js/components/pagination.js"></script>
+    <script src="../js/userpages/CustomerProfile.js"></script>
+</body>
+
+</html>

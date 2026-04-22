@@ -3,6 +3,8 @@ bookings.py — FR3 Booking & Front Desk Management
 GET    /api/bookings                      รายการจองทั้งหมด (พร้อม filter)
 POST   /api/bookings                      สร้างการจองใหม่
 GET    /api/bookings/{id}                 ดูรายละเอียดการจอง
+PATCH  /api/bookings/{id}                 แก้ไขการจอง
+DELETE /api/bookings/{id}                 ลบการจอง
 PATCH  /api/bookings/{id}/checkin         Check-In
 PATCH  /api/bookings/{id}/checkout        Check-Out
 PATCH  /api/bookings/{id}/cancel          ยกเลิกการจอง
@@ -13,6 +15,7 @@ from datetime import datetime, timedelta
 import psycopg2
 import psycopg2.extras
 from utils import token_required
+from routes.notification_events import emit_notification
 
 bookings_bp = Blueprint('bookings', __name__)
 
@@ -21,6 +24,22 @@ def get_db_connection():
 
 def get_thai_time():
     return datetime.utcnow() + timedelta(hours=7)
+
+def parse_iso_date(value):
+    if not value:
+        return None
+    text = str(value).strip()
+    if len(text) == 10:
+        return datetime.strptime(text, '%Y-%m-%d')
+    return datetime.fromisoformat(text.replace('Z', '+00:00'))
+
+
+def _safe_emit(conn, **kwargs):
+    try:
+        emit_notification(conn, **kwargs)
+    except Exception:
+        # Notification flow must not block core booking operations.
+        pass
 
 # Map DB status → Frontend status
 STATUS_MAP = {
@@ -83,6 +102,9 @@ def get_all_bookings(current_user):
         end_date   = request.args.get('end_date', '')
         pet_name   = request.args.get('pet_name', '').strip()
         owner_name = request.args.get('owner_name', '').strip()
+        
+        # 🟢 เพิ่มบรรทัดนี้ เพื่อรับค่ารหัสลูกค้าจากหน้า Dashboard
+        customer_id = request.args.get('customerid', '') 
 
         status_db = STATUS_MAP_REVERSE.get(status_fe.upper(), status_fe.upper()) if status_fe else ''
 
@@ -106,6 +128,8 @@ def get_all_bookings(current_user):
                 b.checkindate                              AS checkin_date,
                 b.checkoutdate                             AS checkout_date,
                 b.status::text                             AS status_db,
+                b.cancelledat                              AS cancelled_at,
+                s.firstname || ' ' || s.lastname           AS cancelled_by_name,
                 b.lockedrate                               AS price_room,
                 COALESCE(i.servicetotal, 0)                AS price_addons,
                 bd.bookingdetailid,
@@ -127,6 +151,9 @@ def get_all_bookings(current_user):
         if status_db:
             query += " AND b.status::text = %s"
             params.append(status_db)
+        if customer_id:
+            query += " AND b.customerid = %s"
+            params.append(customer_id)
         if start_date:
             query += " AND b.checkindate::date >= %s"
             params.append(start_date)
@@ -300,6 +327,20 @@ def create_booking(current_user):
         """, (booking_id, total_rate))
 
         conn.commit()
+        _safe_emit(
+            conn,
+            notif_type='NEW_BOOKING_ALERT',
+            title=f'มีการจองใหม่ BK-{str(booking_id).zfill(4)}',
+            message=f'สร้างการจองใหม่สำหรับลูกค้า #{data["customer_id"]}',
+            recipient_staff_id=None,
+            related_id=booking_id,
+            booking_id=booking_id,
+            actor_staff_id=staff_id,
+            actor_customer_id=current_user.get('customer_id'),
+            target_id=booking_id,
+            metadata={"event": "booking_created", "customer_id": data["customer_id"]},
+        )
+        conn.commit()
         return jsonify({
             "status": "success",
             "message": "สร้างการจองสำเร็จ",
@@ -344,7 +385,8 @@ def get_booking_by_id(current_user, booking_id):
         cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute("""
             SELECT b.bookingid, b.checkindate, b.checkoutdate, b.status::text as status,
-                   b.lockedrate,
+                   b.lockedrate, b.cancelledat AS cancelled_at,
+                   s.firstname || ' ' || s.lastname AS cancelled_by_name,
                    c.customerid AS owner_id,
                    c.firstname || ' ' || c.lastname AS owner_name,
                    c.phonenumber AS owner_phone,
@@ -372,6 +414,20 @@ def get_booking_by_id(current_user, booking_id):
         if not row:
             return jsonify({"error": True, "code": 404, "message": "ไม่พบการจอง"}), 404
 
+        conn2 = get_db_connection()
+        cur2 = conn2.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur2.execute("""
+            SELECT bs.itemid AS item_id, ii.itemname AS name,
+                   bs.quantity, bs.unitprice AS unit_price
+            FROM bookingservice bs
+            JOIN inventoryitem ii ON bs.itemid = ii.itemid
+            WHERE bs.bookingid = %s
+            ORDER BY ii.itemname
+        """, (booking_id,))
+        service_rows = cur2.fetchall()
+        cur2.close()
+        conn2.close()
+
         return jsonify({
             "status": "success",
             "data": {
@@ -394,6 +450,12 @@ def get_booking_by_id(current_user, booking_id):
                 "price_addons":      float(row['price_addons']  or 0),
                 "invoice_id":        f"INV-{str(row['invoiceid']).zfill(4)}" if row['invoiceid'] else None,
                 "booking_detail_id": row['bookingdetailid'],
+                "services": [{
+                    "item_id": s['item_id'],
+                    "name": s['name'],
+                    "quantity": int(s['quantity'] or 0),
+                    "unit_price": float(s['unit_price'] or 0),
+                } for s in service_rows],
                 "cancelled_by": row.get('cancelled_by_name'),
                 "cancelled_at": row['cancelled_at'].strftime('%Y-%m-%d %H:%M') if row.get('cancelled_at') else None,
             }
@@ -403,7 +465,156 @@ def get_booking_by_id(current_user, booking_id):
         return jsonify({"error": True, "message": str(e)}), 500
 
 
-# ── 4. Check-In (PATCH /api/bookings/{id}/checkin) ───────────────────
+# ── 4. แก้ไขการจอง (PATCH /api/bookings/{id}) ───────────────────────
+@bookings_bp.route('/<int:booking_id>', methods=['PATCH'])
+@token_required
+def update_booking(current_user, booking_id):
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    try:
+        data = request.get_json() or {}
+        cur.execute("""
+            SELECT b.bookingid, b.customerid, b.status::text AS status, bd.bookingdetailid, bd.petid, bd.roomid
+            FROM booking b
+            JOIN bookingdetail bd ON b.bookingid = bd.bookingid
+            WHERE b.bookingid = %s
+        """, (booking_id,))
+        row = cur.fetchone()
+        if not row:
+            return jsonify({"error": True, "code": 404, "message": "ไม่พบการจอง"}), 404
+        if row['status'] not in ('PENDING', 'CONFIRMED'):
+            return jsonify({"error": True, "code": 400, "message": "แก้ไขได้เฉพาะรายการที่รอยืนยันเท่านั้น"}), 400
+
+        customer_id = data.get('customer_id', row['customerid'])
+        pets = data.get('pets') or [{"pet_id": row['petid'], "room_id": row['roomid']}]
+        if not pets or len(pets) != 1:
+            return jsonify({"error": True, "message": "รองรับการแก้ไขครั้งละ 1 สัตว์เลี้ยง"}), 400
+
+        pet_id = int(pets[0]['pet_id'])
+        room_id = int(pets[0]['room_id'])
+        checkin = parse_iso_date(data.get('checkin_date'))
+        checkout = parse_iso_date(data.get('checkout_date'))
+        if not checkin or not checkout or checkout <= checkin:
+            return jsonify({"error": True, "message": "วันที่ Check-out ต้องหลัง Check-in"}), 400
+
+        cur.execute("SELECT petid FROM pet WHERE petid = %s AND customerid = %s", (pet_id, customer_id))
+        if not cur.fetchone():
+            return jsonify({"error": True, "message": "สัตว์เลี้ยงไม่ตรงกับลูกค้าที่ระบุ"}), 400
+
+        cur.execute("SELECT rate FROM room WHERE roomid = %s", (room_id,))
+        room_row = cur.fetchone()
+        if not room_row:
+            return jsonify({"error": True, "message": "ไม่พบห้องพักที่เลือก"}), 400
+
+        cur.execute("""
+            SELECT 1
+            FROM bookingdetail bd
+            JOIN booking b ON bd.bookingid = b.bookingid
+            WHERE bd.roomid = %s
+              AND b.bookingid <> %s
+              AND b.status::text NOT IN ('CANCELLED', 'COMPLETED')
+              AND b.checkindate < %s
+              AND b.checkoutdate > %s
+            LIMIT 1
+        """, (room_id, booking_id, checkout, checkin))
+        if cur.fetchone():
+            return jsonify({"error": True, "message": "ห้องนี้ไม่ว่างในช่วงวันที่เลือก"}), 400
+
+        nights = max((checkout.date() - checkin.date()).days, 1)
+        room_total = float(room_row['rate'] or 0) * nights
+
+        services = data.get('services', None)
+        service_total = 0.0
+        cur2 = conn.cursor()
+        if isinstance(services, list):
+            cur2.execute("DELETE FROM bookingservice WHERE bookingid = %s", (booking_id,))
+            for svc in services:
+                item_id = int(svc.get('item_id'))
+                qty = int(svc.get('quantity', 1))
+                unit_price = float(svc.get('unit_price', 0))
+                cur2.execute("""
+                    INSERT INTO bookingservice (bookingid, itemid, quantity, unitprice)
+                    VALUES (%s, %s, %s, %s)
+                """, (booking_id, item_id, qty, unit_price))
+                service_total += qty * unit_price
+        else:
+            cur.execute("SELECT COALESCE(SUM(quantity * unitprice),0) AS total FROM bookingservice WHERE bookingid = %s", (booking_id,))
+            service_total = float((cur.fetchone() or {}).get('total') or 0)
+
+        cur2.execute("""
+            UPDATE booking
+            SET customerid = %s, checkindate = %s, checkoutdate = %s, lockedrate = %s
+            WHERE bookingid = %s
+        """, (customer_id, checkin, checkout, room_total, booking_id))
+        cur2.execute("""
+            UPDATE bookingdetail
+            SET petid = %s, roomid = %s
+            WHERE bookingdetailid = %s
+        """, (pet_id, room_id, row['bookingdetailid']))
+        cur2.execute("""
+            UPDATE invoice
+            SET roomtotal = %s, servicetotal = %s
+            WHERE bookingid = %s
+        """, (room_total, service_total, booking_id))
+
+        conn.commit()
+        _safe_emit(
+            conn,
+            notif_type='BOOKING_CONFIRMED',
+            title=f'อัปเดตการจอง BK-{str(booking_id).zfill(4)}',
+            message='รายละเอียดการจองถูกแก้ไขแล้ว',
+            recipient_staff_id=None,
+            related_id=booking_id,
+            booking_id=booking_id,
+            actor_staff_id=current_user.get('staff_id'),
+            actor_customer_id=current_user.get('customer_id'),
+            target_id=booking_id,
+            metadata={"event": "booking_updated", "pet_id": pet_id, "room_id": room_id},
+        )
+        conn.commit()
+        cur2.close()
+        return jsonify({
+            "status": "success",
+            "message": "อัปเดตการจองสำเร็จ",
+            "booking_id": booking_id,
+        }), 200
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"error": True, "message": str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+
+# ── 5. ลบการจอง (DELETE /api/bookings/{id}) ─────────────────────────
+@bookings_bp.route('/<int:booking_id>', methods=['DELETE'])
+@token_required
+def delete_booking(current_user, booking_id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT status::text FROM booking WHERE bookingid = %s", (booking_id,))
+        row = cur.fetchone()
+        if not row:
+            return jsonify({"error": True, "code": 404, "message": "ไม่พบการจอง"}), 404
+        if row[0] not in ('PENDING', 'CANCELLED'):
+            return jsonify({"error": True, "code": 400, "message": "ลบได้เฉพาะรายการรอยืนยันหรือยกเลิกแล้ว"}), 400
+
+        cur.execute("DELETE FROM invoice WHERE bookingid = %s", (booking_id,))
+        cur.execute("DELETE FROM bookingservice WHERE bookingid = %s", (booking_id,))
+        cur.execute("DELETE FROM bookingdetail WHERE bookingid = %s", (booking_id,))
+        cur.execute("DELETE FROM booking WHERE bookingid = %s", (booking_id,))
+        conn.commit()
+        return jsonify({"status": "success", "booking_id": booking_id}), 200
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"error": True, "message": str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+
+# ── 6. Check-In (PATCH /api/bookings/{id}/checkin) ───────────────────
 @bookings_bp.route('/<int:booking_id>/checkin', methods=['PATCH'])
 @token_required
 def checkin(current_user, booking_id):
@@ -455,6 +666,19 @@ def checkin(current_user, booking_id):
             return jsonify({"error": True, "code": 404, "message": "ไม่พบการจอง"}), 404
 
         conn.commit()
+        _safe_emit(
+            conn,
+            notif_type='CHECKIN_REMINDER',
+            title=f'เช็กอินสำเร็จ BK-{str(booking_id).zfill(4)}',
+            message='สถานะการจองเปลี่ยนเป็น CHECKED_IN',
+            recipient_staff_id=None,
+            related_id=booking_id,
+            booking_id=booking_id,
+            actor_staff_id=current_user.get('staff_id'),
+            target_id=booking_id,
+            metadata={"event": "booking_checkin"},
+        )
+        conn.commit()
         cur.close()
         conn.close()
 
@@ -469,7 +693,7 @@ def checkin(current_user, booking_id):
         return jsonify({"error": True, "message": str(e)}), 500
 
 
-# ── 5. Check-Out (PATCH /api/bookings/{id}/checkout) ─────────────────
+# ── 7. Check-Out (PATCH /api/bookings/{id}/checkout) ─────────────────
 @bookings_bp.route('/<int:booking_id>/checkout', methods=['PATCH'])
 @token_required
 def checkout(current_user, booking_id):
@@ -547,6 +771,19 @@ def checkout(current_user, booking_id):
                 grand_total = float(inv[1] or 0)
 
         conn.commit()
+        _safe_emit(
+            conn,
+            notif_type='BOOKING_CONFIRMED',
+            title=f'เช็กเอาต์สำเร็จ BK-{str(booking_id).zfill(4)}',
+            message='สถานะการจองเปลี่ยนเป็น CHECKED_OUT',
+            recipient_staff_id=None,
+            related_id=booking_id,
+            booking_id=booking_id,
+            actor_staff_id=staff_id,
+            target_id=booking_id,
+            metadata={"event": "booking_checkout", "invoice_id": invoice_id},
+        )
+        conn.commit()
         cur.close()
         cur2.close()
         conn.close()
@@ -564,7 +801,7 @@ def checkout(current_user, booking_id):
         return jsonify({"error": True, "message": str(e)}), 500
 
 
-# ── 6. Cancel Booking (PATCH /api/bookings/{id}/cancel) ──────────────
+# ── 8. Cancel Booking (PATCH /api/bookings/{id}/cancel) ──────────────
 @bookings_bp.route('/<int:booking_id>/cancel', methods=['PATCH'])
 @token_required
 def cancel_booking(current_user, booking_id):
@@ -619,6 +856,19 @@ def cancel_booking(current_user, booking_id):
                             "message": "ไม่พบการจอง หรือยกเลิกไม่ได้แล้ว"}), 400
 
         conn.commit()
+        _safe_emit(
+            conn,
+            notif_type='BOOKING_CANCELLED',
+            title=f'ยกเลิกการจอง BK-{str(booking_id).zfill(4)}',
+            message='การจองถูกยกเลิกแล้ว',
+            recipient_staff_id=None,
+            related_id=booking_id,
+            booking_id=booking_id,
+            actor_staff_id=staff_id,
+            target_id=booking_id,
+            metadata={"event": "booking_cancelled"},
+        )
+        conn.commit()
         cur.close()
         conn.close()
 
@@ -632,7 +882,7 @@ def cancel_booking(current_user, booking_id):
         return jsonify({"error": True, "message": str(e)}), 500
 
 
-# ── 7. Add Add-on Service (POST /api/bookings/{id}/addons) ────────────
+# ── 9. Add Add-on Service (POST /api/bookings/{id}/addons) ────────────
 @bookings_bp.route('/<int:booking_id>/addons', methods=['POST'])
 @token_required
 def add_addon(current_user, booking_id):
@@ -720,6 +970,19 @@ def add_addon(current_user, booking_id):
             """, (total_added_cost, booking_id))
 
         conn.commit()
+        _safe_emit(
+            conn,
+            notif_type='BOOKING_CONFIRMED',
+            title=f'เพิ่มบริการเสริม BK-{str(booking_id).zfill(4)}',
+            message=f'เพิ่มบริการเสริม {len(services)} รายการ',
+            recipient_staff_id=None,
+            related_id=booking_id,
+            booking_id=booking_id,
+            actor_staff_id=current_user.get('staff_id'),
+            target_id=booking_id,
+            metadata={"event": "booking_addons", "count": len(services), "added_cost": total_added_cost},
+        )
+        conn.commit()
         cur.close()
         cur2.close()
         conn.close()
@@ -737,7 +1000,7 @@ def add_addon(current_user, booking_id):
         conn.close()
 
 
-# ── 8. Get Chargeable Services (GET /api/bookings/services) ──────────
+# ── 10. Get Chargeable Services (GET /api/bookings/services) ──────────
 @bookings_bp.route('/services', methods=['GET'])
 @token_required
 def get_services(current_user):

@@ -44,7 +44,7 @@ async function loadDashboard() {
 
     const [bookingsRes, notifRes, staffRes, roomsRes, analyticsRes] = await Promise.allSettled([
       window.API.bookings.getAll(),
-      window.API.notifications.getAll({ is_read: false }),
+      window.API.notifications.getAll({ page: 1, page_size: 20 }),
       window.API.staff.getAll(),
       window.API.rooms.getAll(),
       window.API.analytics.getDashboard({ start_date: today, end_date: today }),
@@ -52,7 +52,8 @@ async function loadDashboard() {
 
     // Extract data safely
     const bookings  = _extract(bookingsRes,   []);
-    const notifs    = _extract(notifRes,      []);
+    const notifData = _extractNotif(notifRes);
+    const notifs    = notifData.data;
     const staff     = _extract(staffRes,      []);
     const rooms     = _extract(roomsRes,      []);
     const analytics = _extractObj(analyticsRes, null);
@@ -63,7 +64,7 @@ async function loadDashboard() {
     renderPendingTable(bookings);
     renderActiveTable(bookings);
     renderTeam(staff);
-    renderNotifications(notifs);
+    renderNotifications(notifs, notifData.meta);
     renderRoomGrid(rooms, bookings);
 
   } catch (err) {
@@ -85,6 +86,16 @@ function _extractObj(settled, fallback) {
   const res = settled.value;
   if (!res.ok) return fallback;
   return res.data?.data ?? res.data ?? fallback;
+}
+
+function _extractNotif(settled) {
+  if (settled.status !== 'fulfilled') return { data: [], meta: {} };
+  const res = settled.value;
+  if (!res.ok) return { data: [], meta: {} };
+  return {
+    data: res.data?.data ?? [],
+    meta: res.data?.meta ?? {},
+  };
 }
 
 /* ─── 1. KPI STAT CARDS ──────────────────── */
@@ -147,12 +158,19 @@ function renderPendingTable(bookings) {
   const tbody = document.getElementById('pending-tbody');
   if (!tbody) return;
 
-  const list = bookings.filter(b => b.status === 'PENDING').slice(0, 6);
+  const filtered = bookings.filter(b => b.status === 'PENDING');
+  const page = window.Pagination
+    ? Pagination.paginate(filtered, { key: 'dashboard-pending', pageSize: 6 })
+    : { pageItems: filtered, total: filtered.length, start: 0, end: filtered.length, totalPages: 1 };
+  const list = page.pageItems;
 
   if (!list.length) {
     tbody.innerHTML = `<tr><td colspan="4" class="db-loading-cell">ไม่มีการจองที่รอ Check-in 🎉</td></tr>`;
+    window.Pagination?.render(page, { key: 'dashboard-pending', containerEl: ensureDashboardPager(tbody.closest('.db-table-card'), 'dashboard-pending-pager'), label: 'รายการ', onChange: () => renderPendingTable(bookings) });
     return;
   }
+
+  window.Pagination?.render(page, { key: 'dashboard-pending', containerEl: ensureDashboardPager(tbody.closest('.db-table-card'), 'dashboard-pending-pager'), label: 'รายการ', onChange: () => renderPendingTable(bookings) });
 
   tbody.innerHTML = list.map(b => {
     const nights = _calcNights(b.checkin_date || b.checkin, b.checkout_date || b.checkout);
@@ -180,12 +198,19 @@ function renderActiveTable(bookings) {
   const tbody = document.getElementById('active-tbody');
   if (!tbody) return;
 
-  const list = bookings.filter(b => b.status === 'CHECKED_IN').slice(0, 6);
+  const filtered = bookings.filter(b => b.status === 'CHECKED_IN');
+  const page = window.Pagination
+    ? Pagination.paginate(filtered, { key: 'dashboard-active', pageSize: 6 })
+    : { pageItems: filtered, total: filtered.length, start: 0, end: filtered.length, totalPages: 1 };
+  const list = page.pageItems;
 
   if (!list.length) {
     tbody.innerHTML = `<tr><td colspan="4" class="db-loading-cell">ไม่มีผู้เข้าพักในขณะนี้</td></tr>`;
+    window.Pagination?.render(page, { key: 'dashboard-active', containerEl: ensureDashboardPager(tbody.closest('.db-table-card'), 'dashboard-active-pager'), label: 'รายการ', onChange: () => renderActiveTable(bookings) });
     return;
   }
+
+  window.Pagination?.render(page, { key: 'dashboard-active', containerEl: ensureDashboardPager(tbody.closest('.db-table-card'), 'dashboard-active-pager'), label: 'รายการ', onChange: () => renderActiveTable(bookings) });
 
   const today = new Date(); today.setHours(0,0,0,0);
 
@@ -234,7 +259,11 @@ function renderTeam(staff) {
   const colors = ['blue','teal','amber','rose','purple','slate'];
 
   if (listEl) {
-    listEl.innerHTML = staff.slice(0, 6).map((s, i) => {
+    const page = window.Pagination
+      ? Pagination.paginate(staff, { key: 'dashboard-team', pageSize: 6 })
+      : { pageItems: staff, total: staff.length, start: 0, end: staff.length, totalPages: 1 };
+    window.Pagination?.render(page, { key: 'dashboard-team', containerEl: ensureDashboardPager(listEl.closest('.db-team-card'), 'dashboard-team-pager'), label: 'staff', onChange: () => renderTeam(staff) });
+    listEl.innerHTML = page.pageItems.map((s, i) => {
       const initial = (s.first_name || '?').charAt(0);
       const color   = colors[i % colors.length];
       const online  = s.is_on_duty;
@@ -253,11 +282,11 @@ function renderTeam(staff) {
 }
 
 /* ─── 6. NOTIFICATIONS ───────────────────── */
-function renderNotifications(notifs) {
+function renderNotifications(notifs, meta = {}) {
   const listEl  = document.getElementById('notif-list');
   const badgeEl = document.getElementById('unread-badge');
 
-  const unread = notifs.filter(n => !n.is_read).length;
+  const unread = Number(meta.unread_count ?? notifs.filter(n => !n.is_read).length);
   if (badgeEl) {
     badgeEl.style.display = unread > 0 ? 'inline-flex' : 'none';
     badgeEl.textContent   = unread;
@@ -274,18 +303,34 @@ function renderNotifications(notifs) {
   };
 
   if (listEl) {
-    listEl.innerHTML = notifs.slice(0, 5).map(n => `
+    const page = window.Pagination
+      ? Pagination.paginate(notifs, { key: 'dashboard-notifications', pageSize: 5 })
+      : { pageItems: notifs, total: notifs.length, start: 0, end: notifs.length, totalPages: 1 };
+    window.Pagination?.render(page, { key: 'dashboard-notifications', containerEl: ensureDashboardPager(listEl.parentElement, 'dashboard-notifications-pager'), label: 'notifications', onChange: () => renderNotifications(notifs) });
+    listEl.innerHTML = page.pageItems.map(n => `
       <div class="db-notif-item ${n.is_read ? '' : 'unread'}"
            onclick="window.location.href='Notifications.html'">
         <div class="db-notif-icon">${typeIcon[n.type] || '🔔'}</div>
         <div class="db-notif-content">
           <div class="db-notif-title">${n.title || '—'}</div>
-          <div class="db-notif-time">🕐 ${_fmtDateTime(n.sent_at)}</div>
+          <div class="db-notif-time">🕐 ${_fmtDateTime(n.created_at || n.sent_at)}</div>
         </div>
         ${!n.is_read ? '<div class="db-notif-dot"></div>' : ''}
       </div>
     `).join('');
   }
+}
+
+function ensureDashboardPager(anchor, id) {
+  let pager = document.getElementById(id);
+  if (!pager) {
+    pager = document.createElement('div');
+    pager.id = id;
+    pager.className = 'pg-pagination';
+    pager.style.marginTop = '12px';
+    anchor?.appendChild(pager);
+  }
+  return pager;
 }
 
 /* ─── 7. ROOM GRID ───────────────────────── */

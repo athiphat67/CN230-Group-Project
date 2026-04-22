@@ -14,8 +14,8 @@ CREATE TYPE room_status_enum   AS ENUM ('AVAILABLE', 'OCCUPIED', 'MAINTENANCE');
 CREATE TYPE booking_status     AS ENUM ('PENDING', 'ACTIVE', 'COMPLETED', 'CANCELLED');
 CREATE TYPE food_status_enum   AS ENUM ('ALL', 'LITTLE', 'NONE');
 CREATE TYPE potty_status_enum  AS ENUM ('NORMAL', 'ABNORMAL', 'NONE');
--- [FIX 1] เพิ่ม PARTIAL สำหรับสถานะมัดจำ
-CREATE TYPE payment_status     AS ENUM ('UNPAID', 'PARTIAL', 'PAID');
+-- [FIX 1] รองรับสถานะบิลที่ยกเลิกจากหน้า Billing
+CREATE TYPE payment_status     AS ENUM ('UNPAID', 'PARTIAL', 'PAID', 'CANCELLED');
 
 -- ── 1. CUSTOMER ──────────────────────────────────────────────
 CREATE TABLE Customer (

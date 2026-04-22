@@ -22,6 +22,60 @@ def get_db_connection():
 @inventory_bp.route('', methods=['GET'])
 @token_required
 def get_inventory_items(current_user):
+    """
+    ดึงรายการสินค้าทั้งหมดในคลัง
+    ---
+    tags:
+      - Inventory
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: category
+        in: query
+        type: string
+        required: false
+        description: กรองตามหมวดหมู่สินค้า (เช่น FOOD, TOY, MEDICINE, SERVICE)
+    responses:
+      200:
+        description: รายการสินค้าทั้งหมดพร้อมสถานะสต็อกและการหมดอายุ
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+              example: success
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  item_id:
+                    type: integer
+                  name:
+                    type: string
+                  category:
+                    type: string
+                  quantity_remaining:
+                    type: integer
+                  unit_price:
+                    type: number
+                  reorder_threshold:
+                    type: integer
+                  is_chargeable:
+                    type: boolean
+                  expiry_date:
+                    type: string
+                    format: date
+                  stock_status:
+                    type: string
+                    example: IN_STOCK
+                  low_stock:
+                    type: boolean
+                  near_expiry:
+                    type: boolean
+      500:
+        description: Internal Server Error
+    """
     try:
         category = request.args.get('category', '').strip()
 
@@ -72,6 +126,48 @@ def get_inventory_items(current_user):
 @inventory_bp.route('', methods=['POST'])
 @token_required
 def add_inventory_item(current_user):
+    """
+    เพิ่มสินค้าหรือบริการใหม่เข้าคลัง
+    ---
+    tags:
+      - Inventory
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            name:
+              type: string
+              example: "Royal Canin Fit 2kg"
+            category:
+              type: string
+              example: "FOOD"
+            quantity_remaining:
+              type: integer
+              example: 20
+            unit_price:
+              type: number
+              example: 650.00
+            reorder_threshold:
+              type: integer
+              example: 5
+            is_chargeable:
+              type: boolean
+              example: true
+            expiry_date:
+              type: string
+              format: date
+              example: "2025-12-31"
+    responses:
+      201:
+        description: เพิ่มสินค้าใหม่เรียบร้อย
+      500:
+        description: Internal Server Error
+    """
     try:
         data = request.get_json()
 
@@ -111,6 +207,53 @@ def add_inventory_item(current_user):
 @inventory_bp.route('/alerts', methods=['GET'])
 @token_required
 def get_alerts(current_user):
+    """
+    ดึงรายการแจ้งเตือน (สินค้าใกล้หมดสต็อก / ใกล้หมดอายุใน 30 วัน)
+    ---
+    tags:
+      - Inventory
+    security:
+      - BearerAuth: []
+    responses:
+      200:
+        description: รายการแจ้งเตือนแยกเป็น 2 กลุ่ม (low_stock, near_expiry)
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+              example: success
+            data:
+              type: object
+              properties:
+                low_stock:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      item_id:
+                        type: integer
+                      name:
+                        type: string
+                      quantity_remaining:
+                        type: integer
+                      reorder_threshold:
+                        type: integer
+                near_expiry:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      item_id:
+                        type: integer
+                      name:
+                        type: string
+                      expiry_date:
+                        type: string
+                        format: date
+      500:
+        description: Internal Server Error
+    """
     try:
         conn = get_db_connection()
         cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -159,6 +302,49 @@ def get_alerts(current_user):
 @inventory_bp.route('/<int:item_id>', methods=['PATCH'])
 @token_required
 def update_inventory_item(current_user, item_id):
+    """
+    อัปเดตข้อมูลสินค้า (เช่น เติมสต็อก, ปรับราคา, อัปเดตวันหมดอายุ)
+    ---
+    tags:
+      - Inventory
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: item_id
+        in: path
+        type: integer
+        required: true
+        description: ID ของสินค้าที่ต้องการอัปเดต
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            quantity_remaining:
+              type: integer
+              description: จำนวนสต็อกปัจจุบันที่ต้องการตั้งค่า
+            unit_price:
+              type: number
+            reorder_threshold:
+              type: integer
+            expiry_date:
+              type: string
+              format: date
+            name:
+              type: string
+            category:
+              type: string
+    responses:
+      200:
+        description: อัปเดตสินค้าเรียบร้อย
+      400:
+        description: ไม่มีข้อมูลที่ต้องการอัปเดต
+      404:
+        description: ไม่พบสินค้า
+      500:
+        description: Internal Server Error
+    """
     try:
         data = request.get_json()
 
@@ -202,6 +388,44 @@ def update_inventory_item(current_user, item_id):
 @inventory_bp.route('/usage', methods=['POST'])
 @token_required
 def record_usage(current_user):
+    """
+    บันทึกการใช้งานสินค้า/บริการ (หักสต็อกและคิดเงินเข้า Invoice)
+    ---
+    tags:
+      - Inventory
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - item_id
+            - booking_detail_id
+          properties:
+            item_id:
+              type: integer
+              example: 1
+            quantity:
+              type: integer
+              description: จำนวนที่ใช้งาน (ค่าเริ่มต้นคือ 1)
+              example: 1
+            booking_detail_id:
+              type: integer
+              description: ID รายละเอียดการจองที่ผูกกับการใช้สินค้านี้
+              example: 5
+    responses:
+      201:
+        description: บันทึกการใช้งานเรียบร้อย (หักสต็อกและบวกยอดในบิลให้แล้ว)
+      400:
+        description: สินค้ามีไม่พอในสต็อก
+      404:
+        description: ไม่พบสินค้า
+      500:
+        description: Internal Server Error
+    """
     conn = get_db_connection()
     cur  = conn.cursor()
     try:

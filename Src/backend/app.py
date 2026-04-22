@@ -24,8 +24,12 @@ from routes.customer import customer_bp
 from routes.rooms import rooms_bp
 from routes.analytics import analytics_bp  
 
+from flasgger import Swagger
+
 app = Flask(__name__)
 app.config.from_object(Config)
+
+swagger = Swagger(app)
 
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True, allow_headers="*")
 

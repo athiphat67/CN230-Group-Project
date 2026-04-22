@@ -1,304 +1,65 @@
-# About Backend — Purrfect Stay API
-> อัปเดตล่าสุด: 21 Apr 2026  
+# about_backend.md — Backend Architecture & API Reference
+> Purrfect Stay · Flask Backend  
 > Base URL: `http://127.0.0.1:5000/api`  
-> Stack: Python 3.10 · Flask · psycopg2 · PostgreSQL (Supabase) · bcrypt · PyJWT
+> Stack: Python 3.10 · Flask · psycopg2 · PostgreSQL (Supabase) · bcrypt · PyJWT  
+> อัปเดตล่าสุด: Apr 2026
 
 ---
 
 ## โครงสร้างไฟล์ Backend
 
 ```
-src/backend/
-├── app.py                  ← Flask app + Blueprint registry
-├── config.py               ← โหลด .env (DATABASE_URL, SECRET_KEY)
-├── requirements.txt
-├── Dockerfile
-├── update_hash.py          ← utility: reset password hash ใน DB
-│
-└── routes/
-    ├── auth.py             ← FR1: /api/auth
-    ├── staff.py            ← FR1: /api/staff
-    ├── attendance.py       ← FR1: /api/attendance  [NEW]
-    ├── leave.py            ← FR1: /api/leave        [NEW]
-    ├── audit.py            ← FR1: /api/audit        [NEW]
-    ├── pets.py             ← FR2: /api/pets (+ vaccines, meal-plans)
-    ├── bookings.py         ← FR3: /api/bookings
-    ├── rooms.py            ← FR3: /api/rooms        [NEW]
-    ├── care_reports.py     ← FR4: /api/care-reports [NEW — alias care_logs]
-    ├── billing.py          ← FR5: /api/billing      [NEW — alias invoice]
-    ├── inventory.py        ← FR6: /api/inventory
-    ├── analytics.py        ← FR6: /api/analytics    [NEW]
-    └── notifications.py    ← FR7: /api/notifications [NEW]
+app.py              Flask app factory + 14 Blueprint registrations + CORS + error handler
+config.py           โหลด .env → app.config['SQLALCHEMY_DATABASE_URI'], app.config['SECRET_KEY']
+utils.py            @token_required, @admin_required decorators
+update_hash.py      Dev utility: reset all staff passwords → bcrypt("password123")
+requirements.txt
+dockerfile
+
+routes/
+├── auth.py             /api/auth
+├── staff.py            /api/staff
+├── attendance.py       /api/attendance
+├── leave.py            /api/leave
+├── audit.py            /api/audit
+├── customer.py         /api/customers
+├── pets.py             /api/pets
+├── rooms.py            /api/rooms
+├── bookings.py         /api/bookings
+├── care_logs.py        /api/care-reports
+├── billing.py          /api/billing
+├── inventory.py        /api/inventory
+├── analytics.py        /api/analytics
+└── norifications.py    /api/notifications  ⚠️ typo ในชื่อไฟล์
 ```
 
 ---
 
-## Blueprint Registry (app.py)
+## Auth System
 
-| Blueprint | URL Prefix | ไฟล์ |
-|---|---|---|
-| auth_bp | `/api/auth` | auth.py |
-| staff_bp | `/api/staff` | staff.py |
-| attendance_bp | `/api/attendance` | attendance.py |
-| leave_bp | `/api/leave` | leave.py |
-| audit_bp | `/api/audit` | audit.py |
-| pets_bp | `/api/pets` | pets.py |
-| rooms_bp | `/api/rooms` | rooms.py |
-| bookings_bp | `/api/bookings` | bookings.py |
-| care_reports_bp | `/api/care-reports` | care_reports.py |
-| billing_bp | `/api/billing` | billing.py |
-| inventory_bp | `/api/inventory` | inventory.py |
-| analytics_bp | `/api/analytics` | analytics.py |
-| notifications_bp | `/api/notifications` | notifications.py |
+**Algorithm:** HS256  
+**Token Expiry:** 12 ชั่วโมงหลัง login  
+**Header ทุก request (ยกเว้น `/api/auth/login`):**
 
----
-
-## Database Schema (inferred)
-
-### ตารางที่มีอยู่แล้ว
-
-```sql
--- FR1: Staff
-CREATE TABLE Staff (
-    StaffID       SERIAL PRIMARY KEY,
-    StaffUsername VARCHAR(50) UNIQUE NOT NULL,
-    PasswordHash  TEXT NOT NULL,
-    FirstName     VARCHAR(100),
-    LastName      VARCHAR(100),
-    Role          VARCHAR(20) CHECK (Role IN ('ADMIN','STAFF','VET','OWNER')),
-    IsOnDuty      BOOLEAN DEFAULT FALSE,
-    PhoneNumber   VARCHAR(20),
-    StaffEmail    VARCHAR(100),
-    HireDate      DATE,
-    "isActive"    BOOLEAN DEFAULT TRUE
-);
-
--- FR1: Customer
-CREATE TABLE Customer (
-    CustomerID       SERIAL PRIMARY KEY,
-    CustomerUsername VARCHAR(50) UNIQUE NOT NULL,
-    PasswordHash     TEXT NOT NULL,
-    FirstName        VARCHAR(100),
-    LastName         VARCHAR(100),
-    PhoneNumber      VARCHAR(20),
-    CustomerEmail    VARCHAR(100),
-    Address          TEXT
-);
-
--- FR2: Pet
-CREATE TABLE Pet (
-    PetID         SERIAL PRIMARY KEY,
-    CustomerID    INT REFERENCES Customer(CustomerID),
-    Name          VARCHAR(100) NOT NULL,
-    Species       VARCHAR(20),
-    Breed         VARCHAR(100),
-    Sex           CHAR(1),
-    DateOfBirth   DATE,
-    Weight        NUMERIC(5,2),
-    CoatColor     VARCHAR(50),
-    PhotoURL      TEXT,
-    MedicalNotes  TEXT,
-    Allergies     TEXT,
-    BehaviorNotes TEXT
-);
-
--- FR3: Room
-CREATE TABLE Room (
-    RoomID           SERIAL PRIMARY KEY,
-    RoomNumber       VARCHAR(10) UNIQUE,
-    RoomSize         VARCHAR(20),
-    Rate             NUMERIC(10,2),
-    Status           VARCHAR(20) DEFAULT 'AVAILABLE',
-    PetType          VARCHAR(10)
-);
-
--- FR3: Booking
-CREATE TABLE Booking (
-    BookingID          SERIAL PRIMARY KEY,
-    CustomerID         INT REFERENCES Customer(CustomerID),
-    CheckInDate        TIMESTAMP,
-    CheckOutDate       TIMESTAMP,
-    Status             VARCHAR(20) DEFAULT 'PENDING',
-    LockedRate         NUMERIC(10,2),
-    CreatedBy_StaffID  INT REFERENCES Staff(StaffID),
-    CancelledAt        DATE,
-    CancelledByStaffID INT REFERENCES Staff(StaffID)
-);
-
--- FR3: BookingDetail
-CREATE TABLE BookingDetail (
-    BookingDetailID SERIAL PRIMARY KEY,
-    BookingID       INT REFERENCES Booking(BookingID),
-    PetID           INT REFERENCES Pet(PetID),
-    RoomID          INT REFERENCES Room(RoomID)
-);
-
--- FR3: BookingService
-CREATE TABLE BookingService (
-    BookingID  INT REFERENCES Booking(BookingID),
-    ItemID     INT REFERENCES InventoryItem(ItemID),
-    Quantity   INT DEFAULT 1,
-    UnitPrice  NUMERIC(10,2),
-    PRIMARY KEY (BookingID, ItemID)
-);
-
--- FR5: Invoice
-CREATE TABLE Invoice (
-    InvoiceID          SERIAL PRIMARY KEY,
-    BookingID          INT REFERENCES Booking(BookingID),
-    RoomTotal          NUMERIC(10,2) DEFAULT 0,
-    ServiceTotal       NUMERIC(10,2) DEFAULT 0,
-    VetEmergencyCost   NUMERIC(10,2) DEFAULT 0,
-    DepositPaid        NUMERIC(10,2) DEFAULT 0,
-    GrandTotal         NUMERIC(10,2) GENERATED ALWAYS AS (RoomTotal + ServiceTotal + VetEmergencyCost) STORED,
-    PaymentMethod      VARCHAR(20),
-    PaymentStatus      VARCHAR(20) DEFAULT 'UNPAID',
-    PaymentDate        TIMESTAMP,
-    IssuedBy_StaffID   INT REFERENCES Staff(StaffID)
-);
-
--- FR4: CareLog
-CREATE TABLE CareLog (
-    LogID              SERIAL PRIMARY KEY,
-    BookingDetailID    INT REFERENCES BookingDetail(BookingDetailID),
-    LogDate            TIMESTAMP DEFAULT NOW(),
-    FoodStatus         VARCHAR(20),
-    PottyStatus        VARCHAR(20),
-    MedicationGiven    BOOLEAN DEFAULT FALSE,
-    StaffNote          TEXT,
-    PhotoURL           TEXT,
-    LoggedBy_StaffID   INT REFERENCES Staff(StaffID)
-);
-
--- FR6: InventoryItem
-CREATE TABLE InventoryItem (
-    ItemID            SERIAL PRIMARY KEY,
-    ItemName          VARCHAR(100),
-    Category          VARCHAR(20) CHECK (Category IN ('SUPPLY','FOOD','SERVICE')),
-    QuantityInStock   INT DEFAULT 0,
-    UnitPrice         NUMERIC(10,2),
-    LowStockThreshold INT DEFAULT 5,
-    IsChargeable      BOOLEAN DEFAULT FALSE
-);
-
--- FR6: InventoryUsage
-CREATE TABLE InventoryUsage (
-    UsageID         SERIAL PRIMARY KEY,
-    BookingDetailID INT REFERENCES BookingDetail(BookingDetailID),
-    ItemID          INT REFERENCES InventoryItem(ItemID),
-    QuantityUsed    INT,
-    UsedAt          TIMESTAMP DEFAULT NOW()
-);
+```
+Authorization: Bearer <access_token>
 ```
 
-### ตารางใหม่ที่ต้องสร้าง (DDL)
-
-```sql
--- FR2: Vaccine
-CREATE TABLE Vaccine (
-    VaccineID         SERIAL PRIMARY KEY,
-    PetID             INT REFERENCES Pet(PetID) ON DELETE CASCADE,
-    VaccineName       VARCHAR(100) NOT NULL,
-    AdministeredDate  DATE,
-    ExpiryDate        DATE,
-    VetClinic         VARCHAR(200),
-    CertURL           TEXT
-);
-
--- FR2: MealPlan
-CREATE TABLE MealPlan (
-    MealPlanID     SERIAL PRIMARY KEY,
-    PetID          INT REFERENCES Pet(PetID) ON DELETE CASCADE,
-    MealPeriod     VARCHAR(10) CHECK (MealPeriod IN ('MORNING','MIDDAY','EVENING')),
-    FoodType       VARCHAR(100),
-    QuantityGrams  INT,
-    Notes          TEXT
-);
-
--- FR1: Attendance
-CREATE TABLE Attendance (
-    AttendanceID SERIAL PRIMARY KEY,
-    StaffID      INT REFERENCES Staff(StaffID),
-    Action       VARCHAR(10) CHECK (Action IN ('CLOCK_IN','CLOCK_OUT')),
-    Timestamp    TIMESTAMP DEFAULT NOW()
-);
-
--- FR1: LeaveRequest
-CREATE TABLE LeaveRequest (
-    LeaveID            SERIAL PRIMARY KEY,
-    StaffID            INT REFERENCES Staff(StaffID),
-    StartDate          DATE NOT NULL,
-    EndDate            DATE NOT NULL,
-    Reason             TEXT,
-    Status             VARCHAR(10) DEFAULT 'PENDING' CHECK (Status IN ('PENDING','APPROVED','REJECTED')),
-    ApprovedByStaffID  INT REFERENCES Staff(StaffID),
-    CreatedAt          TIMESTAMP DEFAULT NOW()
-);
-
--- FR1: AuditLog
-CREATE TABLE AuditLog (
-    AuditID        SERIAL PRIMARY KEY,
-    StaffID        INT REFERENCES Staff(StaffID),
-    ActionType     VARCHAR(20) CHECK (ActionType IN ('CREATE','UPDATE','DELETE','CHECKIN','CHECKOUT','APPROVE')),
-    TableAffected  VARCHAR(50),
-    RecordID       INT,
-    Description    TEXT,
-    Timestamp      TIMESTAMP DEFAULT NOW()
-);
-
--- FR7: Notification
-CREATE TABLE Notification (
-    NotificationID SERIAL PRIMARY KEY,
-    RecipientType  VARCHAR(10) CHECK (RecipientType IN ('staff','customer')),
-    RecipientID    INT NOT NULL,
-    Type           VARCHAR(30) CHECK (Type IN (
-                       'BOOKING_CONFIRMED','BOOKING_CANCELLED',
-                       'CHECKIN_REMINDER','CARE_REPORT',
-                       'PAYMENT_CONFIRMED','NEW_BOOKING_ALERT')),
-    Title          VARCHAR(200),
-    Body           TEXT,
-    BookingID      INT REFERENCES Booking(BookingID),
-    IsRead         BOOLEAN DEFAULT FALSE,
-    SentAt         TIMESTAMP DEFAULT NOW()
-);
+**JWT Payload (Staff):**
+```json
+{ "staff_id": 1, "role": "ADMIN", "exp": 1745000000 }
 ```
 
----
+**Decorators ใน utils.py:**
 
-## Auth — JWT
-
-- Algorithm: `HS256`
-- Expiry: 8 ชั่วโมงหลัง login
-- Header ทุก request (ยกเว้น `/api/auth/login`):
-  ```
-  Authorization: Bearer <access_token>
-  ```
-- Payload Staff: `{ staff_id, role, exp }`
-- Payload Customer: `{ customer_id, role: "CUSTOMER", exp }`
+| Decorator | หน้าที่ |
+|:---|:---|
+| `@token_required` | ถอดรหัส JWT → ส่ง `current_user` เป็น arg แรก, คืน 401 ถ้า token ไม่ถูกต้อง |
+| `@admin_required` | ตรวจ `current_user['role'] in ['ADMIN','OWNER']`, คืน 403 ถ้าไม่ใช่ |
 
 ---
 
-## URL Mapping — Frontend vs Backend
-
-| Frontend expects | Backend registers | สถานะ |
-|---|---|---|
-| `/api/auth` | `/api/auth` | ✅ ตรงกัน |
-| `/api/staff` | `/api/staff` | ✅ ตรงกัน |
-| `/api/attendance` | `/api/attendance` | ✅ (NEW) |
-| `/api/leave` | `/api/leave` | ✅ (NEW) |
-| `/api/audit` | `/api/audit` | ✅ (NEW) |
-| `/api/pets` | `/api/pets` | ✅ ตรงกัน |
-| `/api/rooms` | `/api/rooms` | ✅ (NEW) |
-| `/api/bookings` | `/api/bookings` | ✅ ตรงกัน |
-| `/api/care-reports` | `/api/care-reports` | ✅ (NEW) |
-| `/api/billing` | `/api/billing` | ✅ (NEW) |
-| `/api/inventory` | `/api/inventory` | ✅ ตรงกัน |
-| `/api/analytics` | `/api/analytics` | ✅ (NEW) |
-| `/api/notifications` | `/api/notifications` | ✅ (NEW) |
-
----
-
-## Error Response Format
+## Error Response Format (มาตรฐานทุก endpoint)
 
 ```json
 {
@@ -313,10 +74,474 @@ HTTP Status: `200` · `201` · `400` · `401` · `403` · `404` · `409` · `500
 
 ---
 
-## สิ่งที่ยังต้องทำ (TODO)
+## FR1 — User & Access Management
 
-- [ ] JWT middleware decorator `@require_auth` สำหรับทุก protected route
-- [ ] Role-based guard `@require_role('ADMIN')` สำหรับ audit, deactivate staff
-- [ ] ส่ง notification อัตโนมัติหลัง `POST /api/care-reports` (FR4.2)
-- [ ] File upload endpoint สำหรับรูปภาพ care report (`multipart/form-data`)
-- [ ] Trigger AuditLog เมื่อมีการ CREATE / UPDATE / DELETE ในทุก module
+### POST /api/auth/login
+**Auth required:** ❌
+
+**Request:**
+```json
+{ "staff_username": "somchai", "password": "password123" }
+```
+**Response 200:**
+```json
+{ "access_token": "eyJ...", "staff_id": 1, "first_name": "สมชาย", "last_name": "มั่นคง", "role": "ADMIN" }
+```
+
+---
+
+### POST /api/auth/logout
+**Auth required:** ✅ (ต้องมี token แนบมา แต่ไม่ได้ blacklist — client-side logout)
+
+**Response 200:** `{ "message": "Logged out successfully" }`
+
+---
+
+### GET /api/staff
+**Auth required:** ✅  
+**Response:** array ของ staff ที่ `isActive = TRUE`
+
+```json
+{
+  "status": "success",
+  "data": [{
+    "staff_id": 1,
+    "staff_username": "somchai",
+    "first_name": "สมชาย",
+    "last_name": "มั่นคง",
+    "role": "ADMIN",
+    "is_on_duty": true,
+    "phone_number": "081-111-0001",
+    "staff_email": "somchai@purrfect.com",
+    "hire_date": "2022-01-10"
+  }]
+}
+```
+
+---
+
+### POST /api/staff
+**Auth required:** ✅  
+**Request:**
+```json
+{
+  "staff_username": "narin",
+  "password": "password123",
+  "first_name": "นริน",
+  "last_name": "พรหมดี",
+  "role": "STAFF",
+  "phone_number": "082-222-0001",
+  "staff_email": "narin@purrfect.com",
+  "hire_date": "2023-01-05"
+}
+```
+
+---
+
+### PUT /api/staff/{staff_id}
+**Auth required:** ✅  
+**Request:** `first_name, last_name, role, staff_email, phone_number` (ไม่เปลี่ยน username/password)
+
+---
+
+### PATCH /api/staff/{staff_id}/deactivate
+**Auth required:** ✅  
+**Effect:** `SET "isActive" = FALSE` — ไม่ลบข้อมูลออกจาก DB
+
+---
+
+### POST /api/attendance/clock
+**Auth required:** ✅  
+**Request:**
+```json
+{ "staff_id": 3, "action": "CLOCK_IN" }
+```
+รองรับทั้ง `"CLOCK_IN"/"CLOCK_OUT"` และ `"IN"/"OUT"` (normalize อัตโนมัติ)
+
+**Logic:**
+- `CLOCK_IN`: ตรวจสอบว่าไม่ได้ clock-in วันนี้แล้ว → INSERT attendance, SET `isonduty = TRUE`
+- `CLOCK_OUT`: UPDATE clockout, SET `isonduty = FALSE`
+- Late detection: `clockin > 09:05` → `status = 'Late'`
+
+---
+
+### GET /api/attendance
+**Auth required:** ✅  
+**Query params:** `?start_date=2026-04-01&end_date=2026-04-30&staff_id=3`
+
+---
+
+### GET /api/leave
+**Auth required:** ✅  
+**Query params:** `?status=PENDING`
+
+---
+
+### PATCH /api/leave/{leave_id}
+**Auth required:** ✅  
+**Request:**
+```json
+{ "status": "APPROVED", "approved_by": 1 }
+```
+
+---
+
+### GET /api/audit
+**Auth required:** ✅ @admin_required  
+**Query params:** `?staff_id=1&action_type=DELETE&start_date=2026-04-01&end_date=2026-04-30`
+
+**Response data fields:**
+```json
+{
+  "audit_id": 5, "staff_id": 1, "staff_name": "สมชาย มั่นคง",
+  "action_type": "DELETE", "table_affected": "Invoice",
+  "record_id": 23, "description": "ลบ Invoice #INV-0023",
+  "timestamp": "2026-04-21T14:30:00"
+}
+```
+`action_type` enum: `CREATE` | `UPDATE` | `DELETE` | `CHECKIN` | `CHECKOUT` | `APPROVE`
+
+---
+
+## FR2 — Pet Profile Management
+
+### GET /api/pets
+**Auth required:** ✅  
+**Query params:** `?owner_id=5&species=cat`
+
+**Response data fields per pet:**
+```json
+{
+  "pet_id": 1, "owner_id": 5, "owner_name": "สมชาย มั่นคง",
+  "owner_phone": "081-111-0001", "owner_email": "...",
+  "name": "มะม่วง", "species": "CAT", "breed": "Scottish Fold",
+  "sex": "F", "dob": "2021-03-15", "weight_kg": 4.2,
+  "coat_color": "น้ำตาล-ขาว", "medical_notes": "ไม่มี",
+  "allergies": "ไม่มี", "is_vaccinated": true,
+  "vaccine_record": "...", "behavior_notes": "..."
+}
+```
+
+---
+
+### POST /api/pets
+**Auth required:** ✅  
+Key mapping: รองรับทั้ง `customerid/owner_id/customer_id`, `weight/weight_kg`, `medicalcondition/medical_notes`, `allergy/allergies`, `isvaccinated/is_vaccinated`
+
+---
+
+### PUT /api/pets/{pet_id}
+**Auth required:** ✅  
+ใช้ `COALESCE` — ส่งเฉพาะ field ที่ต้องการแก้ไข
+
+---
+
+### DELETE /api/pets/{pet_id}
+**Auth required:** ✅
+
+---
+
+### GET /api/pets/{pet_id}/vaccines
+**Auth required:** ✅  
+คืน array จากตาราง `vaccinationrecord`
+
+---
+
+### POST /api/pets/{pet_id}/vaccines
+**Auth required:** ✅  
+**Request:** `{ "vaccine_name": "FVRCP", "administered_date": "2025-01-15", "expiry_date": "2026-01-15" }`  
+Effect: INSERT + `SET isvaccinated = TRUE`
+
+---
+
+### GET /api/pets/{pet_id}/meal-plans
+**Auth required:** ✅  
+คืน array จากตาราง `mealplan`
+
+---
+
+### POST /api/pets/{pet_id}/meal-plans
+**Auth required:** ✅  
+**Request:** array ของมื้ออาหาร → DELETE เก่าแล้ว INSERT ใหม่ทั้งหมด
+
+---
+
+## FR3 — Booking & Front Desk Management
+
+### GET /api/bookings
+**Auth required:** ✅  
+**Query params:** `?status=CHECKED_IN&start_date=...&end_date=...&pet_name=...&owner_name=...`
+
+**Status mapping (DB → Frontend):**
+```
+PENDING   → PENDING
+ACTIVE    → CHECKED_IN
+COMPLETED → CHECKED_OUT
+CANCELLED → CANCELLED
+```
+
+---
+
+### POST /api/bookings
+**Auth required:** ✅  
+**Request:**
+```json
+{
+  "customer_id": 5,
+  "checkin_date": "2026-04-25",
+  "checkout_date": "2026-04-28",
+  "total_rate": 4500,
+  "pets": [{ "pet_id": 3, "room_id": 12 }],
+  "services": [{ "item_id": 7, "quantity": 1, "unit_price": 300 }],
+  "notes": "แพ้ไก่"
+}
+```
+**Effect:** INSERT Booking → INSERT BookingDetail → INSERT BookingService → INSERT Invoice (UNPAID)
+
+---
+
+### PATCH /api/bookings/{id}/checkin
+**Auth required:** ✅  
+**Effect:** `status: PENDING/CONFIRMED → ACTIVE`
+
+---
+
+### PATCH /api/bookings/{id}/checkout
+**Auth required:** ✅  
+**Request:** `{ "payment_method": "cash" }`  
+**Effect:** `status → COMPLETED`, Invoice `paymentstatus → PAID`
+
+---
+
+### PATCH /api/bookings/{id}/cancel
+**Auth required:** ✅  
+**Request:** `{ "cancelled_by": 1 }` (optional, fallback ใช้ staff จาก token)  
+**Effect:** `status → CANCELLED`, บันทึก `cancelledat` + `cancelledbystaffid`
+
+---
+
+### POST /api/bookings/{id}/addons
+**Auth required:** ✅  
+**Request:** `{ "services": [{ "item_id": 5, "quantity": 1, "unit_price": 200 }] }`  
+**Effect:** INSERT BookingService + UPDATE Invoice.servicetotal
+
+---
+
+### GET /api/bookings/services
+**Auth required:** ✅  
+คืนรายการ InventoryItem ที่ `ischargeable = TRUE` สำหรับใช้ใน booking form
+
+---
+
+### GET /api/rooms
+**Auth required:** ✅
+
+---
+
+### GET /api/rooms/availability
+**Auth required:** ✅  
+**Query params:** `?checkin_date=2026-04-25&checkout_date=2026-04-28&pet_type=CAT`  
+Logic: ห้องที่ `pettype = pet_type` AND `status != MAINTENANCE` AND ไม่มี booking ที่ overlap
+
+---
+
+### PATCH /api/rooms/{room_id}
+**Auth required:** ✅ @admin_required  
+**Request:** `{ "status": "MAINTENANCE", "price_per_night": 800 }`
+
+---
+
+## FR4 — Pet Care & Daily Monitoring
+
+### POST /api/care-reports
+**Auth required:** ✅  
+**Request:**
+```json
+{
+  "booking_id": 1,
+  "pet_id": 3,
+  "food_status": "ALL",
+  "potty_status": "NORMAL",
+  "mood": "HAPPY",
+  "behavior_notes": "วิ่งเล่นตลอด",
+  "staff_note": "แจ้งเจ้าของว่า...",
+  "medication_given": false
+}
+```
+Logic: Resolve `booking_id + pet_id → bookingdetailid` → INSERT carelog
+
+> ⚠️ TODO: trigger notification ไปหาเจ้าของหลัง submit (FR4.2 ยังไม่ implement)
+
+---
+
+### GET /api/care-reports
+**Auth required:** ✅  
+**Query params:** `?booking_id=1&date=2026-04-21`
+
+---
+
+### GET /api/care-reports/active-stays
+**Auth required:** ✅  
+คืนรายชื่อสัตว์เลี้ยงที่ `checkindate <= today <= checkoutdate` พร้อม `reported_today` flag
+
+---
+
+### POST /api/care-reports/{report_id}/photos
+**Auth required:** ✅  
+**Request:** `{ "photo_url": "https://..." }` (Frontend อัปโหลดไป Storage ก่อน แล้วส่ง URL มา)
+
+---
+
+## FR5 — Billing & Payment Management
+
+### GET /api/billing
+**Auth required:** ✅  
+**Query params:** `?status=PAID&booking_id=5`
+
+**Response data fields:**
+```json
+{
+  "invoice_id": "INV-0001", "invoice_id_raw": 1,
+  "booking_id": 1, "owner_name": "สมชาย มั่นคง",
+  "pet_names": ["มะม่วง"],
+  "checkin_date": "2026-04-20", "checkout_date": "2026-04-24",
+  "room_total": 2000, "service_total": 500,
+  "vet_cost": 0, "grand_total": 2500, "deposit_paid": 0,
+  "payment_status": "PAID", "payment_method": "cash",
+  "paid_at": "2026-04-24T15:30:00"
+}
+```
+
+---
+
+### GET /api/billing/{invoice_id}
+**Auth required:** ✅  
+เพิ่ม `line_items` array (รายละเอียดแต่ละรายการ)
+
+---
+
+### POST /api/billing/preview
+**Auth required:** ✅  
+**Request:** `{ "booking_id": 1 }`  
+คำนวณ preview invoice ก่อน checkout จาก inventoryusage
+
+---
+
+### PATCH /api/billing/{invoice_id}/pay
+**Auth required:** ✅  
+**Request:** `{ "payment_method": "qr_promptpay" }`  
+**Effect:** Invoice `paymentstatus → PAID`, Booking `status → COMPLETED`
+
+---
+
+## FR6 — Inventory & Analytics
+
+### GET /api/inventory
+**Auth required:** ✅  
+**Query params:** `?category=food`
+
+---
+
+### POST /api/inventory
+**Auth required:** ✅  
+**Request:** `{ "name": "...", "category": "food", "quantity_remaining": 20, "unit_price": 150, "reorder_threshold": 5, "is_chargeable": false, "expiry_date": "2026-12-31" }`
+
+---
+
+### PATCH /api/inventory/{item_id}
+**Auth required:** ✅  
+Field mapping: `quantity_remaining` → `quantityinstock`, `unit_price` → `unitprice`, etc.
+
+---
+
+### GET /api/inventory/alerts
+**Auth required:** ✅  
+คืน `{ "low_stock": [...], "near_expiry": [...] }` (near_expiry = ภายใน 30 วัน)
+
+---
+
+### POST /api/inventory/usage
+**Auth required:** ✅  
+**Request:** `{ "item_id": 3, "quantity": 1, "booking_detail_id": 5 }`  
+Logic: INSERT InventoryUsage + ลดสต็อก + ถ้า `ischargeable = TRUE` → UPDATE Invoice.servicetotal
+
+---
+
+### GET /api/analytics/dashboard
+**Auth required:** ✅ @admin_required  
+**Query params:** `?start_date=2026-04-01&end_date=2026-04-30`
+
+**Response structure:**
+```json
+{
+  "status": "success",
+  "data": {
+    "period":          { "start": "...", "end": "..." },
+    "revenue":         { "total": 128500, "room": 95000, "addons": 33500, "avg_bill": 3059, "growth_pct": 12.5, "prev_total": 114200 },
+    "bookings":        { "total": 42, "checked_in": 8, "checked_out": 28, "cancelled": 4, "pending": 2 },
+    "occupancy_rate":  0.84,
+    "low_stock_alert": 2,
+    "low_stock_items": [{ "name": "...", "in_stock": 3, "threshold": 5 }],
+    "pet_ratio":       { "CAT": 24, "DOG": 18 },
+    "top_addons":      [{ "service": "อาบน้ำ", "count": 15, "revenue": 4500 }],
+    "daily_revenue":   [{ "date": "2026-04-01", "amount": 4200 }]
+  }
+}
+```
+
+> Source: top_addons ดึงจาก `bookingservice` (บริการเสริมที่คิดเงิน) ไม่ใช่ `inventoryusage`
+
+---
+
+## FR7 — Notification Management
+
+### GET /api/notifications
+**Auth required:** ✅  
+**Query params:** `?is_read=false`  
+กรองตาม `recipient_staff_id = current_user.staff_id` OR `recipient_staff_id IS NULL` (broadcast)
+
+---
+
+### PATCH /api/notifications/{notification_id}/read
+**Auth required:** ✅
+
+---
+
+### PATCH /api/notifications/read-all
+**Auth required:** ✅
+
+---
+
+## Customers (Phase 2 — Internal Staff Use)
+
+### GET /api/customers
+**Query params:** `?q=สมชาย` (ค้นหาด้วยชื่อ/email)
+
+### GET /api/customers/{id}/pets
+คืนสัตว์เลี้ยงของ customer รายนี้ — ใช้ใน new booking flow
+
+### POST /api/customers
+รองรับ key ทั้ง `firstname/first_name`, `phonenumber/phone_number`, `customeremail/customer_email`  
+Auto-generate `customer_username` จาก phone number ถ้าไม่ส่งมา
+
+---
+
+## Blueprint Routing ที่ต้องระวัง
+
+| ปัญหา | แก้ไข |
+|:---|:---|
+| `/api/billing/preview` ต้องวางก่อน `/<int:invoice_id>` | ✅ แก้ไขแล้วใน billing.py |
+| `/api/rooms/availability` ต้องวางก่อน `/<int:room_id>` | ✅ แก้ไขแล้วใน rooms.py |
+| `/api/inventory/alerts` ต้องวางก่อน `/<int:item_id>` | ✅ แก้ไขแล้วใน inventory.py |
+| `/api/notifications/read-all` ต้องวางก่อน `/<int:id>/read` | ✅ แก้ไขแล้ว |
+
+---
+
+## Thai Timezone Handling
+
+เวลาในระบบใช้ UTC+7 โดยคำนวณผ่าน helper function:
+```python
+def get_thai_time():
+    return datetime.utcnow() + timedelta(hours=7)
+```
+ใช้กับ: Attendance clock timestamps, Booking cancellation dates, Invoice payment dates

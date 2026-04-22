@@ -60,6 +60,30 @@ def format_pet(p):
 @pets_bp.route("", methods=["GET"])
 @token_required
 def get_all_pets(current_user):
+    """
+    ดูรายการสัตว์เลี้ยงทั้งหมด
+    ---
+    tags:
+      - Pets
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: owner_id
+        in: query
+        type: integer
+        required: false
+        description: กรองตาม ID เจ้าของ
+      - name: species
+        in: query
+        type: string
+        required: false
+        description: กรองตามสายพันธุ์ (เช่น cat, dog)
+    responses:
+      200:
+        description: รายการสัตว์เลี้ยง
+      500:
+        description: Internal Server Error
+    """
     try:
         owner_id = request.args.get("owner_id")
         species = request.args.get("species", "").strip()
@@ -93,6 +117,68 @@ def get_all_pets(current_user):
 @pets_bp.route("", methods=["POST"])
 @token_required
 def add_pet(current_user):
+    """
+    สร้างโปรไฟล์สัตว์เลี้ยงใหม่
+    ---
+    tags:
+      - Pets
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            customer_id:
+              type: integer
+              description: ID ลูกค้าเจ้าของสัตว์เลี้ยง
+              example: 1
+            name:
+              type: string
+              example: "Nong Meow"
+            species:
+              type: string
+              example: "CAT"
+            breed:
+              type: string
+              example: "Persian"
+            sex:
+              type: string
+              example: "M"
+            dob:
+              type: string
+              example: "2020-01-15"
+            weight_kg:
+              type: number
+              example: 4.5
+            coat_color:
+              type: string
+              example: "White"
+            medical_notes:
+              type: string
+              example: "ไม่มี"
+            allergies:
+              type: string
+              example: "Seafood"
+            is_vaccinated:
+              type: boolean
+              example: true
+            vaccine_record:
+              type: string
+              example: "Rabies, FVRCP"
+            behavior_notes:
+              type: string
+              example: "ขี้กลัวคนแปลกหน้า"
+    responses:
+      201:
+        description: สร้างโปรไฟล์สำเร็จ
+      400:
+        description: ข้อมูลไม่ครบถ้วน
+      500:
+        description: Internal Server Error
+    """
     try:
         data = request.get_json()
         conn = get_db_connection()
@@ -158,6 +244,27 @@ def add_pet(current_user):
 @pets_bp.route("/<int:pet_id>", methods=["GET"])
 @token_required
 def get_pet_by_id(current_user, pet_id):
+    """
+    ดูรายละเอียดสัตว์เลี้ยง
+    ---
+    tags:
+      - Pets
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: pet_id
+        in: path
+        type: integer
+        required: true
+        description: ID ของสัตว์เลี้ยง
+    responses:
+      200:
+        description: ข้อมูลสัตว์เลี้ยง
+      404:
+        description: ไม่พบสัตว์เลี้ยง
+      500:
+        description: Internal Server Error
+    """
     try:
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -179,6 +286,54 @@ def get_pet_by_id(current_user, pet_id):
 @pets_bp.route("/<int:pet_id>", methods=["PUT"])
 @token_required
 def update_pet(current_user, pet_id):
+    """
+    แก้ไขข้อมูลโปรไฟล์สัตว์เลี้ยง
+    ---
+    tags:
+      - Pets
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: pet_id
+        in: path
+        type: integer
+        required: true
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            name:
+              type: string
+            breed:
+              type: string
+            sex:
+              type: string
+            dob:
+              type: string
+            weight_kg:
+              type: number
+            coat_color:
+              type: string
+            medical_notes:
+              type: string
+            allergies:
+              type: string
+            is_vaccinated:
+              type: boolean
+            vaccine_record:
+              type: string
+            behavior_notes:
+              type: string
+    responses:
+      200:
+        description: อัปเดตข้อมูลสำเร็จ
+      404:
+        description: ไม่พบสัตว์เลี้ยง
+      500:
+        description: Internal Server Error
+    """
     try:
         data = request.get_json()
         conn = get_db_connection()
@@ -235,6 +390,24 @@ def update_pet(current_user, pet_id):
 @pets_bp.route("/<int:pet_id>/vaccines", methods=["GET"])
 @token_required
 def get_vaccines(current_user, pet_id):
+    """
+    ดูประวัติวัคซีนของสัตว์เลี้ยง
+    ---
+    tags:
+      - Pets
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: pet_id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: รายการประวัติวัคซีน
+      500:
+        description: Internal Server Error
+    """
     try:
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -267,6 +440,39 @@ def get_vaccines(current_user, pet_id):
 @pets_bp.route("/<int:pet_id>/vaccines", methods=["POST"])
 @token_required
 def add_vaccine(current_user, pet_id):
+    """
+    บันทึกประวัติวัคซีนใหม่
+    ---
+    tags:
+      - Pets
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: pet_id
+        in: path
+        type: integer
+        required: true
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            vaccine_name:
+              type: string
+              example: "Rabies"
+            administered_date:
+              type: string
+              example: "2025-10-01"
+            expiry_date:
+              type: string
+              example: "2026-10-01"
+    responses:
+      201:
+        description: บันทึกวัคซีนสำเร็จ
+      500:
+        description: Internal Server Error
+    """
     try:
         data = request.get_json()
         conn = get_db_connection()
@@ -310,6 +516,24 @@ def add_vaccine(current_user, pet_id):
 @pets_bp.route("/<int:pet_id>/meal-plans", methods=["GET"])
 @token_required
 def get_meal_plans(current_user, pet_id):
+    """
+    ดูแผนอาหารของสัตว์เลี้ยง
+    ---
+    tags:
+      - Pets
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: pet_id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: แผนอาหารแต่ละมื้อ
+      500:
+        description: Internal Server Error
+    """
     try:
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -341,6 +565,44 @@ def get_meal_plans(current_user, pet_id):
 @pets_bp.route("/<int:pet_id>/meal-plans", methods=["POST"])
 @token_required
 def save_meal_plans(current_user, pet_id):
+    """
+    บันทึกแผนอาหารของสัตว์เลี้ยง (แทนที่ข้อมูลเก่าทั้งหมด)
+    ---
+    tags:
+      - Pets
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: pet_id
+        in: path
+        type: integer
+        required: true
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              meal_period:
+                type: string
+                example: "MORNING"
+              food_type:
+                type: string
+                example: "Dry Food"
+              quantity_grams:
+                type: number
+                example: 150
+              notes:
+                type: string
+                example: "ผสมน้ำนิดหน่อย"
+    responses:
+      200:
+        description: บันทึกแผนการอาหารเรียบร้อย
+      500:
+        description: Internal Server Error
+    """
     try:
         data = request.get_json()  # List ของมื้ออาหาร
         conn = get_db_connection()
@@ -377,6 +639,26 @@ def save_meal_plans(current_user, pet_id):
 @pets_bp.route("/<int:pet_id>", methods=["DELETE"])
 @token_required
 def delete_pet(current_user, pet_id):
+    """
+    ลบโปรไฟล์สัตว์เลี้ยง
+    ---
+    tags:
+      - Pets
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: pet_id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: ลบข้อมูลสำเร็จ
+      404:
+        description: ไม่พบสัตว์เลี้ยงที่ต้องการลบ
+      500:
+        description: Internal Server Error
+    """
     try:
         conn = get_db_connection()
         cur = conn.cursor()
@@ -399,4 +681,3 @@ def delete_pet(current_user, pet_id):
 
     except Exception as e:
         return jsonify({"error": True, "message": str(e)}), 500
-

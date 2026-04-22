@@ -206,10 +206,26 @@ button { cursor: pointer; }
 
 /* ── LAYOUT HELPERS ───────────────────────────────── */
 .page-wrapper {
-  min-height: 100vh;
-  padding-top: var(--nav-height);
+    /* ดันเนื้อหาไปทางขวาให้พ้น Sidebar */
+    /* **จุดสำคัญ:** ให้เปลี่ยนเลข 260px เป็นความกว้าง (width) จริงของ Sidebar คุณ */
+    margin-left: 260px; 
+    
+    /* คำนวณความกว้างใหม่เพื่อไม่ให้หน้าจอมีแถบเลื่อนแนวนอน (Horizontal Scroll) */
+    width: calc(100% - 260px); 
+    
+    /* ให้เนื้อหาเต็มความสูงหน้าจอเป็นอย่างน้อย */
+    min-height: 100vh;
+    box-sizing: border-box;
 }
 
+/* ── หน้าจอขนาดเล็ก (Mobile/Tablet) ── */
+/* หากบนมือถือ Sidebar ของคุณถูกซ่อนหรือเปลี่ยนเป็นเมนูแฮมเบอร์เกอร์ ต้องยกเลิก margin-left คืนด้วย */
+@media (max-width: 960px) {
+    .page-wrapper {
+        margin-left: 0;
+        width: 100%;
+    }
+}
 .container {
   max-width: 1160px;
   margin: 0 auto;

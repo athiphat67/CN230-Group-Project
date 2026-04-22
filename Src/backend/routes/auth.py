@@ -16,6 +16,50 @@ def get_db_connection():
 # -------------------------------------------------------------
 @auth_bp.route('/login', methods=['POST'])
 def login():
+    """
+    เข้าสู่ระบบสำหรับพนักงาน (Staff Login)
+    ---
+    tags:
+      - Authentication
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - staff_username
+            - password
+          properties:
+            staff_username:
+              type: string
+              example: admin
+            password:
+              type: string
+              example: 123456
+    responses:
+      200:
+        description: เข้าสู่ระบบสำเร็จ (พร้อมรับ JWT Token นำไปใส่ในช่อง Authorize)
+        schema:
+          type: object
+          properties:
+            access_token:
+              type: string
+            staff_id:
+              type: integer
+            first_name:
+              type: string
+            last_name:
+              type: string
+            role:
+              type: string
+      400:
+        description: Bad Request (ส่งข้อมูลมาไม่ครบ)
+      401:
+        description: Unauthorized (Username หรือ Password ไม่ถูกต้อง)
+      500:
+        description: Internal Server Error
+    """
     try:
         data = request.get_json()
         username = data.get('staff_username') 
@@ -111,6 +155,21 @@ def login():
 @auth_bp.route('/logout', methods=['POST'])
 @token_required  # บังคับว่าต้องมี Token แนบมาใน Header จึงจะ Logout ได้
 def logout(current_user): # รับ current_user ที่ได้จาก @token_required
+    """
+    ออกจากระบบสำหรับพนักงาน (Staff Logout)
+    ---
+    tags:
+      - Authentication
+    security:
+      - BearerAuth: []
+    responses:
+      200:
+        description: ออกจากระบบสำเร็จ
+      401:
+        description: Unauthorized (Token ไม่ถูกต้องหรือหมดอายุ)
+      500:
+        description: Internal Server Error
+    """
     try:
         # โดยหลักการของ JWT การ Logout ฝั่ง Backend อาจจะไม่ได้ลบ Token จริงๆ (เพราะเป็น Stateless)
         # แต่เราสามารถจัดการด้วยการให้ Frontend ลบ Token ของตัวเองออก 
@@ -132,6 +191,55 @@ def logout(current_user): # รับ current_user ที่ได้จาก @
 # -------------------------------------------------------------
 @auth_bp.route('/register', methods=['POST'])
 def register_customer():
+    """
+    สมัครสมาชิกสำหรับลูกค้า (Customer Register)
+    ---
+    tags:
+      - Authentication
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - username
+            - password
+            - first_name
+            - last_name
+            - email
+          properties:
+            username:
+              type: string
+              example: "somchai123"
+            password:
+              type: string
+              example: "password123"
+            first_name:
+              type: string
+              example: "Somchai"
+            last_name:
+              type: string
+              example: "Jaidee"
+            phone:
+              type: string
+              example: "0812345678"
+            email:
+              type: string
+              example: "somchai@example.com"
+            address:
+              type: string
+              example: "123/4 BKK"
+    responses:
+      201:
+        description: สมัครสมาชิกสำเร็จ
+      400:
+        description: Bad Request (ส่งข้อมูลมาไม่ครบ)
+      409:
+        description: Conflict (Username หรือ Email ซ้ำในระบบ)
+      500:
+        description: Internal Server Error
+    """
     try:
         data = request.get_json()
         username = data.get('username')
@@ -197,6 +305,37 @@ def register_customer():
 # -------------------------------------------------------------
 @auth_bp.route('/login/customer', methods=['POST'])
 def login_customer():
+    """
+    เข้าสู่ระบบสำหรับลูกค้า (Customer Login)
+    ---
+    tags:
+      - Authentication
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - username
+            - password
+          properties:
+            username:
+              type: string
+              example: "somchai123"
+            password:
+              type: string
+              example: "password123"
+    responses:
+      200:
+        description: ล็อกอินสำเร็จ (โดยปกติสำหรับลูกค้าระบบนี้จะยังไม่ได้คืนค่า JWT Token แต่คืนสถานะแทน)
+      400:
+        description: Bad Request (ส่งข้อมูลมาไม่ครบ)
+      401:
+        description: Unauthorized (Username หรือ Password ไม่ถูกต้อง)
+      500:
+        description: Internal Server Error
+    """
     try:
         data = request.get_json()
         username = data.get('username')

@@ -94,3 +94,47 @@ window.setButtonLoading = setButtonLoading;
 window.validateRequired = validateRequired;
 window.formatCurrency   = formatCurrency;
 window.formatNumber     = formatNumber;
+
+function checkCustomerAccess() {
+    const role = localStorage.getItem('role');
+    const token = localStorage.getItem('access_token');
+    // ดึงข้อมูลชื่อจาก localStorage ที่เก็บไว้ตอน Login
+    const customerInfo = JSON.parse(localStorage.getItem('customer_info') || '{}');
+    const customerId = localStorage.getItem('customer_id') || customerInfo.customerid || customerInfo.customer_id || customerInfo.id;
+
+    if (!token || role !== 'customer') {
+        window.location.href = '../login.html';
+        return null;
+    }
+    return {
+        id: customerId,
+        customerid: customerId,
+        firstname: localStorage.getItem('first_name') || 'Guest',
+        ...customerInfo
+    };
+}
+
+function speciesEmoji(species) {
+    const s = String(species).toLowerCase();
+    if (s.includes('dog')) return '🐶';
+    if (s.includes('cat')) return '🐱';
+    if (s.includes('bird')) return '🦜';
+    return '🐾';
+}
+
+function formatDate(dateStr, options = { month: 'short', day: 'numeric', year: 'numeric' }) {
+    if (!dateStr) return '';
+    return new Date(dateStr).toLocaleDateString('en-US', options);
+}
+
+function showToast(msg, type = 'info') {
+    console.log(`[Toast ${type}]: ${msg}`);
+    const container = document.getElementById('toast-container');
+    if (container) {
+        const toast = document.createElement('div');
+        toast.className = `toast toast--${type}`;
+        toast.innerText = msg;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+}

@@ -13,6 +13,50 @@ def get_db_connection():
 @customer_bp.route('', methods=['GET'])
 @token_required
 def get_all_customers(current_user):
+    """
+    ดึงรายการลูกค้าทั้งหมด หรือค้นหาจากชื่อ/อีเมล
+    ---
+    tags:
+      - Customers
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: q
+        in: query
+        type: string
+        required: false
+        description: คำค้นหา (ชื่อ, นามสกุล, หรือ อีเมล)
+    responses:
+      200:
+        description: รายการลูกค้า
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+              example: success
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  customerid:
+                    type: integer
+                  customerusername:
+                    type: string
+                  firstname:
+                    type: string
+                  lastname:
+                    type: string
+                  phonenumber:
+                    type: string
+                  customeremail:
+                    type: string
+                  address:
+                    type: string
+      500:
+        description: Database error
+    """
     try:
         search = request.args.get('q', '').strip()
         conn = get_db_connection()
@@ -40,6 +84,25 @@ def get_all_customers(current_user):
 @customer_bp.route('/<int:id>/pets', methods=['GET'])
 @token_required
 def get_customer_pets(current_user, id):
+    """
+    ดึงรายการสัตว์เลี้ยงของลูกค้า
+    ---
+    tags:
+      - Customers
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        type: integer
+        required: true
+        description: ID ของลูกค้า
+    responses:
+      200:
+        description: รายการสัตว์เลี้ยง
+      500:
+        description: Internal Server Error
+    """
     try:
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -53,10 +116,39 @@ def get_customer_pets(current_user, id):
     except Exception as e:
         return jsonify({"error": True, "message": str(e)}), 500
 
+@customer_bp.route('/me', methods=['GET'])
+@token_required
+def get_current_customer(current_user):
+    customer_id = current_user.get('customer_id')
+    if not customer_id:
+        return jsonify({"error": True, "code": 403, "message": "Customer token required"}), 403
+    return get_customer_by_id.__wrapped__(current_user, customer_id)
+
 # ── 2. READ (Get One by ID) ───────────────────────────────────
 @customer_bp.route('/<int:id>', methods=['GET'])
 @token_required
 def get_customer_by_id(current_user, id):
+    """
+    ดูข้อมูลลูกค้าด้วย ID
+    ---
+    tags:
+      - Customers
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        type: integer
+        required: true
+        description: ID ของลูกค้า
+    responses:
+      200:
+        description: ข้อมูลลูกค้ารายบุคคล
+      404:
+        description: ไม่พบข้อมูลลูกค้า
+      500:
+        description: Database error
+    """
     try:
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -76,6 +168,50 @@ def get_customer_by_id(current_user, id):
 @customer_bp.route('', methods=['POST'])
 @token_required
 def create_customer(current_user):
+    """
+    เพิ่มข้อมูลลูกค้าใหม่
+    ---
+    tags:
+      - Customers
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            firstname:
+              type: string
+              example: "Somchai"
+            lastname:
+              type: string
+              example: "Jaidee"
+            phonenumber:
+              type: string
+              example: "0812345678"
+            customeremail:
+              type: string
+              example: "somchai@example.com"
+            address:
+              type: string
+              example: "123/45 BKK"
+            password:
+              type: string
+              example: "123456"
+            customer_username:
+              type: string
+              description: หากไม่ระบุ ระบบจะสร้างจากเบอร์โทรอัตโนมัติ
+              example: "user_0812345678"
+    responses:
+      201:
+        description: เพิ่มข้อมูลลูกค้าเรียบร้อย
+      409:
+        description: Username หรือ Email มีในระบบแล้ว
+      500:
+        description: Internal Server Error
+    """
     try:
         data = request.get_json()
         
@@ -133,6 +269,42 @@ def create_customer(current_user):
 @customer_bp.route('/<int:id>', methods=['PUT'])
 @token_required
 def update_customer(current_user, id):
+    """
+    แก้ไขข้อมูลลูกค้า
+    ---
+    tags:
+      - Customers
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        type: integer
+        required: true
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            first_name:
+              type: string
+            last_name:
+              type: string
+            phone_number:
+              type: string
+            customer_email:
+              type: string
+            address:
+              type: string
+    responses:
+      200:
+        description: อัปเดตข้อมูลลูกค้าสำเร็จ
+      404:
+        description: Customer not found
+      500:
+        description: Database error
+    """
     try:
         data = request.get_json()
         conn = get_db_connection()
@@ -162,6 +334,28 @@ def update_customer(current_user, id):
 @customer_bp.route('/<int:id>', methods=['DELETE'])
 @token_required
 def delete_customer(current_user, id):
+    """
+    ลบข้อมูลลูกค้า
+    ---
+    tags:
+      - Customers
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: ลบข้อมูลลูกค้าเรียบร้อย
+      400:
+        description: Cannot delete customer (ติดประวัติการจอง)
+      404:
+        description: Customer not found
+      500:
+        description: Database error
+    """
     try:
         conn = get_db_connection()
         cur = conn.cursor()

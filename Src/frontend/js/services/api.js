@@ -215,18 +215,18 @@ window.staffAPI = {
 window.CustomerAPI = {
   /* --- Auth --- */
   auth: {
-    // ใช้ endpoint เดียวกับ staff หรือแยกตามโครงสร้าง Backend ของคุณ
-    login: (username, password) => apiFetch('/auth/login', {
+    login: (username, password) => apiFetch('/auth/login/customer', {
       method: 'POST',
       body: JSON.stringify({ username, password }),
     }),
-    getMe: () => apiFetch('/auth/me'),
+    logout: () => apiFetch('/auth/logout', { method: 'POST' }),
   },
 
   /* --- Customer Profile --- */
   customer: {
-    getMe: () => apiFetch('/customer/me'), // ดึงข้อมูลตัวเองจาก Token
-    update: (id, data) => apiFetch(`/customer/${id}`, { 
+    getMe: () => apiFetch('/customers/me'),
+    getById: (id) => apiFetch(`/customers/${id}`),
+    update: (id, data) => apiFetch(`/customers/${id}`, { 
       method: 'PUT', 
       body: JSON.stringify(data) 
     }),
@@ -239,6 +239,10 @@ window.CustomerAPI = {
     create:  (data)        => apiFetch('/pets', { method: 'POST', body: JSON.stringify(data) }),
     update:  (id, data)    => apiFetch(`/pets/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete:  (id)          => apiFetch(`/pets/${id}`, { method: 'DELETE' }),
+    getVaccines: (id)      => apiFetch(`/pets/${id}/vaccines`),
+    addVaccine:  (id, data) => apiFetch(`/pets/${id}/vaccines`, { method: 'POST', body: JSON.stringify(data) }),
+    getMealPlans:(id)       => apiFetch(`/pets/${id}/meal-plans`),
+    saveMealPlans:(id, data)=> apiFetch(`/pets/${id}/meal-plans`, { method: 'POST', body: JSON.stringify(data) }),
   },
 
   /* --- Bookings --- */
@@ -246,6 +250,15 @@ window.CustomerAPI = {
     getAll: (params = {}) => apiFetch('/bookings?' + new URLSearchParams(params)),
     create: (data)        => apiFetch('/bookings', { method: 'POST', body: JSON.stringify(data) }),
     getById: (id)         => apiFetch(`/bookings/${id}`),
+    cancel: (id, data)    => apiFetch(`/bookings/${id}/cancel`, { method: 'PATCH', body: JSON.stringify(data || {}) }),
+    getServices: ()       => apiFetch('/bookings/services'),
+    getRooms: ()          => apiFetch('/rooms'),
+  },
+
+  // 🟢 เพิ่มโค้ด 4 บรรทัดนี้ลงไปครับ 🟢
+  /* --- Rooms --- */
+  rooms: {
+    getAvailability: (params) => apiFetch('/rooms/availability?' + new URLSearchParams(params)),
   },
 
   /* --- Notifications --- */
@@ -254,4 +267,5 @@ window.CustomerAPI = {
     markRead:    (id)          => apiFetch(`/notifications/${id}/read`, { method: 'PATCH' }),
     markAllRead: ()           => apiFetch('/notifications/read-all', { method: 'PATCH' }),
   }
+  
 };

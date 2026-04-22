@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Make a Reservation — PetSerenity</title>
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/userpages/ReservationForm.css">
+</head>
+
+<body>
+    <aside id="sidebar-root"></aside>
+
+    <div class="page-wrapper">
+        <div class="container">
+
+            <header class="reservation-hero animate-fade-in-up">
+                <h1 class="reservation-hero__title" style="font-family: 'Cormorant Garamond', serif;">
+                    Secure a Sanctuary<br><em>for Your Companion</em>
+                </h1>
+                <p class="reservation-hero__sub">
+                    Our luxury suites provide a serene environment with personalized care, curated specifically for the
+                    modern pet.
+                </p>
+            </header>
+
+            <div class="reservation-layout">
+
+                <main class="animate-fade-in-up delay-1">
+
+                    <section class="res-section">
+                        <div class="res-section__header">
+                            <span class="res-section__icon">📅</span>
+                            <h2 class="res-section__title">Select Your Dates</h2>
+                        </div>
+                        <div class="res-section__body">
+                            <div class="dates-grid">
+                                <div class="form-group">
+                                    <label class="form-label"
+                                        style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-3);">Check-In</label>
+                                    <input type="date" id="checkin-date" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label"
+                                        style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-3);">Check-Out</label>
+                                    <input type="date" id="checkout-date" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="res-section">
+                        <div class="res-section__header">
+                            <span class="res-section__icon">🐾</span>
+                            <h2 class="res-section__title">Who is staying?</h2>
+                        </div>
+                        <div class="res-section__body">
+                            <div class="pet-select-options" id="pet-select-list">
+                                <div class="spinner spinner--sm"></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="res-section">
+                        <div class="res-section__header">
+                            <span class="res-section__icon">🛏️</span>
+                            <h2 class="res-section__title">Choose a Suite</h2>
+                        </div>
+                        <div class="res-section__body">
+                            <div class="suite-options" id="suite-options"></div>
+                        </div>
+                    </section>
+
+                    <section class="res-section">
+                        <div class="res-section__header">
+                            <span class="res-section__icon">✨</span>
+                            <h2 class="res-section__title">Enhance the Stay</h2>
+                        </div>
+                        <div class="res-section__body">
+                            <div class="addon-list" id="addon-list"></div>
+                        </div>
+                    </section>
+
+                </main>
+
+                <aside class="animate-fade-in-up delay-2">
+                    <div class="booking-summary">
+                        <div class="booking-summary__header">
+                            <h2 class="booking-summary__title">Booking Summary</h2>
+                        </div>
+                        <div class="booking-summary__body">
+
+                            <div class="summary-line">
+                                <span class="summary-line__label">
+                                    <div id="summary-suite-name"
+                                        style="font-weight: 700; color: var(--text-1); margin-bottom: 2px;">Select a
+                                        suite</div>
+                                    <div style="font-size: 12px;" id="summary-suite-price">—</div>
+                                </span>
+                                <span class="summary-line__value" style="color: transparent;">—</span>
+                            </div>
+
+                            <div class="summary-line">
+                                <span class="summary-line__label">
+                                    <div id="summary-nights-label"
+                                        style="font-weight: 700; color: var(--text-2); margin-bottom: 2px;">— (select
+                                        dates)</div>
+                                    <div style="font-size: 12px;" id="summary-date-range">Select dates to see total
+                                    </div>
+                                </span>
+                                <span class="summary-line__value" id="summary-nights-cost">—</span>
+                            </div>
+
+                            <div class="summary-line" id="summary-addons" style="display: none;">
+                                <span class="summary-line__label">
+                                    <div style="font-weight: 700; color: var(--text-2); margin-bottom: 2px;">Add-ons
+                                    </div>
+                                    <div style="font-size: 12px;" id="summary-addon-label"></div>
+                                </span>
+                                <span class="summary-line__value" id="summary-addon-cost"></span>
+                            </div>
+
+                            <div class="summary-total">
+                                <span class="summary-total__label">SUBTOTAL</span>
+                                <span class="summary-total__amount" id="summary-total-amount">฿0</span>
+                            </div>
+
+                        </div>
+
+                        <div class="booking-summary__footer">
+                            <button id="book-now-btn" class="book-now-btn" disabled>
+                                Book Now
+                                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
+                                    style="width: 18px; height: 18px;">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3">
+                                    </path>
+                                </svg>
+                            </button>
+                            <div class="booking-summary__legal">
+                                By clicking Book Now, you agree to our terms of service and pet safety policies.
+                            </div>
+                        </div>
+
+                        <div style="position: relative;">
+                            <div class="summary-img"
+                                style="display: flex; align-items: center; justify-content: center; font-size: 40px;">🐶
+                            </div>
+                            <div class="summary-quote">
+                                "A home away from home for your best friend."
+                            </div>
+                        </div>
+
+                    </div>
+                </aside>
+
+            </div>
+        </div>
+    </div>
+    <div id="toast-container"></div>
+
+    <!-- Scripts — ใช้ usersidebar.js แทน sidebar.js -->
+    <script src="../js/main.js"></script>
+    <script src="../js/services/api.js"></script>
+    <script src="../js/components/usersidebar.js"></script>
+    <script src="../js/userpages/ReservationForm.js"></script>
+</body>
+
+</html>

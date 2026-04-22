@@ -26,6 +26,61 @@ def get_db_connection():
 @care_logs_bp.route('', methods=['POST'])
 @token_required
 def add_care_log(current_user):
+    """
+    บันทึกรายงานการดูแลสัตว์เลี้ยงประจำวัน (Daily Care Report)
+    ---
+    tags:
+      - Care Reports
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - booking_id
+            - pet_id
+          properties:
+            booking_id:
+              type: integer
+              example: 1
+            pet_id:
+              type: integer
+              example: 2
+            food_status:
+              type: string
+              description: สถานะการกินอาหาร เช่น NORMAL, ATE_LITTLE, REFUSED
+              example: "NORMAL"
+            potty_status:
+              type: string
+              description: สถานะการขับถ่าย เช่น NORMAL, DIARRHEA, NONE
+              example: "NORMAL"
+            medication_given:
+              type: boolean
+              description: ให้ยาแล้วหรือไม่
+              example: true
+            staff_note:
+              type: string
+              description: บันทึกเพิ่มเติมจากพนักงาน
+              example: "น้องร่าเริงดี กินข้าวหมดชาม"
+            mood:
+              type: string
+              description: อารมณ์ของสัตว์เลี้ยง เช่น HAPPY, ANXIOUS, AGGRESSIVE
+              example: "HAPPY"
+            behavior_notes:
+              type: string
+              description: บันทึกพฤติกรรมเพิ่มเติม
+              example: "ชอบเล่นลูกบอล"
+    responses:
+      201:
+        description: บันทึกรายงานสำเร็จ
+      404:
+        description: ไม่พบข้อมูลการจองสำหรับสัตว์เลี้ยงตัวนี้
+      500:
+        description: Internal Server Error
+    """
     try:
         data = request.get_json()
         staff_id = current_user.get('staff_id')
@@ -88,6 +143,73 @@ def add_care_log(current_user):
 @care_logs_bp.route('', methods=['GET'])
 @token_required
 def get_care_logs(current_user):
+    """
+    ดึงรายงานการดูแลสัตว์เลี้ยง
+    ---
+    tags:
+      - Care Reports
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: booking_id
+        in: query
+        type: integer
+        required: false
+        description: กรองตาม ID การจอง
+      - name: date
+        in: query
+        type: string
+        format: date
+        required: false
+        description: กรองตามวันที่ (YYYY-MM-DD)
+    responses:
+      200:
+        description: รายการรายงานการดูแล
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+              example: success
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  report_id:
+                    type: integer
+                  booking_id:
+                    type: integer
+                  pet_id:
+                    type: integer
+                  pet_name:
+                    type: string
+                  species:
+                    type: string
+                  room:
+                    type: string
+                  report_date:
+                    type: string
+                    format: date-time
+                  food_intake:
+                    type: string
+                  bowel_activity:
+                    type: string
+                  mood:
+                    type: string
+                  behavior_notes:
+                    type: string
+                  photo_url:
+                    type: string
+                  medication_given:
+                    type: boolean
+                  notes:
+                    type: string
+                  reported_by:
+                    type: string
+      500:
+        description: Internal Server Error
+    """
     try:
         booking_id = request.args.get('booking_id')
         date_str   = request.args.get('date')
@@ -150,8 +272,37 @@ def get_care_logs(current_user):
 @token_required
 def upload_photos(current_user, report_id):
     """
-    TODO: ต่อ Supabase Storage หรือ S3 เพื่ออัปโหลดรูปจริง
-    ปัจจุบัน: รับ URL จาก body แล้วอัปเดต carelog.photourl
+    อัปโหลดรูปภาพสำหรับรายงานการดูแล (Stub)
+    ---
+    tags:
+      - Care Reports
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: report_id
+        in: path
+        type: integer
+        required: true
+        description: ID ของรายงาน
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            photo_url:
+              type: string
+              description: URL ของรูปภาพ (หลังจากอัปโหลดขึ้น Storage แล้ว)
+              example: "https://example.com/photo.jpg"
+    responses:
+      200:
+        description: อัปเดต URL รูปภาพสำเร็จ
+      400:
+        description: ไม่ได้ระบุ photo_url
+      404:
+        description: ไม่พบรายงาน
+      500:
+        description: Internal Server Error
     """
     try:
         data      = request.get_json()
@@ -184,6 +335,51 @@ def upload_photos(current_user, report_id):
 @care_logs_bp.route('/active-stays', methods=['GET'])
 @token_required
 def get_active_stays(current_user):
+    """
+    ดึงรายชื่อสัตว์เลี้ยงที่กำลังเข้าพักอยู่ในปัจจุบัน
+    ---
+    tags:
+      - Care Reports
+    security:
+      - BearerAuth: []
+    responses:
+      200:
+        description: รายชื่อสัตว์เลี้ยงที่กำลังเข้าพัก
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+              example: success
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  booking_id:
+                    type: integer
+                  pet_id:
+                    type: integer
+                  pet_name:
+                    type: string
+                  species:
+                    type: string
+                  breed:
+                    type: string
+                  room:
+                    type: string
+                  checkin:
+                    type: string
+                    format: date
+                  checkout:
+                    type: string
+                    format: date
+                  reported_today:
+                    type: boolean
+                    description: มีการบันทึกรายงานของวันนี้แล้วหรือยัง
+      500:
+        description: Internal Server Error
+    """
     try:
         conn = get_db_connection()
         cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)

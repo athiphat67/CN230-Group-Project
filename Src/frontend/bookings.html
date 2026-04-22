@@ -1,161 +1,655 @@
 <!DOCTYPE html>
 <html lang="th">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Portal | Purrfect Stay</title>
-    <link rel="stylesheet" href="./css/bookings.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bookings — Purrfect Stay</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Serif+Display:ital@0;1&family=Syne:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages/Bookings.css">
+  <style>
+    /* ── Customer search results dropdown ── */
+    .nb-search-wrap { position: relative; }
+    #nb-customer-results {
+      position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+      background: white; border: 1.5px solid var(--bk-border);
+      border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,.12);
+      z-index: 100; max-height: 240px; overflow-y: auto;
+    }
+    .nb-customer-item {
+      padding: 10px 14px; cursor: pointer; transition: background .15s;
+      border-bottom: 1px solid var(--bk-border);
+    }
+    .nb-customer-item:last-child { border-bottom: none; }
+    .nb-customer-item:hover { background: #F8FAFC; }
+    .nb-customer-name { font-size: 13.5px; font-weight: 600; color: var(--bk-text-1); }
+    .nb-customer-meta { font-size: 12px; color: var(--bk-text-3); margin-top: 2px; }
+    /* "Add new" shortcut at bottom of results list */
+    .nb-results-add-new {
+      padding: 9px 14px; cursor: pointer;
+      display: flex; align-items: center; gap: 6px;
+      font-size: 13px; font-weight: 600; color: var(--bk-blue);
+      border-top: 1px solid var(--bk-border);
+      transition: background .15s;
+    }
+    .nb-results-add-new:hover { background: var(--bk-blue-s); }
+
+    /* ── OR divider ── */
+    .nb-divider {
+      display: flex; align-items: center; gap: 10px;
+      margin: 14px 0; color: var(--bk-text-3); font-size: 12px;
+    }
+    .nb-divider::before, .nb-divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--bk-border);
+    }
+
+    /* ── Toggle "Add New" button ── */
+    .nb-add-new-btn {
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      width: 100%; padding: 9px 16px; border-radius: 10px;
+      border: 1.5px dashed var(--bk-border);
+      background: transparent; color: var(--bk-text-3);
+      font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+      cursor: pointer; transition: all .2s;
+    }
+    .nb-add-new-btn:hover,
+    .nb-add-new-btn.active {
+      border-color: var(--bk-blue); color: var(--bk-blue);
+      background: var(--bk-blue-s); border-style: solid;
+    }
+
+    /* ── Inline registration form panel ── */
+    .nb-inline-form {
+      margin-top: 14px; padding: 18px;
+      background: #EFF6FF;
+      border: 1.5px solid #93C5FD;
+      border-radius: 14px;
+      animation: fadeUp .22s ease;
+    }
+    .nb-inline-form-title {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .6px; color: var(--bk-blue); margin-bottom: 14px;
+    }
+
+    /* ── Confirm button inside inline form ── */
+    .nb-confirm-btn {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      width: 100%; margin-top: 14px;
+      padding: 10px; border-radius: 10px; border: none;
+      background: var(--bk-blue); color: white;
+      font-family: 'DM Sans', sans-serif; font-size: 13.5px; font-weight: 600;
+      cursor: pointer; transition: all .2s;
+    }
+    .nb-confirm-btn:hover { background: var(--bk-blue-2); }
+    .nb-confirm-btn:disabled { opacity: .55; cursor: not-allowed; }
+
+    /* ── Selected badge (shown after customer/pet is locked in) ── */
+    .nb-selected-badge {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 11px 15px; border-radius: 10px;
+      background: var(--bk-green-s); border: 1.5px solid #6EE7B7;
+      color: #065F46; font-size: 13px; font-weight: 500;
+    }
+    .nb-selected-badge-text {
+      display: flex; align-items: center; gap: 7px;
+    }
+    .nb-badge-change {
+      background: none; border: none; color: #059669;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      padding: 3px 9px; border-radius: 6px;
+      transition: background .15s; white-space: nowrap;
+    }
+    .nb-badge-change:hover { background: rgba(16,185,129,.15); }
+
+    /* ── Species radio pills ── */
+    .nb-species-opts { display: flex; gap: 8px; flex-wrap: wrap; padding-top: 2px; }
+    .nb-species-opt {
+      display: flex; align-items: center; gap: 5px;
+      padding: 6px 12px; border: 1.5px solid var(--bk-border);
+      border-radius: 8px; cursor: pointer; font-size: 13px;
+      transition: all .15s; background: white; color: var(--bk-text-2);
+    }
+    .nb-species-opt:has(input:checked) {
+      border-color: var(--bk-blue); background: var(--bk-blue-s); color: var(--bk-blue);
+    }
+    .nb-species-opt input { accent-color: var(--bk-blue); }
+
+    /* ── Room search button ── */
+    .nb-find-room-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 9px 18px; border-radius: 10px; border: none;
+      background: var(--bk-blue); color: white;
+      font-family: 'DM Sans', sans-serif; font-size: 13.5px; font-weight: 600;
+      cursor: pointer; transition: all .2s; margin-top: 10px;
+    }
+    .nb-find-room-btn:hover { opacity: .9; transform: translateY(-1px); }
+    #pp-nights { font-size: 11px; color: var(--bk-text-3); }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
 </head>
-
 <body>
-    <aside class="sidebar">
-        <div class="brand-logo">
-            <span class="logo-icon">🐾</span>
-            <div class="logo-text">
-                <h3>Purrfect Stay</h3>
-                <p>ADMIN PORTAL</p>
-            </div>
+
+<aside id="sidebar-root"></aside>
+
+<main class="main">
+  <div id="topbar-root"></div>
+
+  <div class="content">
+
+    <!-- ── STAT CARDS ── -->
+    <div class="bk-stats-row">
+      <div class="bk-stat blue">
+        <div class="bk-stat-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        </div>
+        <div class="bk-stat-body">
+          <div class="bk-stat-label">Check-ins วันนี้</div>
+          <div class="bk-stat-value" id="stat-checkins-today">—</div>
+          <div class="bk-stat-sub">รอเข้าพัก</div>
+        </div>
+        <div class="bk-stat-ring"></div>
+      </div>
+      <div class="bk-stat teal">
+        <div class="bk-stat-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        </div>
+        <div class="bk-stat-body">
+          <div class="bk-stat-label">กำลังเข้าพัก</div>
+          <div class="bk-stat-value" id="count-CHECKED_IN">—</div>
+          <div class="bk-stat-sub">Active stays</div>
+        </div>
+        <div class="bk-stat-ring"></div>
+      </div>
+      <div class="bk-stat amber">
+        <div class="bk-stat-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        </div>
+        <div class="bk-stat-body">
+          <div class="bk-stat-label">รอ Check-out</div>
+          <div class="bk-stat-value" id="count-PENDING">—</div>
+          <div class="bk-stat-sub">รายการรอยืนยัน</div>
+        </div>
+        <div class="bk-stat-ring"></div>
+      </div>
+      <div class="bk-stat coral">
+        <div class="bk-stat-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+        </div>
+        <div class="bk-stat-body">
+          <div class="bk-stat-label">ยกเลิก</div>
+          <div class="bk-stat-value" id="count-CANCELLED">—</div>
+          <div class="bk-stat-sub">รายการยกเลิก</div>
+        </div>
+        <div class="bk-stat-ring"></div>
+      </div>
+    </div>
+
+    <!-- ── BOOKING TABLE CARD ── -->
+    <div class="bk-card">
+      <div class="bk-card-header">
+        <div class="bk-filter-tabs" id="filter-tabs">
+          <button class="bk-tab active" onclick="filterBookings('all', this)">
+            ทั้งหมด <span class="bk-tab-count" id="count-all">—</span>
+          </button>
+          <button class="bk-tab" onclick="filterBookings('PENDING', this)">
+            รอยืนยัน <span class="bk-tab-count" id="count-PENDING-tab">—</span>
+          </button>
+          <button class="bk-tab" onclick="filterBookings('CHECKED_IN', this)">
+            Active Stay <span class="bk-tab-count" id="count-CHECKED_IN-tab">—</span>
+          </button>
+          <button class="bk-tab" onclick="filterBookings('CHECKED_OUT', this)">
+            Checked Out <span class="bk-tab-count" id="count-CHECKED_OUT">—</span>
+          </button>
+          <button class="bk-tab" onclick="filterBookings('CANCELLED', this)">
+            ยกเลิก <span class="bk-tab-count" id="count-CANCELLED-tab">—</span>
+          </button>
+        </div>
+        <div class="bk-tools">
+          <div class="bk-search-wrap">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input class="bk-search" type="text" placeholder="ค้นหาชื่อสัตว์เลี้ยง หรือเจ้าของ..." oninput="searchBookings(this.value)">
+          </div>
+        </div>
+      </div>
+
+      <div class="bk-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>สัตว์เลี้ยง / เจ้าของ</th>
+              <th>ห้องพัก</th>
+              <th>Check-in</th>
+              <th>Check-out</th>
+              <th>Add-ons</th>
+              <th>สถานะ</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="bookings-tbody"></tbody>
+        </table>
+        <div class="bk-empty" id="bk-empty" style="display:none">
+          <div class="bk-empty-icon">🐾</div>
+          <p>ไม่พบการจองที่ตรงกัน</p>
+        </div>
+      </div>
+
+      <div class="bk-table-footer">
+        <span id="bk-showing">—</span>
+      </div>
+    </div>
+  </div>
+</main>
+
+
+<!-- ══════════════════════════════════════════
+     MODAL: NEW BOOKING
+     Flow: Customer → Pet → Date/Room → Services
+══════════════════════════════════════════ -->
+<div class="bk-modal-overlay" id="modal-new-booking">
+  <div class="bk-modal">
+    <div class="bk-modal-header">
+      <div>
+        <div class="bk-modal-title">สร้างการจองใหม่</div>
+        <div class="bk-modal-sub">ลงทะเบียนลูกค้าและสัตว์เลี้ยง หรือเลือกจากที่มีอยู่</div>
+      </div>
+      <button class="bk-modal-close" onclick="closeModal('modal-new-booking')">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="bk-modal-body">
+
+      <!-- ══ STEP 1: CUSTOMER ══ -->
+      <div class="bk-form-section">
+        <div class="bk-form-section-title">👤 ขั้นตอนที่ 1 — ลูกค้า</div>
+
+        <!-- Badge shown after customer confirmed -->
+        <div id="nb-customer-badge" class="nb-selected-badge" style="display:none">
+          <div class="nb-selected-badge-text">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+            <span id="nb-customer-badge-text"></span>
+          </div>
+          <button class="nb-badge-change" onclick="clearSelectedCustomer()">เปลี่ยน</button>
         </div>
 
-        <nav class="sidebar-menu">
-            <a href="dashboard.html" class="menu-item">
-                <span class="menu-icon">⊞</span> ภาพรวม (Dashboard)
-            </a>
-            <a href="calendar.html" class="menu-item">
-                <span class="menu-icon">📅</span> ปฏิทิน (Calendar)
-            </a>
-            <a href="bookings.html" class="menu-item active">
-                <span class="menu-icon">📋</span> การจอง (Bookings)
-            </a>
-            <a href="invoice.html" class="menu-item">
-                <span class="menu-icon">💳</span> การเงิน (Billing)
-            </a>
-        </nav>
-
-        <div class="user-profile">
-            <div class="user-avatar">
-                <img src="https://ui-avatars.com/api/?name=Somchai+M&background=0D8ABC&color=fff" alt="User">
+        <!-- Input area (hidden after customer confirmed) -->
+        <div id="nb-customer-input-area">
+          <!-- Search existing customers -->
+          <div class="nb-search-wrap">
+            <div class="bk-form-group">
+              <label class="bk-label">ค้นหาลูกค้าที่มีอยู่ในระบบ</label>
+              <input class="bk-input" type="text" id="nb-customer-search"
+                placeholder="พิมพ์ชื่อหรือเบอร์โทรศัพท์ (อย่างน้อย 2 ตัวอักษร)..."
+                oninput="onCustomerSearchInput(this.value)" autocomplete="off">
+              <div id="nb-customer-results"></div>
             </div>
-            <div class="user-info">
-                <p class="user-name" id="display-staff-name">สมชาย มั่นคง</p>
-                <p class="user-role" id="display-staff-role">ผู้ดูแลระบบ (Admin)</p>
+          </div>
+
+          <!-- OR divider -->
+          <div class="nb-divider"><span>หรือ</span></div>
+
+          <!-- Toggle new customer form -->
+          <button class="nb-add-new-btn" id="nb-toggle-customer-btn" onclick="toggleNewCustomerForm()">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+            ลูกค้าใหม่ — ลงทะเบียนที่นี่
+          </button>
+
+          <!-- Inline new customer form -->
+          <div id="nb-new-customer-form" class="nb-inline-form" style="display:none">
+            <div class="nb-inline-form-title">📋 กรอกข้อมูลลูกค้าใหม่</div>
+            <div class="bk-form-row">
+              <div class="bk-form-group">
+                <label class="bk-label">ชื่อ <span class="req">*</span></label>
+                <input class="bk-input" type="text" id="nc-firstname" placeholder="ชื่อ">
+              </div>
+              <div class="bk-form-group">
+                <label class="bk-label">นามสกุล <span class="req">*</span></label>
+                <input class="bk-input" type="text" id="nc-lastname" placeholder="นามสกุล">
+              </div>
             </div>
+            <div class="bk-form-group" style="margin-top:12px">
+              <label class="bk-label">เบอร์โทรศัพท์ <span class="req">*</span></label>
+              <input class="bk-input" type="tel" id="nc-phone" placeholder="0xx-xxx-xxxx">
+            </div>
+            <div class="bk-form-row" style="margin-top:12px">
+              <div class="bk-form-group">
+                <label class="bk-label">อีเมล</label>
+                <input class="bk-input" type="email" id="nc-email" placeholder="(ไม่บังคับ)">
+              </div>
+              <div class="bk-form-group">
+                <label class="bk-label">ที่อยู่</label>
+                <input class="bk-input" type="text" id="nc-address" placeholder="(ไม่บังคับ)">
+              </div>
+            </div>
+            <button class="nb-confirm-btn" id="nc-confirm-btn" onclick="confirmNewCustomer()">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+              สร้างบัญชีลูกค้า
+            </button>
+          </div>
         </div>
-    </aside>
+      </div>
 
-    <main class="main-content">
-        <div class="booking-grid">
-            <section class="selection-area">
+      <!-- ══ STEP 2: PET ══ -->
+      <div id="nb-pet-step" style="display:none">
+        <div class="bk-form-section">
+          <div class="bk-form-section-title">🐾 ขั้นตอนที่ 2 — สัตว์เลี้ยง</div>
 
-                <div class="card booking-header-card">
-                    <div class="pet-selection">
-                        <h3>Pet Guest:</h3>
-                        <div class="pet-input-group">
-                            <div class="pet-avatar">
-                                <img src="https://cdn-icons-png.flaticon.com/512/616/616408.png" alt="Pet Icon">
-                            </div>
-                            <div class="pet-dropdown-container">
-                                <label>Select Your Pet</label>
-                                <select>
-                                    <option>Buddy (Beagle MIX)</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
+          <!-- Badge shown after pet confirmed -->
+          <div id="nb-pet-badge" class="nb-selected-badge" style="display:none">
+            <div class="nb-selected-badge-text">
+              <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+              <span id="nb-pet-badge-text"></span>
+            </div>
+            <button class="nb-badge-change" onclick="clearSelectedPet()">เปลี่ยน</button>
+          </div>
 
-                    <div class="vertical-divider"></div>
+          <!-- Selection area (hidden after pet confirmed) -->
+          <div id="nb-pet-input-area">
+            <!-- Existing pets dropdown -->
+            <div id="nb-pet-select-group" class="bk-form-group">
+              <label class="bk-label">สัตว์เลี้ยงของลูกค้ารายนี้</label>
+              <select class="bk-select" id="nb-pet-select" onchange="onPetSelect()">
+                <option value="">-- เลือกสัตว์เลี้ยง --</option>
+              </select>
+            </div>
 
-                    <div class="stay-selection">
-                        <h3>Your Stay:</h3>
-                        <div class="calendar-row">
-                            <div class="date-input-container">
-                                <label>Check-in</label>
-                                <input type="date" value="2026-11-12" class="editable-date">
-                            </div>
+            <!-- OR divider (hidden if no pets) -->
+            <div class="nb-divider" id="nb-pet-divider"><span>หรือ</span></div>
 
-                            <span class="arrow">→</span>
+            <!-- Toggle new pet form -->
+            <button class="nb-add-new-btn" id="nb-toggle-pet-btn" onclick="toggleNewPetForm()">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
+              เพิ่มสัตว์เลี้ยงใหม่ให้ลูกค้ารายนี้
+            </button>
 
-                            <div class="date-input-container">
-                                <label>Check-out</label>
-                                <input type="date" value="2026-11-15" class="editable-date">
-                            </div>
-                        </div>
-                        <p class="duration">Duration: <span id="night-count">3</span> Nights</p>
-                    </div>
+            <!-- Inline new pet form -->
+            <div id="nb-new-pet-form" class="nb-inline-form" style="display:none">
+              <div class="nb-inline-form-title">🐾 กรอกข้อมูลสัตว์เลี้ยงใหม่</div>
+
+              <div class="bk-form-row">
+                <div class="bk-form-group">
+                  <label class="bk-label">ชื่อสัตว์เลี้ยง <span class="req">*</span></label>
+                  <input class="bk-input" type="text" id="np-name" placeholder="เช่น น้องมะม่วง">
                 </div>
-
-                <div class="suites-section">
-                    <h3>Choose a Suite</h3>
-                    <div class="suite-options">
-
-                        <div class="suite-card active">
-                            <div class="suite-bg-image standard-bg"></div>
-
-                            <h4>Standard Suite</h4>
-                            <p>Cosy & Quiet</p>
-                            <span class="price">$85/night</span>
-                        </div>
-
-                        <div class="suite-card">
-                            <div class="suite-bg-image deluxe-bg"></div>
-
-                            <h4>Deluxe Suite</h4>
-                            <p>Window View</p>
-                            <span class="price">$120/night</span>
-                        </div>
-
-                        <div class="suite-card">
-                            <div class="suite-bg-image executive-bg"></div>
-
-                            <h4>Executive Suite</h4>
-                            <p>Private Lounge</p>
-                            <span class="price">$195/night</span>
-                        </div>
-                    </div>
+                <div class="bk-form-group">
+                  <label class="bk-label">ประเภท <span class="req">*</span></label>
+                  <div class="nb-species-opts">
+                    <label class="nb-species-opt">
+                      <input type="radio" name="np-species" value="CAT" checked> 🐱 แมว
+                    </label>
+                    <label class="nb-species-opt">
+                      <input type="radio" name="np-species" value="DOG"> 🐶 สุนัข
+                    </label>
+                    <label class="nb-species-opt">
+                      <input type="radio" name="np-species" value="OTHER"> 🐾 อื่นๆ
+                    </label>
+                  </div>
                 </div>
+              </div>
 
-                <div class="card enhancement-section">
-                    <h3>✨ Enhanced Stay Options</h3>
-                    <label class="option"><input type="checkbox" checked> Expert Grooming <span>+$45</span></label>
-                    <label class="option"><input type="checkbox"> Physical Wellness <span>+$30</span></label>
-                    <label class="option"><input type="checkbox"> Special Diet Plan <span>+$15</span></label>
+              <div class="bk-form-row" style="margin-top:12px">
+                <div class="bk-form-group">
+                  <label class="bk-label">สายพันธุ์</label>
+                  <input class="bk-input" type="text" id="np-breed" placeholder="เช่น Scottish Fold">
                 </div>
-            </section>
-
-            <aside class="summary-area">
-                <div class="card summary-card">
-                    <h2>Booking Summary</h2>
-                    <div class="summary-line">
-                        <span>Standard Suite ($85 x 3)</span>
-                        <span>$255.00</span>
-                    </div>
-                    <div class="summary-line">
-                        <span>Expert Grooming</span>
-                        <span>+$45.00</span>
-                    </div>
-                    <div class="summary-line">
-                        <span>Tax (7%)</span>
-                        <span>+$21.00</span>
-                    </div>
-                    <hr>
-                    <div class="summary-line total">
-                        <span>Total</span>
-                        <span>$321.00</span>
-                    </div>
-                    <button class="book-btn">Book Now →</button>
-                    <p class="terms">By proceeding, you agree to our Terms of Service.</p>
-
-                    <div class="promo-image">
-                        <img src="https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?auto=format&fit=crop&w=400&q=80"
-                            alt="Happy Dog">
-                        <p>"A home away from home."</p>
-                    </div>
+                <div class="bk-form-group">
+                  <label class="bk-label">เพศ</label>
+                  <select class="bk-select" id="np-sex">
+                    <option value="">-- ไม่ระบุ --</option>
+                    <option value="M">♂ เพศผู้</option>
+                    <option value="F">♀ เพศเมีย</option>
+                  </select>
                 </div>
-            </aside>
+              </div>
 
+              <div class="bk-form-row" style="margin-top:12px">
+                <div class="bk-form-group">
+                  <label class="bk-label">วันเกิด</label>
+                  <input class="bk-input" type="date" id="np-dob">
+                </div>
+                <div class="bk-form-group">
+                  <label class="bk-label">น้ำหนัก (กก.)</label>
+                  <input class="bk-input" type="number" id="np-weight" placeholder="เช่น 4.2" step="0.1" min="0">
+                </div>
+              </div>
+
+              <div class="bk-form-row" style="margin-top:12px">
+                <div class="bk-form-group">
+                  <label class="bk-label">โรคประจำตัว / ข้อควรระวัง</label>
+                  <input class="bk-input" type="text" id="np-medical" placeholder="(ถ้ามี)">
+                </div>
+                <div class="bk-form-group">
+                  <label class="bk-label">อาหาร / สิ่งที่แพ้</label>
+                  <input class="bk-input" type="text" id="np-allergy" placeholder="(ถ้ามี)">
+                </div>
+              </div>
+
+              <button class="nb-confirm-btn" id="np-confirm-btn" onclick="confirmNewPet()">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
+                เพิ่มสัตว์เลี้ยงนี้
+              </button>
+            </div>
+
+          </div><!-- /#nb-pet-input-area -->
         </div>
-    </main>
+      </div>
+
+      <!-- ══ STEP 3: DATE + ROOM ══ -->
+      <div id="nb-room-step" style="display:none">
+        <div class="bk-form-section">
+          <div class="bk-form-section-title">📅 ขั้นตอนที่ 3 — วันที่และห้องพัก</div>
+          <div class="bk-form-row">
+            <div class="bk-form-group">
+              <label class="bk-label">Check-in <span class="req">*</span></label>
+              <input class="bk-input" type="date" id="nb-checkin" onchange="updatePricePreview()">
+            </div>
+            <div class="bk-form-group">
+              <label class="bk-label">Check-out <span class="req">*</span></label>
+              <input class="bk-input" type="date" id="nb-checkout" onchange="updatePricePreview()">
+            </div>
+          </div>
+          <button class="nb-find-room-btn" onclick="findAvailableRooms()">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            ค้นหาห้องว่าง
+          </button>
+          <div class="bk-form-group" style="margin-top:12px">
+            <label class="bk-label">เลือกห้องพัก <span class="req">*</span></label>
+            <select class="bk-select" id="nb-room-select" onchange="onRoomSelect()">
+              <option value="">-- กด "ค้นหาห้องว่าง" ก่อน --</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ STEP 4: SERVICES ══ -->
+      <div id="nb-services-step" style="display:none">
+        <div class="bk-form-section">
+          <div class="bk-form-section-title">✨ ขั้นตอนที่ 4 — Add-on Services (ไม่บังคับ)</div>
+          <div class="bk-addons-grid" id="nb-services-grid">
+            <div style="color:var(--bk-text-3);font-size:13px">กำลังโหลด...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="bk-form-section">
+        <div class="bk-form-section-title">📝 หมายเหตุ (ไม่บังคับ)</div>
+        <textarea class="bk-textarea" id="nb-notes"
+          placeholder="แพ้อาหาร, ต้องการยา, คำแนะนำพิเศษ..." rows="2"></textarea>
+      </div>
+
+      <!-- Price preview -->
+      <div class="bk-price-preview" id="nb-price-preview" style="display:none">
+        <div class="bk-price-row">
+          <span>ค่าห้อง <span id="pp-nights"></span></span>
+          <span id="pp-room">—</span>
+        </div>
+        <div class="bk-price-row"><span>Add-ons</span><span id="pp-addons">—</span></div>
+        <div class="bk-price-row total"><span>รวมทั้งหมด (ประมาณ)</span><span id="pp-total">—</span></div>
+      </div>
+
+    </div><!-- /.bk-modal-body -->
+
+    <div class="bk-modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-new-booking')">ยกเลิก</button>
+      <button class="btn-primary" onclick="saveNewBooking()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+        ยืนยันการจอง
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     MODAL: CONFIRM CHECK-IN
+══════════════════════════════════════════ -->
+<div class="bk-modal-overlay" id="modal-checkin">
+  <div class="bk-modal bk-modal-sm">
+    <div class="bk-modal-header">
+      <div>
+        <div class="bk-modal-title">ยืนยัน Check-in</div>
+        <div class="bk-modal-sub" id="ci-subtitle">—</div>
+      </div>
+      <button class="bk-modal-close" onclick="closeModal('modal-checkin')">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="bk-modal-body">
+      <div class="bk-confirm-box green">
+        <div class="bk-confirm-icon">
+          <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <div>
+          <p class="bk-confirm-title">พร้อม Check-in</p>
+          <p class="bk-confirm-desc">ตรวจสอบข้อมูลและวัคซีนเรียบร้อยแล้ว กด Check-in เพื่อเปลี่ยนสถานะห้องเป็น "กำลังเข้าพัก"</p>
+        </div>
+      </div>
+      <div class="bk-checkin-info" id="ci-info"></div>
+    </div>
+    <div class="bk-modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-checkin')">ยกเลิก</button>
+      <button class="btn-primary" id="ci-confirm-btn" onclick="confirmCheckin()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
+        Check-in ทันที
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MODAL: CONFIRM CHECK-OUT
+══════════════════════════════════════════ -->
+<div class="bk-modal-overlay" id="modal-checkout">
+  <div class="bk-modal bk-modal-sm">
+    <div class="bk-modal-header">
+      <div>
+        <div class="bk-modal-title">ดำเนินการ Check-out</div>
+        <div class="bk-modal-sub" id="co-subtitle">—</div>
+      </div>
+      <button class="bk-modal-close" onclick="closeModal('modal-checkout')">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="bk-modal-body">
+      <div class="bk-price-preview visible" id="co-summary"></div>
+      <div class="bk-form-group" style="margin-top:16px">
+        <label class="bk-label">วิธีชำระเงิน</label>
+        <div class="bk-payment-opts" id="co-payment">
+          <label class="bk-payment-opt"><input type="radio" name="payment" value="cash" checked> 💵 เงินสด</label>
+          <label class="bk-payment-opt"><input type="radio" name="payment" value="qr_promptpay"> 📱 QR PromptPay</label>
+          <label class="bk-payment-opt"><input type="radio" name="payment" value="credit_card"> 💳 บัตรเครดิต</label>
+        </div>
+      </div>
+    </div>
+    <div class="bk-modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-checkout')">ยกเลิก</button>
+      <button class="btn-primary" id="co-confirm-btn" onclick="confirmCheckout()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        Check-out &amp; ออกใบเสร็จ
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MODAL: BOOKING DETAIL
+══════════════════════════════════════════ -->
+<div class="bk-modal-overlay" id="modal-detail">
+  <div class="bk-modal">
+    <div class="bk-modal-header">
+      <div>
+        <div class="bk-modal-title">รายละเอียดการจอง</div>
+        <div class="bk-modal-sub" id="det-subtitle">—</div>
+      </div>
+      <button class="bk-modal-close" onclick="closeModal('modal-detail')">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="bk-modal-body" id="det-body"></div>
+    <div class="bk-modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-detail')">ปิด</button>
+      <button class="btn-primary" id="det-action-btn">ดำเนินการ</button>
+    </div>
+  </div>
+</div>
+
+<div class="bk-modal-overlay" id="modal-add-service">
+  <div class="bk-modal bk-modal-sm">
+    <div class="bk-modal-header">
+      <div>
+        <div class="bk-modal-title">เพิ่มบริการเสริม</div>
+        <div class="bk-modal-sub" id="as-subtitle">—</div>
+      </div>
+      <button class="bk-modal-close" onclick="closeModal('modal-add-service')">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="bk-modal-body">
+      <div class="bk-addons-grid" id="as-services-grid" style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="color:var(--bk-text-3);font-size:13px">กำลังโหลด...</div>
+      </div>
+    </div>
+    <div class="bk-modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-add-service')">ยกเลิก</button>
+      <button class="btn-primary" id="as-confirm-btn" onclick="confirmAddService()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
+        ยืนยันการเพิ่ม
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="js/components/sidebar.js"></script>
+<script src="js/components/navbar.js"></script>
+<script src="js/services/api.js"></script>
+<script src="js/pages/Bookings.js"></script>
+<script>
+  const currentUser = {
+    name: localStorage.getItem('first_name') || 'สมชาย มั่นคง',
+    role: localStorage.getItem('role') || 'Administrator',
+  };
+  Sidebar.render({ activePage: 'bookings', user: currentUser });
+  Navbar.render({
+    title: 'Bookings',
+    breadcrumb: 'Admin › การจอง (Bookings)',
+    actionsHTML: `
+      <button class="btn-primary" onclick="openBookingModal()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path d="M12 4v16m8-8H4"/>
+        </svg>
+        New Booking
+      </button>
+    `,
+  });
+</script>
 </body>
-
 </html>

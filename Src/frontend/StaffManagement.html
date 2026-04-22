@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +8,9 @@
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Syne:wght@600;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Syne:wght@600;700&display=swap"
+    rel="stylesheet">
 
   <!-- Global styles -->
   <link rel="stylesheet" href="css/main.css">
@@ -18,362 +21,728 @@
 
   <link rel="icon" href="assets/favicon.ico">
 </head>
+
 <body>
 
-<!-- ── SIDEBAR (rendered by sidebar.js) ── -->
-<aside id="sidebar-root"></aside>
+  <!-- ── SIDEBAR (rendered by sidebar.js) ── -->
+  <aside id="sidebar-root"></aside>
 
-<!-- ── MAIN ── -->
-<main class="main">
+  <!-- ── MAIN ── -->
+  <main class="main">
 
-  <!-- TOPBAR (rendered by navbar.js) -->
-  <div id="topbar-root"></div>
+    <!-- TOPBAR (rendered by navbar.js) -->
+    <div id="topbar-root"></div>
 
-  <!-- CONTENT -->
-  <div class="content">
+    <!-- CONTENT -->
+    <div class="content">
 
-    <!-- STAT CARDS -->
-    <div class="stats-row">
-      <div class="stat-card blue">
-        <div class="stat-icon">
-          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-        </div>
-        <div class="stat-label">Total Staff</div>
-        <div class="stat-value">9</div>
-        <div class="stat-sub">2 Admin · 7 Staff</div>
-      </div>
-      <div class="stat-card teal">
-        <div class="stat-icon">
-          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        </div>
-        <div class="stat-label">On Duty Now</div>
-        <div class="stat-value">6</div>
-        <div class="stat-sub">3 offline today</div>
-      </div>
-      <div class="stat-card amber">
-        <div class="stat-icon">
-          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        </div>
-        <div class="stat-label">Leave Pending</div>
-        <div class="stat-value">2</div>
-        <div class="stat-sub">รอการอนุมัติ</div>
-      </div>
-      <div class="stat-card red">
-        <div class="stat-icon">
-          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        </div>
-        <div class="stat-label">Absent Today</div>
-        <div class="stat-value">2</div>
-        <div class="stat-sub">เปรียบเทียบเมื่อวาน</div>
-      </div>
-    </div>
-
-    <!-- TABS -->
-    <div class="tabs-container">
-      <div class="tabs-header">
-        <div class="tabs-nav">
-          <button class="tab-btn active" onclick="switchTab('staff', this)">
-            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-            Staff List <span class="tab-count">9</span>
-          </button>
-          <button class="tab-btn" onclick="switchTab('attendance', this)">
-            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-            Attendance <span class="tab-count">15</span>
-          </button>
-          <button class="tab-btn" onclick="switchTab('leave', this)">
-            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-            Leave Requests <span class="tab-count" id="leave-count">2</span>
-          </button>
-        </div>
-        <div class="tabs-tools">
-          <div class="search-wrap">
-            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-            <input class="search-input" type="text" placeholder="ค้นหาชื่อหรืออีเมล..." oninput="filterStaff(this.value)">
+      <!-- STAT CARDS -->
+      <div class="stats-row">
+        <div class="stat-card blue">
+          <div class="stat-icon">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
           </div>
-          <button class="filter-btn">
-            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 4h18M7 12h10M11 20h2"/></svg>
-            Filter
-          </button>
+          <div class="stat-label">Total Staff</div>
+          <div class="stat-value">9</div>
+          <div class="stat-sub">2 Admin · 7 Staff</div>
+        </div>
+        <div class="stat-card teal">
+          <div class="stat-icon">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div class="stat-label">On Duty Now</div>
+          <div class="stat-value">6</div>
+          <div class="stat-sub">3 offline today</div>
+        </div>
+        <div class="stat-card amber">
+          <div class="stat-icon">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div class="stat-label">Leave Pending</div>
+          <div class="stat-value">2</div>
+          <div class="stat-sub">รอการอนุมัติ</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-icon">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div class="stat-label">Absent Today</div>
+          <div class="stat-value">2</div>
+          <div class="stat-sub">เปรียบเทียบเมื่อวาน</div>
         </div>
       </div>
 
-      <!-- TAB: STAFF LIST -->
-      <div class="tab-content active" id="tab-staff">
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Staff</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Phone</th>
-                <th>Hire Date</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="staff-tbody">
-              <tr>
-                <td><div class="staff-cell"><div class="avatar blue">ส</div><div><div class="staff-name">สมชาย มั่นคง</div><div class="staff-email">somchai@purrfect.com</div></div></div></td>
-                <td><span class="badge admin">ADMIN</span></td>
-                <td><span class="badge online"><span class="badge-dot" style="background:#10b981"></span>Online</span></td>
-                <td style="color:var(--text-2)">081-111-0001</td>
-                <td style="color:var(--text-2)">10 ม.ค. 2022</td>
-                <td><div class="action-btns">
-                  <button class="btn-icon" title="Edit" onclick="openEditModal('สมชาย','มั่นคง','ADMIN','somchai@purrfect.com','081-111-0001')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
-                  <button class="btn-icon danger" title="Deactivate"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg></button>
-                </div></td>
-              </tr>
-              <tr>
-                <td><div class="staff-cell"><div class="avatar purple">ม</div><div><div class="staff-name">มาลี สุขสันต์</div><div class="staff-email">malee@purrfect.com</div></div></div></td>
-                <td><span class="badge admin">ADMIN</span></td>
-                <td><span class="badge online"><span class="badge-dot" style="background:#10b981"></span>Online</span></td>
-                <td style="color:var(--text-2)">081-111-0002</td>
-                <td style="color:var(--text-2)">15 มี.ค. 2022</td>
-                <td><div class="action-btns">
-                  <button class="btn-icon" title="Edit"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
-                  <button class="btn-icon danger" title="Deactivate"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg></button>
-                </div></td>
-              </tr>
-              <tr>
-                <td><div class="staff-cell"><div class="avatar teal">น</div><div><div class="staff-name">นริน พรหมดี</div><div class="staff-email">narin@purrfect.com</div></div></div></td>
-                <td><span class="badge staff">STAFF</span></td>
-                <td><span class="badge online"><span class="badge-dot" style="background:#10b981"></span>Online</span></td>
-                <td style="color:var(--text-2)">082-222-0001</td>
-                <td style="color:var(--text-2)">5 ม.ค. 2023</td>
-                <td><div class="action-btns">
-                  <button class="btn-icon" title="Edit"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
-                  <button class="btn-icon danger" title="Deactivate"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg></button>
-                </div></td>
-              </tr>
-              <tr>
-                <td><div class="staff-cell"><div class="avatar rose">ป</div><div><div class="staff-name">ปอร์น ใจดี</div><div class="staff-email">porn@purrfect.com</div></div></div></td>
-                <td><span class="badge staff">STAFF</span></td>
-                <td><span class="badge offline"><span class="badge-dot" style="background:#94a3b8"></span>Offline</span></td>
-                <td style="color:var(--text-2)">082-222-0002</td>
-                <td style="color:var(--text-2)">20 เม.ย. 2023</td>
-                <td><div class="action-btns">
-                  <button class="btn-icon" title="Edit"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
-                  <button class="btn-icon danger" title="Deactivate"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg></button>
-                </div></td>
-              </tr>
-              <tr>
-                <td><div class="staff-cell"><div class="avatar amber">ก</div><div><div class="staff-name">กฤต ทองดี</div><div class="staff-email">krit@purrfect.com</div></div></div></td>
-                <td><span class="badge staff">STAFF</span></td>
-                <td><span class="badge online"><span class="badge-dot" style="background:#10b981"></span>Online</span></td>
-                <td style="color:var(--text-2)">082-222-0003</td>
-                <td style="color:var(--text-2)">1 มิ.ย. 2023</td>
-                <td><div class="action-btns">
-                  <button class="btn-icon" title="Edit"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
-                  <button class="btn-icon danger" title="Deactivate"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg></button>
-                </div></td>
-              </tr>
-              <tr>
-                <td><div class="staff-cell"><div class="avatar teal">ว</div><div><div class="staff-name">วรรณ สว่างใจ</div><div class="staff-email">wan@purrfect.com</div></div></div></td>
-                <td><span class="badge staff">STAFF</span></td>
-                <td><span class="badge online"><span class="badge-dot" style="background:#10b981"></span>Online</span></td>
-                <td style="color:var(--text-2)">082-222-0004</td>
-                <td style="color:var(--text-2)">10 ม.ค. 2024</td>
-                <td><div class="action-btns">
-                  <button class="btn-icon" title="Edit"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
-                  <button class="btn-icon danger" title="Deactivate"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg></button>
-                </div></td>
-              </tr>
-              <tr>
-                <td><div class="staff-cell"><div class="avatar slate">ป</div><div><div class="staff-name">ปัทมา ดอกไม้</div><div class="staff-email">pat@purrfect.com</div></div></div></td>
-                <td><span class="badge staff">STAFF</span></td>
-                <td><span class="badge offline"><span class="badge-dot" style="background:#94a3b8"></span>Offline</span></td>
-                <td style="color:var(--text-2)">082-222-0005</td>
-                <td style="color:var(--text-2)">22 มี.ค. 2024</td>
-                <td><div class="action-btns">
-                  <button class="btn-icon" title="Edit"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
-                  <button class="btn-icon danger" title="Deactivate"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg></button>
-                </div></td>
-              </tr>
-              <tr>
-                <td><div class="staff-cell"><div class="avatar blue">แ</div><div><div class="staff-name">แพร งามพร้อม</div><div class="staff-email">prae@purrfect.com</div></div></div></td>
-                <td><span class="badge staff">STAFF</span></td>
-                <td><span class="badge online"><span class="badge-dot" style="background:#10b981"></span>Online</span></td>
-                <td style="color:var(--text-2)">082-222-0006</td>
-                <td style="color:var(--text-2)">1 ก.ค. 2024</td>
-                <td><div class="action-btns">
-                  <button class="btn-icon" title="Edit"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
-                  <button class="btn-icon danger" title="Deactivate"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg></button>
-                </div></td>
-              </tr>
-              <tr>
-                <td><div class="staff-cell"><div class="avatar rose">ต</div><div><div class="staff-name">ต้อง ทำได้</div><div class="staff-email">tong@purrfect.com</div></div></div></td>
-                <td><span class="badge staff">STAFF</span></td>
-                <td><span class="badge online"><span class="badge-dot" style="background:#10b981"></span>Online</span></td>
-                <td style="color:var(--text-2)">082-222-0007</td>
-                <td style="color:var(--text-2)">15 ก.ย. 2024</td>
-                <td><div class="action-btns">
-                  <button class="btn-icon" title="Edit"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
-                  <button class="btn-icon danger" title="Deactivate"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg></button>
-                </div></td>
-              </tr>
-            </tbody>
-          </table>
+      <!-- TABS -->
+      <div class="tabs-container">
+        <div class="tabs-header">
+          <div class="tabs-nav">
+            <button class="tab-btn active" onclick="switchTab('staff', this)">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path
+                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              Staff List <span class="tab-count">9</span>
+            </button>
+            <button class="tab-btn" onclick="switchTab('attendance', this)">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+              </svg>
+              Attendance <span class="tab-count">15</span>
+            </button>
+            <button class="tab-btn" onclick="switchTab('leave', this)">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              Leave Requests <span class="tab-count" id="leave-count">2</span>
+            </button>
+          </div>
+          <div class="tabs-tools">
+            <div class="search-wrap">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="8" />
+                <path d="M21 21l-4.35-4.35" />
+              </svg>
+              <input class="search-input" type="text" placeholder="ค้นหาชื่อหรืออีเมล..."
+                oninput="filterStaff(this.value)">
+            </div>
+            <button class="filter-btn">
+              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M3 4h18M7 12h10M11 20h2" />
+              </svg>
+              Filter
+            </button>
+          </div>
         </div>
-      </div>
 
-      <!-- TAB: ATTENDANCE -->
-      <div class="tab-content" id="tab-attendance">
-        <div class="att-toolbar">
-          <span class="att-label">ช่วงวันที่:</span>
-          <input class="date-input" type="date" value="2025-04-01">
-          <span class="att-label">ถึง</span>
-          <input class="date-input" type="date" value="2025-04-03">
-          <button class="btn-primary" style="padding:7px 14px;font-size:13px">ค้นหา</button>
+        <!-- TAB: STAFF LIST -->
+        <div class="tab-content active" id="tab-staff">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Staff</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Phone</th>
+                  <th>Hire Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="staff-tbody">
+                <tr>
+                  <td>
+                    <div class="staff-cell">
+                      <div class="avatar blue">ส</div>
+                      <div>
+                        <div class="staff-name">สมชาย มั่นคง</div>
+                        <div class="staff-email">somchai@purrfect.com</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="badge admin">ADMIN</span></td>
+                  <td><span class="badge online"><span class="badge-dot" style="background:#10b981"></span>Online</span>
+                  </td>
+                  <td style="color:var(--text-2)">081-111-0001</td>
+                  <td style="color:var(--text-2)">10 ม.ค. 2022</td>
+                  <td>
+                    <div class="action-btns">
+                      <button class="btn-icon" title="Edit"
+                        onclick="openEditModal('สมชาย','มั่นคง','ADMIN','somchai@purrfect.com','081-111-0001')"><svg
+                          fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                          <path
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg></button>
+                      <button class="btn-icon danger" title="Deactivate"><svg fill="none" stroke="currentColor"
+                          stroke-width="2" viewBox="0 0 24 24">
+                          <path
+                            d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                        </svg></button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="staff-cell">
+                      <div class="avatar purple">ม</div>
+                      <div>
+                        <div class="staff-name">มาลี สุขสันต์</div>
+                        <div class="staff-email">malee@purrfect.com</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="badge admin">ADMIN</span></td>
+                  <td><span class="badge online"><span class="badge-dot" style="background:#10b981"></span>Online</span>
+                  </td>
+                  <td style="color:var(--text-2)">081-111-0002</td>
+                  <td style="color:var(--text-2)">15 มี.ค. 2022</td>
+                  <td>
+                    <div class="action-btns">
+                      <button class="btn-icon" title="Edit"><svg fill="none" stroke="currentColor" stroke-width="2"
+                          viewBox="0 0 24 24">
+                          <path
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg></button>
+                      <button class="btn-icon danger" title="Deactivate"><svg fill="none" stroke="currentColor"
+                          stroke-width="2" viewBox="0 0 24 24">
+                          <path
+                            d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                        </svg></button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="staff-cell">
+                      <div class="avatar teal">น</div>
+                      <div>
+                        <div class="staff-name">นริน พรหมดี</div>
+                        <div class="staff-email">narin@purrfect.com</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="badge staff">STAFF</span></td>
+                  <td><span class="badge online"><span class="badge-dot" style="background:#10b981"></span>Online</span>
+                  </td>
+                  <td style="color:var(--text-2)">082-222-0001</td>
+                  <td style="color:var(--text-2)">5 ม.ค. 2023</td>
+                  <td>
+                    <div class="action-btns">
+                      <button class="btn-icon" title="Edit"><svg fill="none" stroke="currentColor" stroke-width="2"
+                          viewBox="0 0 24 24">
+                          <path
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg></button>
+                      <button class="btn-icon danger" title="Deactivate"><svg fill="none" stroke="currentColor"
+                          stroke-width="2" viewBox="0 0 24 24">
+                          <path
+                            d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                        </svg></button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="staff-cell">
+                      <div class="avatar rose">ป</div>
+                      <div>
+                        <div class="staff-name">ปอร์น ใจดี</div>
+                        <div class="staff-email">porn@purrfect.com</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="badge staff">STAFF</span></td>
+                  <td><span class="badge offline"><span class="badge-dot"
+                        style="background:#94a3b8"></span>Offline</span></td>
+                  <td style="color:var(--text-2)">082-222-0002</td>
+                  <td style="color:var(--text-2)">20 เม.ย. 2023</td>
+                  <td>
+                    <div class="action-btns">
+                      <button class="btn-icon" title="Edit"><svg fill="none" stroke="currentColor" stroke-width="2"
+                          viewBox="0 0 24 24">
+                          <path
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg></button>
+                      <button class="btn-icon danger" title="Deactivate"><svg fill="none" stroke="currentColor"
+                          stroke-width="2" viewBox="0 0 24 24">
+                          <path
+                            d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                        </svg></button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="staff-cell">
+                      <div class="avatar amber">ก</div>
+                      <div>
+                        <div class="staff-name">กฤต ทองดี</div>
+                        <div class="staff-email">krit@purrfect.com</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="badge staff">STAFF</span></td>
+                  <td><span class="badge online"><span class="badge-dot" style="background:#10b981"></span>Online</span>
+                  </td>
+                  <td style="color:var(--text-2)">082-222-0003</td>
+                  <td style="color:var(--text-2)">1 มิ.ย. 2023</td>
+                  <td>
+                    <div class="action-btns">
+                      <button class="btn-icon" title="Edit"><svg fill="none" stroke="currentColor" stroke-width="2"
+                          viewBox="0 0 24 24">
+                          <path
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg></button>
+                      <button class="btn-icon danger" title="Deactivate"><svg fill="none" stroke="currentColor"
+                          stroke-width="2" viewBox="0 0 24 24">
+                          <path
+                            d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                        </svg></button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="staff-cell">
+                      <div class="avatar teal">ว</div>
+                      <div>
+                        <div class="staff-name">วรรณ สว่างใจ</div>
+                        <div class="staff-email">wan@purrfect.com</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="badge staff">STAFF</span></td>
+                  <td><span class="badge online"><span class="badge-dot" style="background:#10b981"></span>Online</span>
+                  </td>
+                  <td style="color:var(--text-2)">082-222-0004</td>
+                  <td style="color:var(--text-2)">10 ม.ค. 2024</td>
+                  <td>
+                    <div class="action-btns">
+                      <button class="btn-icon" title="Edit"><svg fill="none" stroke="currentColor" stroke-width="2"
+                          viewBox="0 0 24 24">
+                          <path
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg></button>
+                      <button class="btn-icon danger" title="Deactivate"><svg fill="none" stroke="currentColor"
+                          stroke-width="2" viewBox="0 0 24 24">
+                          <path
+                            d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                        </svg></button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="staff-cell">
+                      <div class="avatar slate">ป</div>
+                      <div>
+                        <div class="staff-name">ปัทมา ดอกไม้</div>
+                        <div class="staff-email">pat@purrfect.com</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="badge staff">STAFF</span></td>
+                  <td><span class="badge offline"><span class="badge-dot"
+                        style="background:#94a3b8"></span>Offline</span></td>
+                  <td style="color:var(--text-2)">082-222-0005</td>
+                  <td style="color:var(--text-2)">22 มี.ค. 2024</td>
+                  <td>
+                    <div class="action-btns">
+                      <button class="btn-icon" title="Edit"><svg fill="none" stroke="currentColor" stroke-width="2"
+                          viewBox="0 0 24 24">
+                          <path
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg></button>
+                      <button class="btn-icon danger" title="Deactivate"><svg fill="none" stroke="currentColor"
+                          stroke-width="2" viewBox="0 0 24 24">
+                          <path
+                            d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                        </svg></button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="staff-cell">
+                      <div class="avatar blue">แ</div>
+                      <div>
+                        <div class="staff-name">แพร งามพร้อม</div>
+                        <div class="staff-email">prae@purrfect.com</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="badge staff">STAFF</span></td>
+                  <td><span class="badge online"><span class="badge-dot" style="background:#10b981"></span>Online</span>
+                  </td>
+                  <td style="color:var(--text-2)">082-222-0006</td>
+                  <td style="color:var(--text-2)">1 ก.ค. 2024</td>
+                  <td>
+                    <div class="action-btns">
+                      <button class="btn-icon" title="Edit"><svg fill="none" stroke="currentColor" stroke-width="2"
+                          viewBox="0 0 24 24">
+                          <path
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg></button>
+                      <button class="btn-icon danger" title="Deactivate"><svg fill="none" stroke="currentColor"
+                          stroke-width="2" viewBox="0 0 24 24">
+                          <path
+                            d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                        </svg></button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="staff-cell">
+                      <div class="avatar rose">ต</div>
+                      <div>
+                        <div class="staff-name">ต้อง ทำได้</div>
+                        <div class="staff-email">tong@purrfect.com</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="badge staff">STAFF</span></td>
+                  <td><span class="badge online"><span class="badge-dot" style="background:#10b981"></span>Online</span>
+                  </td>
+                  <td style="color:var(--text-2)">082-222-0007</td>
+                  <td style="color:var(--text-2)">15 ก.ย. 2024</td>
+                  <td>
+                    <div class="action-btns">
+                      <button class="btn-icon" title="Edit"><svg fill="none" stroke="currentColor" stroke-width="2"
+                          viewBox="0 0 24 24">
+                          <path
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg></button>
+                      <button class="btn-icon danger" title="Deactivate"><svg fill="none" stroke="currentColor"
+                          stroke-width="2" viewBox="0 0 24 24">
+                          <path
+                            d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                        </svg></button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Staff</th>
-                <th>วันที่</th>
-                <th>Clock In</th>
-                <th>Clock Out</th>
-                <th>สถานะ</th>
-                <th>หมายเหตุ</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td><div class="staff-cell"><div class="avatar teal">น</div><div><div class="staff-name">นริน พรหมดี</div></div></div></td><td style="color:var(--text-2)">1 เม.ย. 2025</td><td style="color:var(--text-2)">08:55</td><td style="color:var(--text-2)">18:05</td><td><span class="badge ontime">On Time</span></td><td style="color:var(--text-3)">—</td></tr>
-              <tr><td><div class="staff-cell"><div class="avatar teal">น</div><div><div class="staff-name">นริน พรหมดี</div></div></div></td><td style="color:var(--text-2)">2 เม.ย. 2025</td><td style="color:var(--text-2)">09:10</td><td style="color:var(--text-2)">18:00</td><td><span class="badge late">Late</span></td><td style="color:var(--text-3)">รถติดถนนพหลโยธิน</td></tr>
-              <tr><td><div class="staff-cell"><div class="avatar rose">ป</div><div><div class="staff-name">ปอร์น ใจดี</div></div></div></td><td style="color:var(--text-2)">1 เม.ย. 2025</td><td style="color:var(--text-2)">09:00</td><td style="color:var(--text-2)">18:00</td><td><span class="badge ontime">On Time</span></td><td style="color:var(--text-3)">—</td></tr>
-              <tr><td><div class="staff-cell"><div class="avatar rose">ป</div><div><div class="staff-name">ปอร์น ใจดี</div></div></div></td><td style="color:var(--text-2)">2 เม.ย. 2025</td><td style="color:var(--text-2)">—</td><td style="color:var(--text-2)">—</td><td><span class="badge absent">Absent</span></td><td style="color:var(--text-3)">ลาป่วย ไข้สูง</td></tr>
-              <tr><td><div class="staff-cell"><div class="avatar amber">ก</div><div><div class="staff-name">กฤต ทองดี</div></div></div></td><td style="color:var(--text-2)">1 เม.ย. 2025</td><td style="color:var(--text-2)">08:50</td><td style="color:var(--text-2)">17:55</td><td><span class="badge ontime">On Time</span></td><td style="color:var(--text-3)">—</td></tr>
-              <tr><td><div class="staff-cell"><div class="avatar amber">ก</div><div><div class="staff-name">กฤต ทองดี</div></div></div></td><td style="color:var(--text-2)">3 เม.ย. 2025</td><td style="color:var(--text-2)">—</td><td style="color:var(--text-2)">—</td><td><span class="badge absent">Absent</span></td><td style="color:var(--text-3)">ลาป่วย</td></tr>
-              <tr><td><div class="staff-cell"><div class="avatar slate">ป</div><div><div class="staff-name">ปัทมา ดอกไม้</div></div></div></td><td style="color:var(--text-2)">1 เม.ย. 2025</td><td style="color:var(--text-2)">09:30</td><td style="color:var(--text-2)">18:00</td><td><span class="badge late">Late</span></td><td style="color:var(--text-3)">ลืมนาฬิกาปลุก</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
 
-      <!-- TAB: LEAVE REQUESTS -->
-      <div class="tab-content" id="tab-leave">
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Staff</th>
-                <th>ประเภทการลา</th>
-                <th>วันที่ลา</th>
-                <th>เหตุผล</th>
-                <th>สถานะ</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td><div class="staff-cell"><div class="avatar rose">ป</div><div><div class="staff-name">ปอร์น ใจดี</div></div></div></td><td style="color:var(--text-2)">ลาป่วย</td><td style="color:var(--text-2)">5–6 เม.ย. 2025</td><td style="color:var(--text-2)">ไข้หวัดใหญ่</td><td><span class="badge approved">Approved</span></td><td style="color:var(--text-3)">สมชาย มั่นคง</td></tr>
-              <tr><td><div class="staff-cell"><div class="avatar slate">ป</div><div><div class="staff-name">ปัทมา ดอกไม้</div></div></div></td><td style="color:var(--text-2)">ลากิจ</td><td style="color:var(--text-2)">10 เม.ย. 2025</td><td style="color:var(--text-2)">ธุระส่วนตัว งานแต่งญาติ</td><td><span class="badge approved">Approved</span></td><td style="color:var(--text-3)">มาลี สุขสันต์</td></tr>
-              <tr><td><div class="staff-cell"><div class="avatar amber">ก</div><div><div class="staff-name">กฤต ทองดี</div></div></div></td><td style="color:var(--text-2)">ลาพักร้อน</td><td style="color:var(--text-2)">1–5 พ.ค. 2025</td><td style="color:var(--text-2)">พักร้อนวันหยุดยาวสงกรานต์</td><td><span class="badge approved">Approved</span></td><td style="color:var(--text-3)">สมชาย มั่นคง</td></tr>
-              <tr><td><div class="staff-cell"><div class="avatar blue">แ</div><div><div class="staff-name">แพร งามพร้อม</div></div></div></td><td style="color:var(--text-2)">ลากิจ</td><td style="color:var(--text-2)">15–16 เม.ย. 2025</td><td style="color:var(--text-2)">ย้ายบ้านใหม่</td><td><span class="badge pending">Pending</span></td>
-                <td><div class="action-btns">
-                  <button class="btn-primary" style="padding:5px 12px;font-size:12px;box-shadow:none" onclick="approveLeave(this)">Approve</button>
-                  <button class="btn-cancel" style="padding:5px 12px;font-size:12px">Reject</button>
-                </div></td>
-              </tr>
-              <tr><td><div class="staff-cell"><div class="avatar teal">น</div><div><div class="staff-name">นริน พรหมดี</div></div></div></td><td style="color:var(--text-2)">ลาพักร้อน</td><td style="color:var(--text-2)">1–7 มิ.ย. 2025</td><td style="color:var(--text-2)">ท่องเที่ยวต่างประเทศ ญี่ปุ่น</td><td><span class="badge pending">Pending</span></td>
-                <td><div class="action-btns">
-                  <button class="btn-primary" style="padding:5px 12px;font-size:12px;box-shadow:none" onclick="approveLeave(this)">Approve</button>
-                  <button class="btn-cancel" style="padding:5px 12px;font-size:12px">Reject</button>
-                </div></td>
-              </tr>
-            </tbody>
-          </table>
+        <!-- TAB: ATTENDANCE -->
+        <div class="tab-content" id="tab-attendance">
+          <div class="att-toolbar">
+            <span class="att-label">ช่วงวันที่:</span>
+            <input class="date-input" type="date" value="2025-04-01">
+            <span class="att-label">ถึง</span>
+            <input class="date-input" type="date" value="2025-04-03">
+            <button class="btn-primary" style="padding:7px 14px;font-size:13px">ค้นหา</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Staff</th>
+                  <th>วันที่</th>
+                  <th>Clock In</th>
+                  <th>Clock Out</th>
+                  <th>สถานะ</th>
+                  <th>หมายเหตุ</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <div class="staff-cell">
+                      <div class="avatar teal">น</div>
+                      <div>
+                        <div class="staff-name">นริน พรหมดี</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style="color:var(--text-2)">1 เม.ย. 2025</td>
+                  <td style="color:var(--text-2)">08:55</td>
+                  <td style="color:var(--text-2)">18:05</td>
+                  <td><span class="badge ontime">On Time</span></td>
+                  <td style="color:var(--text-3)">—</td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="staff-cell">
+                      <div class="avatar teal">น</div>
+                      <div>
+                        <div class="staff-name">นริน พรหมดี</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style="color:var(--text-2)">2 เม.ย. 2025</td>
+                  <td style="color:var(--text-2)">09:10</td>
+                  <td style="color:var(--text-2)">18:00</td>
+                  <td><span class="badge late">Late</span></td>
+                  <td style="color:var(--text-3)">รถติดถนนพหลโยธิน</td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="staff-cell">
+                      <div class="avatar rose">ป</div>
+                      <div>
+                        <div class="staff-name">ปอร์น ใจดี</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style="color:var(--text-2)">1 เม.ย. 2025</td>
+                  <td style="color:var(--text-2)">09:00</td>
+                  <td style="color:var(--text-2)">18:00</td>
+                  <td><span class="badge ontime">On Time</span></td>
+                  <td style="color:var(--text-3)">—</td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="staff-cell">
+                      <div class="avatar rose">ป</div>
+                      <div>
+                        <div class="staff-name">ปอร์น ใจดี</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style="color:var(--text-2)">2 เม.ย. 2025</td>
+                  <td style="color:var(--text-2)">—</td>
+                  <td style="color:var(--text-2)">—</td>
+                  <td><span class="badge absent">Absent</span></td>
+                  <td style="color:var(--text-3)">ลาป่วย ไข้สูง</td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="staff-cell">
+                      <div class="avatar amber">ก</div>
+                      <div>
+                        <div class="staff-name">กฤต ทองดี</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style="color:var(--text-2)">1 เม.ย. 2025</td>
+                  <td style="color:var(--text-2)">08:50</td>
+                  <td style="color:var(--text-2)">17:55</td>
+                  <td><span class="badge ontime">On Time</span></td>
+                  <td style="color:var(--text-3)">—</td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="staff-cell">
+                      <div class="avatar amber">ก</div>
+                      <div>
+                        <div class="staff-name">กฤต ทองดี</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style="color:var(--text-2)">3 เม.ย. 2025</td>
+                  <td style="color:var(--text-2)">—</td>
+                  <td style="color:var(--text-2)">—</td>
+                  <td><span class="badge absent">Absent</span></td>
+                  <td style="color:var(--text-3)">ลาป่วย</td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="staff-cell">
+                      <div class="avatar slate">ป</div>
+                      <div>
+                        <div class="staff-name">ปัทมา ดอกไม้</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style="color:var(--text-2)">1 เม.ย. 2025</td>
+                  <td style="color:var(--text-2)">09:30</td>
+                  <td style="color:var(--text-2)">18:00</td>
+                  <td><span class="badge late">Late</span></td>
+                  <td style="color:var(--text-3)">ลืมนาฬิกาปลุก</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
-    </div><!-- /.tabs-container -->
 
-  </div><!-- /.content -->
-</main>
+        <!-- TAB: LEAVE REQUESTS -->
+        <div class="tab-content" id="tab-leave">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Staff</th>
+                  <th>ประเภทการลา</th>
+                  <th>วันที่ลา</th>
+                  <th>เหตุผล</th>
+                  <th>สถานะ</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <div class="staff-cell">
+                      <div class="avatar rose">ป</div>
+                      <div>
+                        <div class="staff-name">ปอร์น ใจดี</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style="color:var(--text-2)">ลาป่วย</td>
+                  <td style="color:var(--text-2)">5–6 เม.ย. 2025</td>
+                  <td style="color:var(--text-2)">ไข้หวัดใหญ่</td>
+                  <td><span class="badge approved">Approved</span></td>
+                  <td style="color:var(--text-3)">สมชาย มั่นคง</td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="staff-cell">
+                      <div class="avatar slate">ป</div>
+                      <div>
+                        <div class="staff-name">ปัทมา ดอกไม้</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style="color:var(--text-2)">ลากิจ</td>
+                  <td style="color:var(--text-2)">10 เม.ย. 2025</td>
+                  <td style="color:var(--text-2)">ธุระส่วนตัว งานแต่งญาติ</td>
+                  <td><span class="badge approved">Approved</span></td>
+                  <td style="color:var(--text-3)">มาลี สุขสันต์</td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="staff-cell">
+                      <div class="avatar amber">ก</div>
+                      <div>
+                        <div class="staff-name">กฤต ทองดี</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style="color:var(--text-2)">ลาพักร้อน</td>
+                  <td style="color:var(--text-2)">1–5 พ.ค. 2025</td>
+                  <td style="color:var(--text-2)">พักร้อนวันหยุดยาวสงกรานต์</td>
+                  <td><span class="badge approved">Approved</span></td>
+                  <td style="color:var(--text-3)">สมชาย มั่นคง</td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="staff-cell">
+                      <div class="avatar blue">แ</div>
+                      <div>
+                        <div class="staff-name">แพร งามพร้อม</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style="color:var(--text-2)">ลากิจ</td>
+                  <td style="color:var(--text-2)">15–16 เม.ย. 2025</td>
+                  <td style="color:var(--text-2)">ย้ายบ้านใหม่</td>
+                  <td><span class="badge pending">Pending</span></td>
+                  <td>
+                    <div class="action-btns">
+                      <button class="btn-primary" style="padding:5px 12px;font-size:12px;box-shadow:none"
+                        onclick="approveLeave(this)">Approve</button>
+                      <button class="btn-cancel" style="padding:5px 12px;font-size:12px">Reject</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="staff-cell">
+                      <div class="avatar teal">น</div>
+                      <div>
+                        <div class="staff-name">นริน พรหมดี</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style="color:var(--text-2)">ลาพักร้อน</td>
+                  <td style="color:var(--text-2)">1–7 มิ.ย. 2025</td>
+                  <td style="color:var(--text-2)">ท่องเที่ยวต่างประเทศ ญี่ปุ่น</td>
+                  <td><span class="badge pending">Pending</span></td>
+                  <td>
+                    <div class="action-btns">
+                      <button class="btn-primary" style="padding:5px 12px;font-size:12px;box-shadow:none"
+                        onclick="approveLeave(this)">Approve</button>
+                      <button class="btn-cancel" style="padding:5px 12px;font-size:12px">Reject</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div><!-- /.tabs-container -->
 
-<!-- ADD / EDIT STAFF MODAL -->
-<div class="modal-overlay" id="modal-add">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title">Add New Staff</div>
-      <div class="modal-close" onclick="closeModal()">✕</div>
-    </div>
-    <div class="modal-body">
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">ชื่อ</label>
-          <input class="form-input" type="text" placeholder="ชื่อจริง">
+    </div><!-- /.content -->
+  </main>
+
+  <!-- ADD / EDIT STAFF MODAL -->
+  <div class="modal-overlay" id="modal-add">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Add New Staff</div>
+        <div class="modal-close" onclick="closeModal()">✕</div>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">ชื่อ</label>
+            <input class="form-input" type="text" placeholder="ชื่อจริง">
+          </div>
+          <div class="form-group">
+            <label class="form-label">นามสกุล</label>
+            <input class="form-input" type="text" placeholder="นามสกุล">
+          </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">นามสกุล</label>
-          <input class="form-input" type="text" placeholder="นามสกุล">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Username</label>
+            <input class="form-input" type="text" placeholder="staff_username">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Role</label>
+            <select class="form-select">
+              <option>STAFF</option>
+              <option>ADMIN</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row full">
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input class="form-input" type="email" placeholder="staff@purrfect.com">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">เบอร์โทร</label>
+            <input class="form-input" type="text" placeholder="0XX-XXX-XXXX">
+          </div>
+          <div class="form-group">
+            <label class="form-label">วันที่เริ่มงาน</label>
+            <input class="form-input" type="date">
+          </div>
+        </div>
+        <div class="form-row full">
+          <div class="form-group">
+            <label class="form-label">Password เริ่มต้น</label>
+            <input class="form-input" type="password" placeholder="••••••••">
+          </div>
         </div>
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Username</label>
-          <input class="form-input" type="text" placeholder="staff_username">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Role</label>
-          <select class="form-select">
-            <option>STAFF</option>
-            <option>ADMIN</option>
-          </select>
-        </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+        <button class="btn-primary">Save Staff</button>
       </div>
-      <div class="form-row full">
-        <div class="form-group">
-          <label class="form-label">Email</label>
-          <input class="form-input" type="email" placeholder="staff@purrfect.com">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">เบอร์โทร</label>
-          <input class="form-input" type="text" placeholder="0XX-XXX-XXXX">
-        </div>
-        <div class="form-group">
-          <label class="form-label">วันที่เริ่มงาน</label>
-          <input class="form-input" type="date">
-        </div>
-      </div>
-      <div class="form-row full">
-        <div class="form-group">
-          <label class="form-label">Password เริ่มต้น</label>
-          <input class="form-input" type="password" placeholder="••••••••">
-        </div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
-      <button class="btn-primary">Save Staff</button>
     </div>
   </div>
-</div>
 
-<!-- ── JS: Components (must load before page scripts) ── -->
-<script src="js/components/sidebar.js"></script>
-<script src="js/components/navbar.js"></script>
+  <!-- ── JS: Components (must load before page scripts) ── -->
+  <script src="js/components/sidebar.js"></script>
+  <script src="js/components/navbar.js"></script>
 
-<!-- ── JS: Page logic ── -->
-<script src="js/pages/StaffManagement.js"></script>
+  <!-- ── JS: Page logic ── -->
+  <script src="js/pages/StaffManagement.js"></script>
 
-<!-- ── JS: Boot — init sidebar & navbar ── -->
-<script>
-  // TODO: replace with real session data from api.js / auth module
-  const currentUser = {
-    name: 'สมชาย มั่นคง',
-    role: 'Administrator',
-  };
+  <!-- ── JS: Boot — init sidebar & navbar ── -->
+  <script>
+    // TODO: replace with real session data from api.js / auth module
+    const currentUser = {
+      name: 'สมชาย มั่นคง',
+      role: 'Administrator',
+    };
 
-  Sidebar.render({
-    activePage: 'staff',
-    user: currentUser,
-  });
+    Sidebar.render({
+      activePage: 'staff',
+      user: currentUser,
+    });
 
-  Navbar.render({
-    title: 'Staff Management',
-    breadcrumb: 'Admin › Staff Management',
-    actionsHTML: `
+    Navbar.render({
+      title: 'Staff Management',
+      breadcrumb: 'Admin › Staff Management',
+      actionsHTML: `
       <button class="btn-primary" onclick="openModal()">
         <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
           <path d="M12 4v16m8-8H4"/>
@@ -381,8 +750,36 @@
         Add New Staff
       </button>
     `,
-  });
+    });
+
+    window.openModal = function () {
+      const modal = document.getElementById('modal-add');
+      if (modal) {
+        modal.classList.add('open');
+      }
+    };
+
+    // ฟังก์ชันสำหรับปิด Modal
+    window.closeModal = function () {
+      const modal = document.getElementById('modal-add');
+      if (modal) {
+        modal.classList.remove('open');
+      }
+    };
+
+    // (แถม) ปิด Modal ถคลิกพื้นที่สีดำรอบๆ นอกกล่อง
+    window.onclick = function (event) {
+      const modal = document.getElementById('modal-add');
+      if (event.target === modal) {
+        closeModal();
+      }
+    };
+  </script>
+</body>
+
+</html>
 </script>
 
 </body>
+
 </html>

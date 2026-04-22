@@ -151,6 +151,38 @@ window.API = {
     markAllRead: ()           => apiFetch('/notifications/read-all', { method: 'PATCH' }),
   },
 
+  /* --- Dashboard (aggregate helper) --- */
+  dashboard: {
+    /**
+     * โหลดข้อมูลทั้งหมดที่ Dashboard ต้องการพร้อมกัน
+     * คืนค่า object { bookings, notifications, staff, rooms, analytics }
+     * แต่ละ key เป็น array/object หรือ [] ถ้า API พัง
+     */
+    loadAll: async () => {
+      const today = new Date().toLocaleDateString('en-CA');
+      const results = await Promise.allSettled([
+        apiFetch('/bookings'),
+        apiFetch('/notifications?is_read=false'),
+        apiFetch('/staff'),
+        apiFetch('/rooms'),
+        apiFetch(`/analytics/dashboard?start_date=${today}&end_date=${today}`),
+      ]);
+
+      const safe = (r, fallback) => {
+        if (r.status !== 'fulfilled' || !r.value.ok) return fallback;
+        return r.value.data?.data ?? r.value.data ?? fallback;
+      };
+
+      return {
+        bookings:      safe(results[0], []),
+        notifications: safe(results[1], []),
+        staff:         safe(results[2], []),
+        rooms:         safe(results[3], []),
+        analytics:     safe(results[4], null),
+      };
+    },
+  },
+
   /* --- Pets (FR2) --- */
   pets: {
     getAll:      (params = {}) => apiFetch('/pets?' + new URLSearchParams(params)),

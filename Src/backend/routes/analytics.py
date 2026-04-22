@@ -1,13 +1,19 @@
 """
 analytics.py — FR6 Analytics Dashboard
-GET /api/analytics/dashboard  (ADMIN/OWNER เท่านั้น)
+Blueprint : analytics_bp
+Mount ใน app.py:
+    from routes.analytics import analytics_bp
+    app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
 
-อัปเดต: 
-- รวมช่วงวันที่ (Start/End Date)
-- เพิ่ม Low Stock Alert (FR6.1.1)
-- เพิ่ม Pet Species Ratio (กราฟสัดส่วนสัตว์เลี้ยง)
-- ปรับปรุง Revenue Logic ให้รวมสถานะ 'PARTIAL' (มัดจำ)
+แก้ไขจาก version เดิม:
+  - top_addons  : เปลี่ยนจาก inventoryusage → bookingservice (chargeable items เท่านั้น)
+  - bookings    : เพิ่ม pending count
+  - revenue     : เพิ่ม prev_period + growth_pct สำหรับ trend arrow
+  - pet_ratio   : กรอง CANCELLED ออก
+  - low_stock   : คง logic เดิม
+  - daily_revenue: filter ด้วย paymentdate (ตามที่ชำระจริง)
 """
+
 from flask import Blueprint, request, jsonify, current_app
 import psycopg2
 import psycopg2.extras
@@ -16,146 +22,223 @@ from utils import token_required, admin_required
 
 analytics_bp = Blueprint('analytics', __name__)
 
-def get_db_connection():
+
+# ─────────────────────────────────────────────────────────────
+def _get_db():
     return psycopg2.connect(current_app.config['SQLALCHEMY_DATABASE_URI'])
 
-def get_thai_time():
-    # ปรับเวลาให้เป็นเวลาประเทศไทย (UTC+7)
+
+def _thai_now():
+    """คืนค่าเวลาปัจจุบัน UTC+7"""
     return datetime.utcnow() + timedelta(hours=7)
 
 
+def _parse_date(s):
+    return datetime.strptime(s, '%Y-%m-%d').date()
+
+
+# ─────────────────────────────────────────────────────────────
 @analytics_bp.route('/dashboard', methods=['GET'])
 @token_required
 @admin_required
 def get_dashboard(current_user):
     try:
-        today = get_thai_time()
-        # ถ้าไม่ส่งวันที่มา ให้ default เป็นต้นเดือนนี้ถึงวันนี้
+        today      = _thai_now()
         start_date = request.args.get('start_date', today.replace(day=1).strftime('%Y-%m-%d'))
         end_date   = request.args.get('end_date',   today.strftime('%Y-%m-%d'))
 
-        conn = get_db_connection()
+        conn = _get_db()
         cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-        # ── 1. สรุป Booking + Revenue (รวมสถานะ PAID และ PARTIAL) ────────
+        # ── 1. Booking summary + revenue ─────────────────────────────────
+        # กรอง booking ที่ checkindate อยู่ในช่วง; รวม revenue จาก PAID/PARTIAL เท่านั้น
         cur.execute("""
             SELECT
-                COUNT(b.BookingID) AS total_bookings,
-                COUNT(CASE WHEN b.Status = 'ACTIVE'    THEN 1 END) AS checked_in,
-                COUNT(CASE WHEN b.Status = 'COMPLETED' THEN 1 END) AS checked_out,
-                COUNT(CASE WHEN b.Status = 'CANCELLED' THEN 1 END) AS cancelled,
-                COALESCE(SUM(CASE WHEN i.PaymentStatus IN ('PAID', 'PARTIAL') THEN i.RoomTotal    ELSE 0 END), 0) AS room_revenue,
-                COALESCE(SUM(CASE WHEN i.PaymentStatus IN ('PAID', 'PARTIAL') THEN i.ServiceTotal ELSE 0 END), 0) AS addon_revenue,
-                COALESCE(SUM(CASE WHEN i.PaymentStatus IN ('PAID', 'PARTIAL') THEN i.GrandTotal   ELSE 0 END), 0) AS total_revenue
-            FROM Booking b
-            LEFT JOIN Invoice i ON b.BookingID = i.BookingID
-            WHERE b.CheckInDate::date >= %s
-              AND b.CheckInDate::date <= %s
+                COUNT(b.bookingid)                                                          AS total_bookings,
+                COUNT(CASE WHEN b.status = 'ACTIVE'    THEN 1 END)                         AS checked_in,
+                COUNT(CASE WHEN b.status = 'COMPLETED' THEN 1 END)                         AS checked_out,
+                COUNT(CASE WHEN b.status = 'CANCELLED' THEN 1 END)                         AS cancelled,
+                COUNT(CASE WHEN b.status = 'PENDING'   THEN 1 END)                         AS pending,
+                COALESCE(SUM(CASE WHEN i.paymentstatus IN ('PAID','PARTIAL')
+                               THEN i.roomtotal    ELSE 0 END), 0)                         AS room_revenue,
+                COALESCE(SUM(CASE WHEN i.paymentstatus IN ('PAID','PARTIAL')
+                               THEN i.servicetotal ELSE 0 END), 0)                         AS addon_revenue,
+                COALESCE(SUM(CASE WHEN i.paymentstatus IN ('PAID','PARTIAL')
+                               THEN i.grandtotal   ELSE 0 END), 0)                         AS total_revenue
+            FROM booking b
+            LEFT JOIN invoice i ON b.bookingid = i.bookingid
+            WHERE b.checkindate::date >= %s
+              AND b.checkindate::date <= %s
         """, (start_date, end_date))
         summary = cur.fetchone()
 
-        # ── 2. Occupancy Rate (คำนวณจากห้องที่ถูกใช้งานจริง ณ ปัจจุบัน) ────
-        cur.execute("SELECT COUNT(*) AS total FROM Room WHERE Status != 'MAINTENANCE'")
-        total_rooms = cur.fetchone()['total'] or 1
-
+        # ── 2. Occupancy Rate (ห้องที่ใช้งานอยู่ ณ ปัจจุบัน / ห้องทั้งหมดที่ไม่ใช่ MAINTENANCE) ──
         cur.execute("""
-            SELECT COUNT(DISTINCT bd.RoomID) AS occupied
-            FROM BookingDetail bd
-            JOIN Booking b ON bd.BookingID = b.BookingID
-            WHERE b.Status = 'ACTIVE'
+            SELECT COUNT(*) AS total
+            FROM room
+            WHERE status != 'MAINTENANCE'
         """)
-        occupied = cur.fetchone()['occupied'] or 0
-        occupancy_rate = round(occupied / total_rooms, 2)
+        total_rooms = int(cur.fetchone()['total'] or 1)
 
-        # ── 3. Low Stock Alert (FR6.1.1 - สินค้าที่ต้องสั่งเพิ่ม) ──────────
         cur.execute("""
-            SELECT COUNT(*) AS low_stock 
-            FROM InventoryItem 
-            WHERE QuantityInStock <= LowStockThreshold
+            SELECT COUNT(DISTINCT bd.roomid) AS occupied
+            FROM bookingdetail bd
+            JOIN booking b ON bd.bookingid = b.bookingid
+            WHERE b.status = 'ACTIVE'
         """)
-        low_stock_items = cur.fetchone()['low_stock'] or 0
+        occupied      = int(cur.fetchone()['occupied'] or 0)
+        occupancy_rate = round(occupied / total_rooms, 4)
 
-        # ── 4. Pet Species Ratio (สัดส่วนสัตว์เลี้ยงที่เข้าพักในจังหวะนี้) ──
+        # ── 3. Low Stock Alert (จำนวน item ที่สต็อก ≤ lowstockthreshold) ──
         cur.execute("""
-            SELECT p.Species, COUNT(DISTINCT p.PetID) AS count
-            FROM BookingDetail bd
-            JOIN Pet p ON bd.PetID = p.PetID
-            JOIN Booking b ON bd.BookingID = b.BookingID
-            WHERE b.CheckInDate::date >= %s AND b.CheckInDate::date <= %s
-            GROUP BY p.Species
+            SELECT COUNT(*) AS cnt
+            FROM inventoryitem
+            WHERE quantityinstock <= lowstockthreshold
+        """)
+        low_stock = int(cur.fetchone()['cnt'] or 0)
+
+        # ── 4. Low Stock Item Names (แสดงในหน้า frontend) ──────────────────
+        cur.execute("""
+            SELECT itemname, quantityinstock, lowstockthreshold
+            FROM inventoryitem
+            WHERE quantityinstock <= lowstockthreshold
+            ORDER BY quantityinstock ASC
+            LIMIT 5
+        """)
+        low_stock_items = [
+            {
+                "name":      r['itemname'],
+                "in_stock":  int(r['quantityinstock']),
+                "threshold": int(r['lowstockthreshold']),
+            }
+            for r in cur.fetchall()
+        ]
+
+        # ── 5. Pet Species Ratio (ช่วงที่เลือก, ไม่รวม CANCELLED) ──────────
+        cur.execute("""
+            SELECT p.species, COUNT(DISTINCT p.petid) AS cnt
+            FROM bookingdetail bd
+            JOIN pet     p ON bd.petid     = p.petid
+            JOIN booking b ON bd.bookingid = b.bookingid
+            WHERE b.checkindate::date >= %s
+              AND b.checkindate::date <= %s
+              AND b.status != 'CANCELLED'
+            GROUP BY p.species
+            ORDER BY cnt DESC
         """, (start_date, end_date))
-        pet_ratio = {row['species']: int(row['count']) for row in cur.fetchall()}
+        pet_ratio = {row['species']: int(row['cnt']) for row in cur.fetchall()}
 
-        # ── 5. Top Add-on Services (สินค้า/บริการที่ทำเงินสูงสุด) ──────────
+        # ── 6. Top Add-on Services — จาก bookingservice (ischargeable = true) ──
+        #       BUG FIX: version เดิมใช้ inventoryusage (internal usage ไม่ใช่บริการเสริม)
         cur.execute("""
             SELECT
-                ii.ItemName                                     AS service,
-                COUNT(iu.UsageID)                               AS count,
-                COALESCE(SUM(iu.QuantityUsed * ii.UnitPrice), 0) AS revenue
-            FROM InventoryUsage iu
-            JOIN InventoryItem  ii ON iu.ItemID           = ii.ItemID
-            JOIN BookingDetail  bd ON iu.BookingDetailID  = bd.BookingDetailID
-            JOIN Booking        b  ON bd.BookingID        = b.BookingID
-            WHERE b.CheckInDate::date >= %s
-              AND b.CheckInDate::date <= %s
-            GROUP BY ii.ItemName
-            ORDER BY count DESC
+                ii.itemname                         AS service,
+                SUM(bs.quantity)                    AS count,
+                SUM(bs.quantity * bs.unitprice)     AS revenue
+            FROM bookingservice bs
+            JOIN inventoryitem  ii ON bs.itemid    = ii.itemid
+            JOIN booking        b  ON bs.bookingid = b.bookingid
+            WHERE b.checkindate::date >= %s
+              AND b.checkindate::date <= %s
+              AND b.status != 'CANCELLED'
+            GROUP BY ii.itemname
+            ORDER BY revenue DESC
             LIMIT 5
         """, (start_date, end_date))
         top_addons = cur.fetchall()
 
-        # ── 6. Daily Revenue Trend (กราฟรายวัน - รวม PAID/PARTIAL) ────────
+        # ── 7. Daily Revenue Trend (กรองด้วย paymentdate — วันที่รับเงินจริง) ──
         cur.execute("""
             SELECT
-                DATE(i.PaymentDate) AS date,
-                SUM(i.GrandTotal)   AS amount
-            FROM Invoice i
-            WHERE i.PaymentStatus IN ('PAID', 'PARTIAL')
-              AND i.PaymentDate::date >= %s
-              AND i.PaymentDate::date <= %s
-            GROUP BY DATE(i.PaymentDate)
+                DATE(i.paymentdate) AS date,
+                SUM(i.grandtotal)   AS amount
+            FROM invoice i
+            WHERE i.paymentstatus IN ('PAID', 'PARTIAL')
+              AND i.paymentdate::date >= %s
+              AND i.paymentdate::date <= %s
+            GROUP BY DATE(i.paymentdate)
             ORDER BY date
         """, (start_date, end_date))
         daily_revenue = cur.fetchall()
 
+        # ── 8. Previous Period Revenue (สำหรับ trend arrow ใน KPI) ──────────
+        try:
+            start_dt  = _parse_date(start_date)
+            end_dt    = _parse_date(end_date)
+            period_len = (end_dt - start_dt).days
+            prev_end   = start_dt - timedelta(days=1)
+            prev_start = prev_end - timedelta(days=period_len)
+
+            cur.execute("""
+                SELECT COALESCE(SUM(i.grandtotal), 0) AS prev_rev
+                FROM invoice i
+                WHERE i.paymentstatus IN ('PAID', 'PARTIAL')
+                  AND i.paymentdate::date >= %s
+                  AND i.paymentdate::date <= %s
+            """, (prev_start.strftime('%Y-%m-%d'), prev_end.strftime('%Y-%m-%d')))
+            prev_revenue = float(cur.fetchone()['prev_rev'] or 0)
+        except Exception:
+            prev_revenue = 0.0
+
         cur.close()
         conn.close()
 
-        # แปลงข้อมูลสรุป
-       # แปลงข้อมูลสรุปให้โครงสร้างตรงกับ Analytics.js ฝั่ง Frontend
+        # ── สร้าง Response ──────────────────────────────────────────────────
+        total_rev  = float(summary['total_revenue'])
+        room_rev   = float(summary['room_revenue'])
+        addon_rev  = float(summary['addon_revenue'])
+        growth_pct = None
+        if prev_revenue > 0:
+            growth_pct = round(((total_rev - prev_revenue) / prev_revenue) * 100, 1)
+
+        total_bk = int(summary['total_bookings'])
+        avg_bill = round(total_rev / total_bk, 2) if total_bk > 0 else 0.0
+
         return jsonify({
             "status": "success",
             "data": {
-                "period": { "start": start_date, "end": end_date },
+                "period": {
+                    "start": start_date,
+                    "end":   end_date,
+                },
                 "revenue": {
-                    "total":  float(summary['total_revenue']),
-                    "room":   float(summary['room_revenue']),
-                    "addons": float(summary['addon_revenue'])
+                    "total":      total_rev,
+                    "room":       room_rev,
+                    "addons":     addon_rev,
+                    "avg_bill":   avg_bill,
+                    "growth_pct": growth_pct,   # None = ไม่มีข้อมูลช่วงก่อน
+                    "prev_total": prev_revenue,
                 },
                 "bookings": {
-                    "total":       int(summary['total_bookings']),
+                    "total":       total_bk,
                     "checked_in":  int(summary['checked_in']),
                     "checked_out": int(summary['checked_out']),
-                    "cancelled":   int(summary['cancelled'])
+                    "cancelled":   int(summary['cancelled']),
+                    "pending":     int(summary['pending']),
                 },
-                "occupancy_rate": occupancy_rate,
-                "low_stock_alert": low_stock_items,
-                "pet_ratio": pet_ratio,
+                "occupancy_rate":   occupancy_rate,
+                "low_stock_alert":  low_stock,
+                "low_stock_items":  low_stock_items,
+                "pet_ratio":        pet_ratio,
                 "top_addons": [
                     {
                         "service": a['service'],
                         "count":   int(a['count']),
                         "revenue": float(a['revenue']),
-                    } for a in top_addons
+                    }
+                    for a in top_addons
                 ],
                 "daily_revenue": [
                     {
                         "date":   r['date'].strftime('%Y-%m-%d'),
                         "amount": float(r['amount']),
-                    } for r in daily_revenue
-                ]
+                    }
+                    for r in daily_revenue
+                ],
             }
         }), 200
 
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": True, "message": str(e)}), 500

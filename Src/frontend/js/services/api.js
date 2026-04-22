@@ -96,6 +96,7 @@ window.API = {
     getAll:   (params = {}) => apiFetch('/billing?' + new URLSearchParams(params)),
     getById:  (id)          => apiFetch(`/billing/${id}`),
     preview:  (bookingId)   => apiFetch('/billing/preview', { method: 'POST', body: JSON.stringify({ booking_id: bookingId }) }),
+    update:   (id, data)    => apiFetch(`/billing/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
     pay:      (id, data)    => apiFetch(`/billing/${id}/pay`, { method: 'PATCH', body: JSON.stringify(data) }),
   },
 

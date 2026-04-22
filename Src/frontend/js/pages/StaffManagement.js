@@ -145,15 +145,17 @@ async function loadAndRenderStaff() {
   const tbody = document.getElementById('staff-tbody');
   if (!tbody) return;
 
-  const response = await window.staffAPI.getAllStaff();
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-3);">กำลังโหลดข้อมูล...</td></tr>';
+
+  const response = await window.API.staff.getAll();
   const currentUser = {
     name: localStorage.getItem('first_name') || 'ไม่ระบุตัวตน',
     role: localStorage.getItem('role') || 'STAFF',
   };
 
   Sidebar.render({ activePage: 'staff', user: currentUser });
-  
-  if (response.status !== 'success') {
+
+  if (!response.ok) {
     tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: red;">โหลดข้อมูลล้มเหลว</td></tr>';
     return;
   }

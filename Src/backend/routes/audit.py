@@ -39,7 +39,7 @@ def get_audit_logs(current_user):
         in: query
         type: string
         required: false
-        description: กรองตามประเภทการกระทำ (เช่น INSERT, UPDATE, DELETE, LOGIN)
+        description: กรองตามประเภทการกระทำ (เช่น CREATE, UPDATE, DELETE, CHECKIN)
       - name: start_date
         in: query
         type: string
@@ -68,23 +68,41 @@ def get_audit_logs(current_user):
                 properties:
                   audit_id:
                     type: integer
+                    example: 1
                   staff_id:
                     type: integer
+                    example: 3
                   staff_name:
                     type: string
+                    nullable: true
+                    example: null
                   action_type:
                     type: string
+                    example: CREATE
                   table_affected:
                     type: string
+                    example: booking
                   record_id:
                     type: integer
+                    example: 6
                   description:
                     type: string
+                    example: "สร้างการจองหมายเลข 6 — ลูกค้า พชรินทร์ บุญมาก (หิมะ)"
                   timestamp:
                     type: string
                     format: date-time
+                    example: "2026-04-14T10:23:00"
       500:
         description: Internal Server Error
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+              example: error
+            message:
+              type: string
+              example: relation "audittrail" does not exist
     """
     try:
         staff_id    = request.args.get('staff_id')
@@ -95,46 +113,50 @@ def get_audit_logs(current_user):
         conn = get_db_connection()
         cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-        # ดึงข้อมูลจาก AuditTrail ตรงๆ พร้อม Alias ชื่อคอลัมน์ให้เป็น snake_case ตาม Frontend
+        # 1. ใช้ชื่อคอลัมน์ตามตารางจริงเป๊ะๆ และจำลอง NULL AS staff_name เพื่อให้โครงสร้างตรงกับ Frontend
+        # ⚠️ หากใน Supabase ของคุณชื่อตารางไม่มีขีดล่าง ให้ลบ _ ออกเป็น audittrail
         query = """
             SELECT
-                AuditID AS audit_id,
-                StaffID AS staff_id,
-                StaffName AS staff_name,
-                ActionType AS action_type,
-                TableAffected AS table_affected,
-                RecordID AS record_id,
-                Description AS description,
-                Timestamp AS timestamp
-            FROM AuditTrail
+                audit_id,
+                staff_id,
+                NULL AS staff_name,  
+                action_type,
+                table_affected,
+                record_id,
+                description,
+                timestamp
+            FROM audit_trail   
             WHERE 1=1
         """
         params = []
 
         if staff_id:
-            query += " AND StaffID = %s"
+            query += " AND staff_id = %s"
             params.append(staff_id)
         if action_type:
-            query += " AND ActionType = %s"
+            query += " AND action_type = %s"
             params.append(action_type.upper())
         if start_date:
-            query += " AND Timestamp >= %s"
+            query += " AND timestamp >= %s"
             params.append(start_date + " 00:00:00")
         if end_date:
-            query += " AND Timestamp <= %s"
+            query += " AND timestamp <= %s"
             params.append(end_date + " 23:59:59")
 
-        query += " ORDER BY Timestamp DESC LIMIT 500"
+        query += " ORDER BY timestamp DESC LIMIT 500"
 
         cur.execute(query, tuple(params))
         logs = cur.fetchall()
         cur.close()
         conn.close()
 
-        # แปลง format วันที่ให้ตรงกับมาตรฐาน ISO ตามที่ Frontend คาดหวัง
+        # 2. ตัวป้องกันบัค (Safe Check) สำหรับแปลงรูปแบบวันที่ (ISO 8601) ให้ Frontend
         for log in logs:
-            if log['timestamp']:
-                log['timestamp'] = log['timestamp'].strftime('%Y-%m-%dT%H:%M:%S')
+            if log.get('timestamp'):
+                if hasattr(log['timestamp'], 'strftime'):
+                    log['timestamp'] = log['timestamp'].strftime('%Y-%m-%dT%H:%M:%S')
+                else:
+                    log['timestamp'] = str(log['timestamp'])
 
         return jsonify({"status": "success", "data": logs}), 200
 

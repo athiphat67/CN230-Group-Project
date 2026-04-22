@@ -1,11 +1,11 @@
 <div align="center">
 
-# 🐾 Purrfect Stay — Pet Hotel Management System
-### CN230 Database Systems · Computer Engineering · Thammasat School of Engineering
+  <img src="documents/Image/LOGO/PurrfectStay_Logo.png" width="300" alt="Logo">
+
+  # Purrfect Stay — Pet Hotel Management System
+  ### CN230 Database Systems · Computer Engineering · Thammasat School of Engineering
 
 </div>
-
----
 
 ## 📖 Project Overview
 

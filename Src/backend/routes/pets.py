@@ -98,6 +98,21 @@ def add_pet(current_user):
         conn = get_db_connection()
         cur = conn.cursor()
 
+        # 🔥 1. ดักจับ Key ให้รองรับทั้งจาก Bookings.js และหน้าอื่นๆ
+        customer_id = data.get("customerid") or data.get("owner_id") or data.get("customer_id")
+        weight = data.get("weight") or data.get("weight_kg")
+        medical = data.get("medicalcondition") or data.get("medical_notes") or "ไม่มี"
+        allergy = data.get("allergy") or data.get("allergies") or "ไม่มี"
+        
+        # เช็ค is_vaccinated ให้ครอบคลุม
+        is_vac = data.get("isvaccinated")
+        if is_vac is None:
+            is_vac = data.get("is_vaccinated", False)
+
+        # กันเหนียว ถ้าไม่ได้ส่ง customer_id มาเลยให้ฟ้อง Error แทนการพังที่ Database
+        if not customer_id:
+            return jsonify({"error": True, "message": "ข้อมูลไม่ครบถ้วน: ไม่พบรหัสลูกค้า (customer_id)"}), 400
+
         cur.execute(
             """
             INSERT INTO pet
@@ -107,17 +122,17 @@ def add_pet(current_user):
             RETURNING petid;
         """,
             (
-                data.get("owner_id"),
+                customer_id,                     # ใช้ตัวแปรที่เราดักจับมาแล้ว
                 data.get("name"),
-                data.get('species').upper(),
+                data.get('species', 'CAT').upper(),
                 data.get("breed"),
                 data.get("sex"),
                 data.get("dob"),
-                data.get("weight_kg"),
+                weight,                          # ใช้ตัวแปรที่เราดักจับมาแล้ว
                 data.get("coat_color"),
-                data.get("medical_notes", "ไม่มี"),
-                data.get("allergies", "ไม่มี"),
-                data.get("is_vaccinated", False),
+                medical,                         # ใช้ตัวแปรที่เราดักจับมาแล้ว
+                allergy,                         # ใช้ตัวแปรที่เราดักจับมาแล้ว
+                is_vac,                          # ใช้ตัวแปรที่เราดักจับมาแล้ว
                 data.get("vaccine_record", "ไม่มี"),
                 data.get("behavior_notes"),
             ),
@@ -136,8 +151,8 @@ def add_pet(current_user):
         ), 201
 
     except Exception as e:
+        print(f"Add Pet Error: {e}") # พิมพ์ Error ลง Terminal ให้ดูง่ายขึ้น
         return jsonify({"error": True, "message": str(e)}), 500
-
 
 # ── 3. Get Pet by ID (GET /api/pets/{pet_id}) ──────────────────────────
 @pets_bp.route("/<int:pet_id>", methods=["GET"])

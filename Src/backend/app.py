@@ -21,6 +21,7 @@ from routes.attendance import attendance_bp
 from routes.leave import leave_bp
 from routes.audit import audit_bp
 from routes.customer import customer_bp
+from routes.rooms import rooms_bp
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -74,6 +75,7 @@ app.register_blueprint(attendance_bp, url_prefix='/api/attendance')
 app.register_blueprint(leave_bp, url_prefix='/api/leave')
 app.register_blueprint(audit_bp, url_prefix='/api/audit')
 app.register_blueprint(customer_bp, url_prefix='/api/customers')
+app.register_blueprint(rooms_bp, url_prefix='/api/rooms')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

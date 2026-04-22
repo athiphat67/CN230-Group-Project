@@ -1,9 +1,6 @@
 /**
  * api.js — Centralized API Service Layer
  * Purrfect Stay Admin Panel
- *
- * ใช้งาน: window.API.staff.getAll() หรือ window.staffAPI.getAllStaff()
- * Base URL: ตั้งค่าที่ตัวแปร BASE_URL ด้านล่าง
  */
 
 const BASE_URL = 'http://127.0.0.1:5000/api';
@@ -29,8 +26,6 @@ async function apiFetch(path, options = {}) {
     });
 
     if (res.status === 401) {
-      // Token หมดอายุ — redirect ไปหน้า login
-      // window.location.href = 'login.html';
       console.warn('Unauthorized — token may have expired');
     }
 
@@ -42,12 +37,12 @@ async function apiFetch(path, options = {}) {
   }
 }
 
-/* ─── WINDOW.API (ใช้ใน 3 หน้าใหม่) ────────────── */
+/* ─── WINDOW.API ─────────────────────────────────── */
 window.API = {
 
   /* --- Auth --- */
   auth: {
-    login: (username, password) => apiFetch('/auth/login', {
+    login:  (username, password) => apiFetch('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ staff_username: username, password }),
     }),
@@ -56,43 +51,55 @@ window.API = {
 
   /* --- Staff --- */
   staff: {
-    getAll: () => apiFetch('/staff'),
-    getById: (id) => apiFetch(`/staff/${id}`),
-    create: (data) => apiFetch('/staff', { method: 'POST', body: JSON.stringify(data) }),
-    update: (id, data) => apiFetch(`/staff/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-    deactivate: (id) => apiFetch(`/staff/${id}/deactivate`, { method: 'PATCH' }),
+    getAll:     ()           => apiFetch('/staff'),
+    getById:    (id)         => apiFetch(`/staff/${id}`),
+    create:     (data)       => apiFetch('/staff', { method: 'POST', body: JSON.stringify(data) }),
+    update:     (id, data)   => apiFetch(`/staff/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    deactivate: (id)         => apiFetch(`/staff/${id}/deactivate`, { method: 'PATCH' }),
+  },
+
+  /* --- Customers --- */
+  customers: {
+    getAll:  (params = {}) => apiFetch('/customers?' + new URLSearchParams(params)),
+    getById: (id)          => apiFetch(`/customers/${id}`),
+    getPets: (id)          => apiFetch(`/customers/${id}/pets`),
+    create:  (data)        => apiFetch('/customers', { method: 'POST', body: JSON.stringify(data) }),
+    update:  (id, data)    => apiFetch(`/customers/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete:  (id)          => apiFetch(`/customers/${id}`, { method: 'DELETE' }),
   },
 
   /* --- Bookings --- */
   bookings: {
-    getAll: (params = {}) => apiFetch('/bookings?' + new URLSearchParams(params)),
-    getById: (id) => apiFetch(`/bookings/${id}`),
-    create: (data) => apiFetch('/bookings', { method: 'POST', body: JSON.stringify(data) }),
-    checkin: (id, by) => apiFetch(`/bookings/${id}/checkin`, { method: 'PATCH', body: JSON.stringify({ checked_in_by: by }) }),
-    checkout: (id, data) => apiFetch(`/bookings/${id}/checkout`, { method: 'PATCH', body: JSON.stringify(data) }),
-    cancel: (id, data) => apiFetch(`/bookings/${id}/cancel`, { method: 'PATCH', body: JSON.stringify(data) }),
+    getAll:      (params = {}) => apiFetch('/bookings?' + new URLSearchParams(params)),
+    getById:     (id)          => apiFetch(`/bookings/${id}`),
+    create:      (data)        => apiFetch('/bookings', { method: 'POST', body: JSON.stringify(data) }),
+    checkin:     (id)          => apiFetch(`/bookings/${id}/checkin`, { method: 'PATCH' }),
+    checkout:    (id, data)    => apiFetch(`/bookings/${id}/checkout`, { method: 'PATCH', body: JSON.stringify(data) }),
+    cancel:      (id, data)    => apiFetch(`/bookings/${id}/cancel`, { method: 'PATCH', body: JSON.stringify(data || {}) }),
+    addAddon:    (id, data)    => apiFetch(`/bookings/${id}/addons`, { method: 'POST', body: JSON.stringify(data) }),
+    getServices: ()            => apiFetch('/bookings/services'),
   },
 
   /* --- Rooms --- */
   rooms: {
-    getAll: () => apiFetch('/rooms'),
-    getAvailability: (p) => apiFetch('/rooms/availability?' + new URLSearchParams(p)),
-    update: (id, data) => apiFetch(`/rooms/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    getAll:          ()         => apiFetch('/rooms'),
+    getAvailability: (p)        => apiFetch('/rooms/availability?' + new URLSearchParams(p)),
+    update:          (id, data) => apiFetch(`/rooms/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   },
 
   /* --- Billing --- */
   billing: {
-    getAll: (params = {}) => apiFetch('/billing?' + new URLSearchParams(params)),
-    getById: (id) => apiFetch(`/billing/${id}`),
-    preview: (bookingId) => apiFetch('/billing/preview', { method: 'POST', body: JSON.stringify({ booking_id: bookingId }) }),
-    pay: (id, data) => apiFetch(`/billing/${id}/pay`, { method: 'PATCH', body: JSON.stringify(data) }),
+    getAll:   (params = {}) => apiFetch('/billing?' + new URLSearchParams(params)),
+    getById:  (id)          => apiFetch(`/billing/${id}`),
+    preview:  (bookingId)   => apiFetch('/billing/preview', { method: 'POST', body: JSON.stringify({ booking_id: bookingId }) }),
+    pay:      (id, data)    => apiFetch(`/billing/${id}/pay`, { method: 'PATCH', body: JSON.stringify(data) }),
   },
 
   /* --- Care Reports --- */
   care: {
-    getAll: (params = {})  => apiFetch('/care-reports?' + new URLSearchParams(params)),
-    getActiveStays: ()     => apiFetch('/care-reports/active-stays'), /* 👈 เพิ่มบรรทัดนี้ */
-    create: (data)         => apiFetch('/care-reports', { method: 'POST', body: JSON.stringify(data) }),
+    getAll:       (params = {}) => apiFetch('/care-reports?' + new URLSearchParams(params)),
+    getActiveStays: ()          => apiFetch('/care-reports/active-stays'),
+    create:       (data)        => apiFetch('/care-reports', { method: 'POST', body: JSON.stringify(data) }),
     uploadPhotos: (id, formData) => fetch(`${BASE_URL}/care-reports/${id}/photos`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${getToken()}` },
@@ -102,11 +109,11 @@ window.API = {
 
   /* --- Inventory --- */
   inventory: {
-    getAll: (params = {}) => apiFetch('/inventory?' + new URLSearchParams(params)),
-    getAlerts: () => apiFetch('/inventory/alerts'),
-    create: (data) => apiFetch('/inventory', { method: 'POST', body: JSON.stringify(data) }),
-    update: (id, data) => apiFetch(`/inventory/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
-    delete: (id) => apiFetch(`/inventory/${id}`, { method: 'DELETE' }),
+    getAll:   (params = {}) => apiFetch('/inventory?' + new URLSearchParams(params)),
+    getAlerts: ()           => apiFetch('/inventory/alerts'),
+    create:   (data)        => apiFetch('/inventory', { method: 'POST', body: JSON.stringify(data) }),
+    update:   (id, data)    => apiFetch(`/inventory/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    delete:   (id)          => apiFetch(`/inventory/${id}`, { method: 'DELETE' }),
   },
 
   /* --- Analytics --- */
@@ -121,7 +128,7 @@ window.API = {
 
   /* --- Attendance --- */
   attendance: {
-    clock: (staffId, action) => apiFetch('/attendance/clock', {
+    clock:  (staffId, action) => apiFetch('/attendance/clock', {
       method: 'POST',
       body: JSON.stringify({ staff_id: staffId, action }),
     }),
@@ -130,8 +137,8 @@ window.API = {
 
   /* --- Leave --- */
   leave: {
-    getAll: (params = {}) => apiFetch('/leave?' + new URLSearchParams(params)),
-    approve: (id, approvedBy, status) => apiFetch(`/leave/${id}`, {
+    getAll:   (params = {}) => apiFetch('/leave?' + new URLSearchParams(params)),
+    approve:  (id, approvedBy, status) => apiFetch(`/leave/${id}`, {
       method: 'PATCH',
       body: JSON.stringify({ status, approved_by: approvedBy }),
     }),
@@ -139,22 +146,22 @@ window.API = {
 
   /* --- Notifications --- */
   notifications: {
-    getAll: (params = {}) => apiFetch('/notifications?' + new URLSearchParams(params)),
-    markRead: (id) => apiFetch(`/notifications/${id}/read`, { method: 'PATCH' }),
-    markAllRead: () => apiFetch('/notifications/read-all', { method: 'PATCH' }),
+    getAll:     (params = {}) => apiFetch('/notifications?' + new URLSearchParams(params)),
+    markRead:   (id)          => apiFetch(`/notifications/${id}/read`, { method: 'PATCH' }),
+    markAllRead: ()           => apiFetch('/notifications/read-all', { method: 'PATCH' }),
   },
 
   /* --- Pets (FR2) --- */
   pets: {
-    getAll: (params = {}) => apiFetch('/pets?' + new URLSearchParams(params)),
-    getById: (id) => apiFetch(`/pets/${id}`),
-    create: (data) => apiFetch('/pets', { method: 'POST', body: JSON.stringify(data) }),
-    update: (id, data) => apiFetch(`/pets/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-    getVaccines: (id) => apiFetch(`/pets/${id}/vaccines`),
-    delete: (id) => apiFetch(`/pets/${id}`, { method: 'DELETE' }),
-    addVaccine: (id, data) => apiFetch(`/pets/${id}/vaccines`, { method: 'POST', body: JSON.stringify(data) }),
-    getMealPlans: (id) => apiFetch(`/pets/${id}/meal-plans`),
-    saveMealPlans: (id, data) => apiFetch(`/pets/${id}/meal-plans`, { method: 'POST', body: JSON.stringify(data) }),
+    getAll:      (params = {}) => apiFetch('/pets?' + new URLSearchParams(params)),
+    getById:     (id)          => apiFetch(`/pets/${id}`),
+    create:      (data)        => apiFetch('/pets', { method: 'POST', body: JSON.stringify(data) }),
+    update:      (id, data)    => apiFetch(`/pets/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete:      (id)          => apiFetch(`/pets/${id}`, { method: 'DELETE' }),
+    getVaccines: (id)          => apiFetch(`/pets/${id}/vaccines`),
+    addVaccine:  (id, data)    => apiFetch(`/pets/${id}/vaccines`, { method: 'POST', body: JSON.stringify(data) }),
+    getMealPlans:(id)          => apiFetch(`/pets/${id}/meal-plans`),
+    saveMealPlans:(id, data)   => apiFetch(`/pets/${id}/meal-plans`, { method: 'POST', body: JSON.stringify(data) }),
   },
 };
 

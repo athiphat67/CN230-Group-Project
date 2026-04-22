@@ -1,11 +1,11 @@
 <div align="center">
 
-# 🐾 Purrfect Stay — Pet Hotel Management System
-### CN230 Database Systems · Computer Engineering · Thammasat School of Engineering
+  <img src="documents/Image/LOGO/PurrfectStay_Logo.png" width="225" alt="Logo">
+
+  # Purrfect Stay — Pet Hotel Management System
+  ### CN230 Database Systems · Computer Engineering · Thammasat School of Engineering
 
 </div>
-
----
 
 ## 📖 Project Overview
 
@@ -170,22 +170,11 @@ curl http://127.0.0.1:5000/api/test-connection
 
 ---
 
-## 📋 Project Progress
-
-| Phase | Deliverable | Due Date | Status |
-|:---:|:---|:---:|:---:|
-| 1 | Proposal Report & Presentation | 30 Mar 2026 | ✅ Done |
-| 2 | Final System & Presentation | 27 May 2026 | 🔵 In Progress |
-
-🔗 **[Kanban Board](https://github.com/users/athiphat67/projects/6/views/2)**
-
----
-
 ## 👥 Team Members
 
 | Student ID | Name | Role |
 |:---:|:---|:---|
-| `6710615292` | Athiphat Sunsit | Frontend Developer & QA Engineer |
+| `6710615292` | Athiphat Sunsit | Full Stack |
 | `6710615060` | Chotiwit Daugstan | Frontend Developer |
 | `6710615185` | Purich Ampawa | Project Lead & Backend Developer |
 | `6710685014` | Theepob Rattanasapsiri | Database Designer |

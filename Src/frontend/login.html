@@ -378,21 +378,39 @@
     if (!valid) return;
 
     setLoading(true);
-    await new Promise(r => setTimeout(r, 1200));
 
-    // Demo login logic
-    const demoAccounts = {
-      'somchai': 'password123',
-      'mali': 'password123',
-    };
+    try {
+      // 🟢 ยิง API ไปที่ Flask Backend ของเรา
+      const response = await fetch('http://127.0.0.1:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          staff_username: username, 
+          password: password 
+        })
+      });
 
-    if (demoAccounts[username] && demoAccounts[username] === password) {
-      showAlert('เข้าสู่ระบบสำเร็จ! กำลังนำคุณไปยัง Dashboard...', 'success');
-      await new Promise(r => setTimeout(r, 800));
-      window.location.href = 'dashboard.html';
-    } else {
+      const data = await response.json();
+
+      if (response.ok && data.access_token) {
+        // 🟢 ล็อกอินสำเร็จ: เก็บ Token และข้อมูลลง LocalStorage
+        localStorage.setItem('access_token', data.access_token);
+        localStorage.setItem('staff_id', data.staff_id);
+        localStorage.setItem('first_name', data.first_name);
+        localStorage.setItem('role', data.role);
+
+        showAlert('เข้าสู่ระบบสำเร็จ! กำลังนำคุณไปยัง Dashboard...', 'success');
+        await new Promise(r => setTimeout(r, 800));
+        window.location.href = 'dashboard.html';
+      } else {
+        // แดง: รหัสผิด หรือหา User ไม่เจอ
+        showAlert(data.detail || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง กรุณาลองอีกครั้ง');
+      }
+    } catch (error) {
+      console.error('Login Error:', error);
+      showAlert('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาลองใหม่');
+    } finally {
       setLoading(false);
-      showAlert('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง กรุณาลองอีกครั้ง');
     }
   }
 

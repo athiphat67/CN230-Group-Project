@@ -19,7 +19,7 @@
 
     <!-- STAT CARDS -->
     <div class="pp-stats-row">
-      <div class="pp-stat rose">
+      <div class="pp-stat rose" style="cursor: pointer; transition: transform 0.2s ease;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='translateY(0)'" onclick="clickStatCard('total')">
         <div class="pp-stat-icon">
           <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
         </div>
@@ -30,7 +30,7 @@
         </div>
         <div class="pp-stat-ring"></div>
       </div>
-      <div class="pp-stat pink">
+      <div class="pp-stat pink" style="cursor: pointer; transition: transform 0.2s ease;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='translateY(0)'" onclick="clickStatCard('cat')">
         <div class="pp-stat-icon">
           <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
         </div>
@@ -41,7 +41,7 @@
         </div>
         <div class="pp-stat-ring"></div>
       </div>
-      <div class="pp-stat teal">
+      <div class="pp-stat teal" style="cursor: pointer; transition: transform 0.2s ease;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='translateY(0)'" onclick="clickStatCard('dog')">
         <div class="pp-stat-icon">
           <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
         </div>
@@ -52,7 +52,7 @@
         </div>
         <div class="pp-stat-ring"></div>
       </div>
-      <div class="pp-stat amber">
+      <div class="pp-stat amber" style="cursor: pointer; transition: transform 0.2s ease;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='translateY(0)'" onclick="clickStatCard('alert')">
         <div class="pp-stat-icon">
           <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
         </div>
@@ -77,6 +77,9 @@
           </button>
           <button class="pp-tab" onclick="filterPets('dog', this)">
             🐶 สุนัข <span class="pp-tab-count" id="count-dog">—</span>
+          </button>
+          <button class="pp-tab" onclick="filterPets('other', this)">
+            🐾 อื่นๆ <span class="pp-tab-count" id="count-other">—</span>
           </button>
         </div>
         <div class="pp-tools">

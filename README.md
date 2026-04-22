@@ -170,17 +170,6 @@ curl http://127.0.0.1:5000/api/test-connection
 
 ---
 
-## 📋 Project Progress
-
-| Phase | Deliverable | Due Date | Status |
-|:---:|:---|:---:|:---:|
-| 1 | Proposal Report & Presentation | 30 Mar 2026 | ✅ Done |
-| 2 | Final System & Presentation | 27 May 2026 | 🔵 In Progress |
-
-🔗 **[Kanban Board](https://github.com/users/athiphat67/projects/6/views/2)**
-
----
-
 ## 👥 Team Members
 
 | Student ID | Name | Role |

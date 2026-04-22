@@ -29,7 +29,6 @@ STATUS_MAP = {
     'COMPLETED': 'CHECKED_OUT',
     'CANCELLED': 'CANCELLED',
 }
-# Map Frontend status → DB status
 STATUS_MAP_REVERSE = {v: k for k, v in STATUS_MAP.items()}
 
 
@@ -38,14 +37,13 @@ STATUS_MAP_REVERSE = {v: k for k, v in STATUS_MAP.items()}
 @token_required
 def get_all_bookings(current_user):
     try:
-        # Query params
         status_fe  = request.args.get('status', '')
         start_date = request.args.get('start_date', '')
         end_date   = request.args.get('end_date', '')
         pet_name   = request.args.get('pet_name', '').strip()
         owner_name = request.args.get('owner_name', '').strip()
 
-        status_db = STATUS_MAP_REVERSE.get(status_fe.upper(), status_fe.upper())
+        status_db = STATUS_MAP_REVERSE.get(status_fe.upper(), status_fe.upper()) if status_fe else ''
 
         conn = get_db_connection()
         cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -55,7 +53,7 @@ def get_all_bookings(current_user):
                 b.bookingid,
                 p.petid                                    AS pet_id,
                 p.name                                     AS pet_name,
-                p.species                                  AS pet_species,
+                p.species::text                            AS pet_species,
                 p.breed,
                 p.allergy                                  AS notes,
                 c.customerid                               AS owner_id,
@@ -63,10 +61,10 @@ def get_all_bookings(current_user):
                 c.phonenumber                              AS owner_phone,
                 r.roomid                                   AS room_id,
                 r.roomnumber                               AS room_number,
-                r.roomsize                                 AS room_type,
+                r.roomsize::text                           AS room_type,
                 b.checkindate                              AS checkin_date,
                 b.checkoutdate                             AS checkout_date,
-                b.status                                   AS status_db,
+                b.status::text                             AS status_db,
                 b.lockedrate                               AS price_room,
                 COALESCE(i.servicetotal, 0)                AS price_addons,
                 bd.bookingdetailid,
@@ -85,7 +83,7 @@ def get_all_bookings(current_user):
         params = []
 
         if status_db:
-            query += " AND b.status = %s"
+            query += " AND b.status::text = %s"
             params.append(status_db)
         if start_date:
             query += " AND b.checkindate::date >= %s"
@@ -109,6 +107,9 @@ def get_all_bookings(current_user):
 
         result = []
         for b in rows:
+            # filter nulls from addons array
+            raw_addons = b['addons'] or []
+            clean_addons = [a for a in raw_addons if a is not None]
             result.append({
                 "booking_id":   b['bookingid'],
                 "pet_id":       b['pet_id'],
@@ -127,7 +128,7 @@ def get_all_bookings(current_user):
                 "status":       STATUS_MAP.get(b['status_db'], b['status_db']),
                 "price_room":   float(b['price_room']   or 0),
                 "price_addons": float(b['price_addons'] or 0),
-                "addons":       b['addons'] or [],
+                "addons":       clean_addons,
                 "booking_detail_id": b['bookingdetailid'],
             })
 
@@ -148,6 +149,16 @@ def create_booking(current_user):
         staff_id   = current_user.get('staff_id')
         total_rate = data.get('total_rate', 0)
 
+        # Validate required fields
+        required = ['customer_id', 'checkin_date', 'checkout_date']
+        for field in required:
+            if not data.get(field):
+                return jsonify({"error": True, "message": f"ต้องระบุ {field}"}), 400
+
+        pets_list = data.get('pets', [])
+        if not pets_list:
+            return jsonify({"error": True, "message": "ต้องระบุสัตว์เลี้ยงอย่างน้อย 1 ตัว"}), 400
+
         cur.execute("""
             INSERT INTO booking (customerid, checkindate, checkoutdate, status, createdby_staffid, lockedrate)
             VALUES (%s, %s, %s, 'PENDING', %s, %s)
@@ -156,24 +167,23 @@ def create_booking(current_user):
 
         booking_id = cur.fetchone()[0]
 
-        # pets / rooms
-        for item in data.get('pets', []):
+        # insert pets / rooms
+        for item in pets_list:
             cur.execute("""
                 INSERT INTO bookingdetail (bookingid, petid, roomid) VALUES (%s, %s, %s)
             """, (booking_id, item['pet_id'], item['room_id']))
 
-        # services เสริมเริ่มต้น
+        # insert services เสริมเริ่มต้น (ถ้ามี)
         for svc in data.get('services', []):
             cur.execute("""
                 INSERT INTO bookingservice (bookingid, itemid, quantity, unitprice)
                 VALUES (%s, %s, %s, %s)
-            """, (booking_id, svc['item_id'], svc['quantity'], svc['unit_price']))
+            """, (booking_id, svc['item_id'], svc.get('quantity', 1), svc['unit_price']))
 
         # สร้าง Invoice ว่างพร้อมกัน
         cur.execute("""
             INSERT INTO invoice (bookingid, roomtotal, servicetotal, vetemergencycost, depositpaid, paymentstatus)
             VALUES (%s, %s, 0, 0, 0, 'UNPAID')
-            ON CONFLICT (bookingid) DO NOTHING;
         """, (booking_id, total_rate))
 
         conn.commit()
@@ -199,12 +209,18 @@ def get_booking_by_id(current_user, booking_id):
         conn = get_db_connection()
         cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute("""
-            SELECT b.bookingid, b.checkindate, b.checkoutdate, b.status, b.lockedrate,
+            SELECT b.bookingid, b.checkindate, b.checkoutdate, b.status::text as status,
+                   b.lockedrate,
                    c.customerid AS owner_id,
-                   c.firstname || ' ' || c.lastname AS owner_name, c.phonenumber AS owner_phone,
-                   p.petid AS pet_id, p.name AS pet_name, p.species AS pet_species, p.breed, p.allergy AS notes,
-                   r.roomid AS room_id, r.roomnumber AS room_number, r.roomsize AS room_type,
-                   COALESCE(i.servicetotal,0) AS price_addons, i.invoiceid,
+                   c.firstname || ' ' || c.lastname AS owner_name,
+                   c.phonenumber AS owner_phone,
+                   p.petid AS pet_id, p.name AS pet_name,
+                   p.species::text AS pet_species,
+                   p.breed, p.allergy AS notes,
+                   r.roomid AS room_id, r.roomnumber AS room_number,
+                   r.roomsize::text AS room_type,
+                   COALESCE(i.servicetotal,0) AS price_addons,
+                   i.invoiceid,
                    bd.bookingdetailid
             FROM booking       b
             JOIN bookingdetail bd ON b.bookingid  = bd.bookingid
@@ -257,9 +273,25 @@ def checkin(current_user, booking_id):
     try:
         conn = get_db_connection()
         cur  = conn.cursor()
-        cur.execute("UPDATE booking SET status = 'ACTIVE' WHERE bookingid = %s RETURNING bookingid", (booking_id,))
+
+        # ตรวจสอบว่า booking อยู่ในสถานะที่ check-in ได้
+        cur.execute("SELECT status::text FROM booking WHERE bookingid = %s", (booking_id,))
+        row = cur.fetchone()
+        if not row:
+            conn.close()
+            return jsonify({"error": True, "code": 404, "message": "ไม่พบการจอง"}), 404
+        if row[0] not in ('PENDING', 'CONFIRMED'):
+            conn.close()
+            return jsonify({"error": True, "code": 400,
+                            "message": f"ไม่สามารถ Check-in ได้ สถานะปัจจุบัน: {row[0]}"}), 400
+
+        cur.execute(
+            "UPDATE booking SET status = 'ACTIVE' WHERE bookingid = %s RETURNING bookingid",
+            (booking_id,)
+        )
         if cur.rowcount == 0:
             conn.rollback()
+            conn.close()
             return jsonify({"error": True, "code": 404, "message": "ไม่พบการจอง"}), 404
 
         conn.commit()
@@ -267,9 +299,9 @@ def checkin(current_user, booking_id):
         conn.close()
 
         return jsonify({
-            "status": "success",
-            "booking_id": booking_id,
-            "status": "CHECKED_IN",
+            "status":        "success",
+            "booking_id":    booking_id,
+            "booking_status": "CHECKED_IN",
             "checked_in_at": get_thai_time().isoformat(),
         }), 200
 
@@ -289,33 +321,41 @@ def checkout(current_user, booking_id):
         conn = get_db_connection()
         cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-        cur.execute("UPDATE booking SET status = 'COMPLETED' WHERE bookingid = %s RETURNING bookingid", (booking_id,))
-        if cur.rowcount == 0:
-            conn.rollback()
-            cur.close()
+        # ตรวจสอบ status
+        cur.execute("SELECT status::text FROM booking WHERE bookingid = %s", (booking_id,))
+        row = cur.fetchone()
+        if not row:
             conn.close()
             return jsonify({"error": True, "code": 404, "message": "ไม่พบการจอง"}), 404
+        if row['status'] != 'ACTIVE':
+            conn.close()
+            return jsonify({"error": True, "code": 400,
+                            "message": f"ไม่สามารถ Check-out ได้ สถานะปัจจุบัน: {row['status']}"}), 400
 
-        # อัปเดต Invoice ถ้ามี payment_method
-        invoice_id = None
+        cur2 = conn.cursor()
+        cur2.execute(
+            "UPDATE booking SET status = 'COMPLETED' WHERE bookingid = %s RETURNING bookingid",
+            (booking_id,)
+        )
+
+        invoice_id  = None
+        grand_total = 0
         if payment_method:
-            cur.execute("""
+            cur2.execute("""
                 UPDATE invoice
-                SET paymentstatus = 'PAID', paymentmethod = %s, issuedby_staffid = %s, paymentdate = %s
+                SET paymentstatus = 'PAID', paymentmethod = %s,
+                    issuedby_staffid = %s, paymentdate = %s
                 WHERE bookingid = %s
                 RETURNING invoiceid, grandtotal
             """, (payment_method, staff_id, get_thai_time(), booking_id))
-            inv = cur.fetchone()
+            inv = cur2.fetchone()
             if inv:
-                invoice_id  = f"INV-{str(inv['invoiceid']).zfill(4)}"
-                grand_total = float(inv['grandtotal'] or 0)
-            else:
-                grand_total = 0
-        else:
-            grand_total = 0
+                invoice_id  = f"INV-{str(inv[0]).zfill(4)}"
+                grand_total = float(inv[1] or 0)
 
         conn.commit()
         cur.close()
+        cur2.close()
         conn.close()
 
         return jsonify({
@@ -336,15 +376,15 @@ def checkout(current_user, booking_id):
 @token_required
 def cancel_booking(current_user, booking_id):
     try:
-        data      = request.get_json() or {}
-        staff_id  = data.get('cancelled_by', current_user.get('staff_id'))
+        data     = request.get_json() or {}
+        staff_id = data.get('cancelled_by', current_user.get('staff_id'))
 
         conn = get_db_connection()
         cur  = conn.cursor()
         cur.execute("""
             UPDATE booking
             SET status = 'CANCELLED', cancelledat = %s, cancelledbystaffid = %s
-            WHERE bookingid = %s AND status NOT IN ('COMPLETED', 'CANCELLED')
+            WHERE bookingid = %s AND status::text NOT IN ('COMPLETED', 'CANCELLED')
             RETURNING bookingid
         """, (get_thai_time().date(), staff_id, booking_id))
 
@@ -352,7 +392,8 @@ def cancel_booking(current_user, booking_id):
             conn.rollback()
             cur.close()
             conn.close()
-            return jsonify({"error": True, "code": 400, "message": "ไม่พบการจอง หรือยกเลิกไม่ได้แล้ว"}), 400
+            return jsonify({"error": True, "code": 400,
+                            "message": "ไม่พบการจอง หรือยกเลิกไม่ได้แล้ว"}), 400
 
         conn.commit()
         cur.close()
@@ -361,7 +402,7 @@ def cancel_booking(current_user, booking_id):
         return jsonify({
             "status":     "success",
             "booking_id": booking_id,
-            "status":     "CANCELLED",
+            "booking_status": "CANCELLED",
         }), 200
 
     except Exception as e:
@@ -381,21 +422,18 @@ def add_addon(current_user, booking_id):
         if not item_id:
             return jsonify({"error": True, "message": "ต้องระบุ item_id"}), 400
 
-        # ดึงราคาปัจจุบันของบริการ
         cur.execute("SELECT itemname, unitprice FROM inventoryitem WHERE itemid = %s", (item_id,))
         item = cur.fetchone()
         if not item:
             return jsonify({"error": True, "message": "ไม่พบบริการ/สินค้า"}), 404
 
         qty = data.get('quantity', 1)
-
         cur2 = conn.cursor()
         cur2.execute("""
             INSERT INTO bookingservice (bookingid, itemid, quantity, unitprice)
             VALUES (%s, %s, %s, %s)
         """, (booking_id, item_id, qty, item['unitprice']))
 
-        # อัปเดต servicetotal ใน invoice
         added_cost = float(item['unitprice']) * qty
         cur2.execute("""
             UPDATE invoice SET servicetotal = servicetotal + %s WHERE bookingid = %s
@@ -407,8 +445,8 @@ def add_addon(current_user, booking_id):
         conn.close()
 
         return jsonify({
-            "status":  "success",
-            "message": f"เพิ่มบริการ '{item['itemname']}' สำเร็จ",
+            "status":     "success",
+            "message":    f"เพิ่มบริการ '{item['itemname']}' สำเร็จ",
             "added_cost": added_cost,
         }), 201
 
@@ -417,3 +455,28 @@ def add_addon(current_user, booking_id):
         return jsonify({"error": True, "message": str(e)}), 500
     finally:
         conn.close()
+
+
+# ── 8. Get Chargeable Services (GET /api/bookings/services) ──────────
+@bookings_bp.route('/services', methods=['GET'])
+@token_required
+def get_services(current_user):
+    """ดึงรายการบริการเสริมที่คิดเงินได้ สำหรับใช้ใน new booking form"""
+    try:
+        conn = get_db_connection()
+        cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("""
+            SELECT itemid AS item_id, itemname AS name,
+                   unitprice AS unit_price, category
+            FROM inventoryitem
+            WHERE ischargeable = TRUE
+            ORDER BY category, itemname
+        """)
+        items = cur.fetchall()
+        cur.close()
+        conn.close()
+        for it in items:
+            it['unit_price'] = float(it['unit_price'] or 0)
+        return jsonify({"status": "success", "data": items}), 200
+    except Exception as e:
+        return jsonify({"error": True, "message": str(e)}), 500

@@ -78,10 +78,22 @@ def get_customer_by_id(current_user, id):
 def create_customer(current_user):
     try:
         data = request.get_json()
-        username = data.get('customer_username')
-        password = data.get('password', '123456') # Default password ถ้าไม่ได้ส่งมา
-        email = data.get('customer_email')
         
+        # 1. ดึงข้อมูลโดยรองรับ Key ทั้งจาก Bookings.js และจากหน้าอื่น
+        first_name = data.get('firstname') or data.get('first_name')
+        last_name  = data.get('lastname') or data.get('last_name')
+        phone      = data.get('phonenumber') or data.get('phone_number')
+        email      = data.get('customeremail') or data.get('customer_email')
+        address    = data.get('address')
+        
+        password = data.get('password', '123456') # Default password
+
+        # 2. สร้าง Username อัตโนมัติ (เอาเบอร์โทรมาใช้ เพื่อไม่ให้ซ้ำกันเด็ดขาด)
+        username = data.get('customer_username')
+        if not username:
+            # ถ้าไม่มีเบอร์โทร ให้ใช้ "user_ตามด้วยชื่อ" (ดัก Error ไว้ก่อน)
+            username = f"user_{phone}" if phone else f"user_{first_name}"
+
         # เข้ารหัสผ่าน
         hashed_pw = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
@@ -94,8 +106,7 @@ def create_customer(current_user):
             RETURNING customerid;
         """
         cur.execute(query, (
-            username, hashed_pw, data.get('first_name'), data.get('last_name'), 
-            data.get('phone_number'), email, data.get('address')
+            username, hashed_pw, first_name, last_name, phone, email, address
         ))
         
         new_id = cur.fetchone()[0]
@@ -103,11 +114,19 @@ def create_customer(current_user):
         cur.close()
         conn.close()
 
-        return jsonify({"status": "success", "message": "เพิ่มข้อมูลลูกค้าเรียบร้อย", "customer_id": new_id}), 201
+        # เช็คให้แน่ใจว่าส่ง key 'customer_id' กลับไปให้ Frontend (เพราะ Bookings.js ใช้ท่านี้เช็ค)
+        return jsonify({
+            "status": "success", 
+            "message": "เพิ่มข้อมูลลูกค้าเรียบร้อย", 
+            "customer_id": new_id
+        }), 201
 
-    except psycopg2.IntegrityError:
+    except psycopg2.IntegrityError as e:
+        # พิมพ์ Error ลง Terminal เพื่อให้เราดูง่ายๆ เวลาติดบั๊ก
+        print(f"DB Integrity Error: {e}") 
         return jsonify({"error": True, "code": 409, "message": "Conflict", "detail": "Username หรือ Email นี้มีในระบบแล้ว"}), 409
     except Exception as e:
+        print(f"Error: {e}")
         return jsonify({"error": True, "code": 500, "message": "Internal Server Error", "detail": str(e)}), 500
 
 # ── 4. UPDATE (Edit Customer Info) ────────────────────────────

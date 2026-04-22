@@ -125,7 +125,7 @@ def get_audit_logs(current_user):
                 record_id,
                 description,
                 timestamp
-            FROM audit_trail   
+            FROM auditlog   
             WHERE 1=1
         """
         params = []

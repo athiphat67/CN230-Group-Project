@@ -19,25 +19,27 @@ document.addEventListener('DOMContentLoaded', async () => {
 /* ── API CALLS ── */
 async function fetchNotifications() {
   try {
-    const response = await fetch('/api/notifications', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    const result = await response.json();
+    const response = await window.API.notifications.getAll();
     
-    if (result.status === 'success') {
-      NOTIFICATIONS = result.data;
-      renderStats();
-      renderList();
+    // เช็คว่าระดับ HTTP สำเร็จ (ok: true หรือ status 200)
+    if (response && response.ok) {
+      const backendPayload = response.data; // ดึงก้อนข้อมูลที่มาจาก Flask
+
+      if (backendPayload && backendPayload.status === 'success') {
+        NOTIFICATIONS = backendPayload.data || [];
+        renderStats();
+        renderList();
+      } else {
+        console.error('Backend returned an error:', backendPayload);
+        showToast('❌ ไม่สามารถโหลดการแจ้งเตือนได้');
+      }
     } else {
-      console.error('Failed to load notifications:', result.message);
+      console.error('Failed to load notifications. Raw Data:', response);
+      showToast('❌ โหลดข้อมูลล้มเหลว (HTTP Error)');
     }
   } catch (error) {
     console.error('Error fetching notifications:', error);
+    showToast('❌ ขัดข้อง: การเชื่อมต่อเซิร์ฟเวอร์ผิดพลาด');
   }
 }
 
@@ -126,13 +128,8 @@ async function markRead(id) {
 
     // 2. ยิง API อัปเดตสถานะที่ Backend
     try {
-      await fetch(`/api/notifications/${id}/read`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      await window.API.notifications.markRead(id);
+
     } catch (error) {
       console.error(`Error marking notification ${id} as read:`, error);
       // หากต้องการให้สมบูรณ์ขึ้น สามารถเขียน Logic คืนค่า n.is_read กลับเป็น false ได้ถ้ายิง API พลาด
@@ -140,8 +137,9 @@ async function markRead(id) {
   }
 }
 
+/* ── MARK READ ── */
 async function markAllRead() {
-  // 1. อัปเดต UI ทันที
+  // 1. Optimistic Update (อัปเดตหน้าจอก่อนเลยเพื่อความลื่นไหล)
   NOTIFICATIONS.forEach(n => n.is_read = true);
   renderStats();
   renderList();
@@ -149,19 +147,18 @@ async function markAllRead() {
 
   // 2. ยิง API
   try {
-    const response = await fetch('/api/notifications/read-all', {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-        'Content-Type': 'application/json'
-      }
-    });
+    const response = await window.API.notifications.markAllRead();
 
-    const result = await response.json();
-    if (result.status === 'success') {
-      showToast('✅ ทำเครื่องหมายอ่านทั้งหมดแล้ว');
+    // เช็คโครงสร้างแบบเดียวกันกับตอน Get
+    if (response && response.ok) {
+      const backendPayload = response.data;
+      if (backendPayload && backendPayload.status === 'success') {
+        showToast('✅ ทำเครื่องหมายอ่านทั้งหมดแล้ว');
+      } else {
+        showToast('❌ เกิดข้อผิดพลาดจากเซิร์ฟเวอร์');
+      }
     } else {
-      showToast('❌ เกิดข้อผิดพลาดจากเซิร์ฟเวอร์');
+      showToast('❌ ขัดข้อง: เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ');
     }
   } catch (error) {
     console.error('Error marking all as read:', error);

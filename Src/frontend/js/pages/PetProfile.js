@@ -9,27 +9,6 @@
 /* ── MOCK DATA ── */
 let PETS = []
 
-async function loadPetsData() {
-  // 1. เรียก API ผ่าน window.API ที่เราตั้งไว้
-  const res = await window.API.pets.getAll();
-
-  if (res.ok) {
-    // 2. นำข้อมูลจาก Database มาเก็บในตัวแปร PETS
-    // หมายเหตุ: Backend ของคุณส่งข้อมูลกลับมาในรูปแบบ { status: "success", data: [...] }
-    PETS = res.data.data.map(p => ({
-      ...p,
-      // เพิ่ม Emoji ตาม Species เพราะใน DB เก็บแค่ข้อความ
-      emoji: p.species?.toLowerCase() === 'cat' ? '🐱' : '🐶'
-    }));
-
-    // 3. สั่งให้ UI วาดตารางและตัวเลข Stat ใหม่
-    renderStats();
-    renderTable();
-  } else {
-    showToast('โหลดข้อมูลไม่สำเร็จ: ' + res.data.message, 'warn');
-  }
-}
-
 
 /* ── STATE ── */
 let currentFilter = 'all';

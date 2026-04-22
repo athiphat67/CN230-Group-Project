@@ -46,12 +46,14 @@ async function applyFilters() {
     const res = await window.API.audit.getAll(params);
     
     if (res.ok) {
-      // ตรวจสอบและดึงข้อมูล Array ออกมาให้ถูกต้อง (รองรับทั้ง res.data และ res.data.data)
+      // ตรวจสอบและดึงข้อมูล Array ออกมาให้ถูกต้อง
       const responseData = Array.isArray(res.data) ? res.data : (res.data?.data || []);
       AUDIT_LOGS = responseData;
     } else {
       AUDIT_LOGS = [];
-      console.error("โหลด Audit Log ไม่สำเร็จ:", res.message || "Unknown Error");
+      // 💡 ดึง Error จาก Flask (res.data.message) มาแสดง เพื่อให้รู้ข้อผิดพลาดที่แท้จริง
+      const backendError = res.data?.message || res.message || "Unknown Error";
+      console.error("❌ โหลด Audit Log ไม่สำเร็จ สาเหตุจาก Backend:", backendError);
     }
   } catch (error) {
     AUDIT_LOGS = [];

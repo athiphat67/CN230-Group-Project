@@ -279,7 +279,7 @@ function renderTeam(staff) {
     const page = window.Pagination
       ? Pagination.paginate(staff, { key: 'dashboard-team', pageSize: 6 })
       : { pageItems: staff, total: staff.length, start: 0, end: staff.length, totalPages: 1 };
-    window.Pagination?.render(page, { key: 'dashboard-team', containerEl: ensureDashboardPager(listEl.closest('.db-team-card'), 'dashboard-team-pager'), label: 'staff', onChange: () => renderTeam(staff) });
+    window.Pagination?.render(page, { key: 'dashboard-team', containerEl: ensureDashboardPager('dashboard-team-pager'), label: 'staff', onChange: () => renderTeam(staff) });
     listEl.innerHTML = page.pageItems.map((s, i) => {
       const initial = (s.first_name || '?').charAt(0);
       const color   = colors[i % colors.length];
@@ -323,7 +323,7 @@ function renderNotifications(notifs, meta = {}) {
     const page = window.Pagination
       ? Pagination.paginate(notifs, { key: 'dashboard-notifications', pageSize: 5 })
       : { pageItems: notifs, total: notifs.length, start: 0, end: notifs.length, totalPages: 1 };
-    window.Pagination?.render(page, { key: 'dashboard-notifications', containerEl: ensureDashboardPager(listEl.parentElement, 'dashboard-notifications-pager'), label: 'notifications', onChange: () => renderNotifications(notifs) });
+    window.Pagination?.render(page, { key: 'dashboard-notifications', containerEl: ensureDashboardPager('dashboard-notifications-pager'), label: 'notifications', onChange: () => renderNotifications(notifs, meta) });
     listEl.innerHTML = page.pageItems.map(n => `
       <div class="db-notif-item ${n.is_read ? '' : 'unread'}"
            onclick="window.location.href='Notifications.html'">
@@ -338,15 +338,22 @@ function renderNotifications(notifs, meta = {}) {
   }
 }
 
-function ensureDashboardPager(anchor, id) {
-  let pager = document.getElementById(id);
-  if (!pager) {
-    pager = document.createElement('div');
-    pager.id = id;
-    pager.className = 'pg-pagination';
-    pager.style.marginTop = '12px';
-    anchor?.appendChild(pager);
+function ensureDashboardPager(idOrAnchor, maybeId) {
+  let pager = null;
+  if (typeof idOrAnchor === 'string' && !maybeId) {
+    pager = document.getElementById(idOrAnchor);
+    if (!pager) return null;
+  } else {
+    const anchor = idOrAnchor;
+    const id = maybeId;
+    pager = document.getElementById(id);
+    if (!pager) {
+      pager = document.createElement('div');
+      pager.id = id;
+      anchor?.appendChild(pager);
+    }
   }
+  pager.classList.add('pg-pagination', 'db-pagination');
   return pager;
 }
 

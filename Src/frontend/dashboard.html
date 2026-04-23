@@ -169,8 +169,10 @@
       <div class="db-right">
 
         <!-- Team On Duty -->
-        <div class="db-section-title">👥 ทีมงานหน้างาน</div>
-        <div class="db-team-card">
+        <div class="db-team-card db-panel-card">
+          <div class="db-panel-head">
+            <div class="db-section-title">👥 ทีมงานหน้างาน</div>
+          </div>
           <div class="db-team-header">
             <span>พนักงานทั้งหมด</span>
             <span class="db-team-badge" id="team-badge">กำลังโหลด...</span>
@@ -178,18 +180,22 @@
           <div class="db-team-list" id="team-list">
             <div class="db-loading-state">กำลังโหลด...</div>
           </div>
+          <div class="db-panel-pager" id="dashboard-team-pager"></div>
           <a href="StaffManagement.html" class="db-team-link">จัดการทีมงาน →</a>
         </div>
 
         <!-- Quick Notifications -->
-        <div class="db-section-hdr" style="margin-top:20px">
-          <div class="db-section-title">🔔 แจ้งเตือนล่าสุด</div>
-          <span class="db-unread-badge" id="unread-badge" style="display:none">0</span>
+        <div class="db-notif-list db-panel-card">
+          <div class="db-panel-head">
+            <div class="db-section-title">🔔 แจ้งเตือนล่าสุด</div>
+            <span class="db-unread-badge" id="unread-badge" style="display:none">0</span>
+          </div>
+          <div id="notif-list">
+            <div class="db-loading-state">กำลังโหลด...</div>
+          </div>
+          <div class="db-panel-pager" id="dashboard-notifications-pager"></div>
+          <a href="Notifications.html" class="db-notif-all-link">ดูการแจ้งเตือนทั้งหมด →</a>
         </div>
-        <div class="db-notif-list" id="notif-list">
-          <div class="db-loading-state">กำลังโหลด...</div>
-        </div>
-        <a href="Notifications.html" class="db-notif-all-link">ดูการแจ้งเตือนทั้งหมด →</a>
 
       </div>
 

@@ -1,4 +1,44 @@
 const Sidebar = {
+  getCurrentUser() {
+    const roleRaw = localStorage.getItem('role') || localStorage.getItem('user_role') || '';
+    const role = String(roleRaw).toUpperCase();
+    const token = localStorage.getItem('access_token');
+    const sessionRaw = localStorage.getItem('admin_session');
+    let session = null;
+
+    try {
+      session = sessionRaw ? JSON.parse(sessionRaw) : null;
+    } catch (_) {
+      session = null;
+    }
+
+    const staffId = String(
+      session?.staff_id
+      ?? session?.staffId
+      ?? localStorage.getItem('staff_id')
+      ?? ''
+    ).trim();
+
+    const firstName = session?.first_name || session?.firstName || localStorage.getItem('first_name') || '';
+    const lastName = session?.last_name || session?.lastName || localStorage.getItem('last_name') || '';
+    const name = `${firstName} ${lastName}`.trim() || firstName || session?.name || 'Administrator';
+    const displayRole = session?.role || role || 'STAFF';
+
+    return {
+      isAuthenticatedAdmin: !!token && ['ADMIN', 'STAFF', 'OWNER'].includes(role),
+      id: staffId,
+      name,
+      role: displayRole,
+    };
+  },
+
+  enforceAdminSession() {
+    const current = Sidebar.getCurrentUser();
+    if (current.isAuthenticatedAdmin) return current;
+    window.location.href = 'login.html';
+    return null;
+  },
+
   render({ activePage = 'dashboard', user = {}, isSubPage = false }) {
     const root = document.getElementById('sidebar-root');
     if (!root) return;
@@ -126,8 +166,11 @@ async function handleLogout() {
     // 2. ไม่ว่าจะยิง API สำเร็จหรือไม่ ต้องล้างข้อมูลในเครื่องออกเสมอเพื่อความปลอดภัย
     localStorage.removeItem('access_token');
     localStorage.removeItem('first_name');
+    localStorage.removeItem('last_name');
     localStorage.removeItem('staff_id');
     localStorage.removeItem('role');
+    localStorage.removeItem('user_role');
+    localStorage.removeItem('admin_session');
 
     // 3. ดีดกลับไปหน้า Login
     window.location.href = 'login.html';

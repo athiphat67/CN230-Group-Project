@@ -889,10 +889,8 @@
   <script src="js/components/pagination.js"></script>
   <script src="js/pages/Bookings.js"></script>
   <script>
-    const currentUser = {
-      name: localStorage.getItem('first_name') || 'สมชาย มั่นคง',
-      role: localStorage.getItem('role') || 'Administrator',
-    };
+    const currentUser = Sidebar.enforceAdminSession();
+    if (!currentUser) throw new Error('Missing admin session');
     Sidebar.render({ activePage: 'bookings', user: currentUser });
     Navbar.render({
       title: 'Bookings',

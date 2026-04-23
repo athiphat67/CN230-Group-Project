@@ -193,8 +193,12 @@ async function loadNotifications(customer) {
         page: 1,
         page_size: 50,
         customer_id: customerId,
+        customerId: customerId,
         customerid: customerId,
         owner_id: customerId,
+        ownerId: customerId,
+        user_id: customerId,
+        userId: customerId,
         userid: customerId
     });
     const rawNotifications = (res.ok && res.data?.data) ? res.data.data : [];
@@ -230,33 +234,49 @@ function isNotificationForCustomer(notification, customerId) {
 
     const linkedIds = [
         notification.customer_id, notification.customerid,
+        notification.customerId,
         notification.owner_id, notification.ownerid,
+        notification.ownerId,
         notification.user_id, notification.userid,
+        notification.userId,
         notification.related_customer_id, notification.related_customerid,
+        notification.related_customerId,
+        notification.recipient_customer_id, notification.recipient_customerid,
+        notification.recipient_customerId,
         notification.target_id, notification.target_user_id, notification.recipient_id
     ]
         .filter(v => v !== undefined && v !== null && String(v).trim() !== '')
-        .map(v => String(v));
+        .map(normalizeId);
 
     if (linkedIds.length > 0) {
-        return linkedIds.includes(customerId);
+        return linkedIds.includes(normalizeId(customerId));
     }
 
     const payload = notification.payload || notification.meta || notification.data || {};
     if (payload && typeof payload === 'object') {
         const payloadIds = [
             payload.customer_id, payload.customerid,
+            payload.customerId,
             payload.owner_id, payload.ownerid,
+            payload.ownerId,
             payload.user_id, payload.userid,
+            payload.userId,
             payload.related_customer_id, payload.related_customerid,
+            payload.related_customerId,
+            payload.recipient_customer_id, payload.recipient_customerid,
+            payload.recipient_customerId,
             payload.target_id, payload.target_user_id, payload.recipient_id
         ]
             .filter(v => v !== undefined && v !== null && String(v).trim() !== '')
-            .map(v => String(v));
-        if (payloadIds.includes(customerId)) return true;
+            .map(normalizeId);
+        if (payloadIds.includes(normalizeId(customerId))) return true;
     }
 
     return false;
+}
+
+function normalizeId(value) {
+    return String(value).trim();
 }
 
 function paginateCustomerList(items, key, pageSize, anchor, onChange) {

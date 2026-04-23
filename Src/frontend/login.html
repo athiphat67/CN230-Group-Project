@@ -812,7 +812,14 @@
               localStorage.setItem('role', data.role || 'staff');
               localStorage.setItem('user_role', data.role || 'staff');
               localStorage.setItem('first_name', data.first_name || username);
+              localStorage.setItem('last_name', data.last_name || '');
               localStorage.setItem('staff_id', data.staff_id);
+              localStorage.setItem('admin_session', JSON.stringify({
+                staff_id: data.staff_id || '',
+                first_name: data.first_name || username,
+                last_name: data.last_name || '',
+                role: data.role || 'staff'
+              }));
 
               showAlert('เข้าสู่ระบบสำเร็จ! กำลังนำคุณไปยัง Dashboard...', 'success');
               setTimeout(() => { window.location.href = 'dashboard.html'; }, 800);

@@ -214,10 +214,8 @@
   <script src="js/components/pagination.js"></script>
   <script src="js/pages/Rooms.js"></script>
   <script>
-    const currentUser = {
-      name: localStorage.getItem('first_name') || 'Administrator',
-      role: localStorage.getItem('role') || 'Administrator'
-    };
+    const currentUser = Sidebar.enforceAdminSession();
+    if (!currentUser) throw new Error('Missing admin session');
     Sidebar.render({ activePage: 'rooms', user: currentUser });
     Navbar.render({
       title: 'Room Management',

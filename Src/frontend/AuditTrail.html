@@ -135,7 +135,8 @@
 <script src="js/components/pagination.js"></script>
 <script src="js/pages/AuditTrail.js"></script>
 <script>
-  const currentUser = { name: 'สมชาย มั่นคง', role: 'Administrator' };
+  const currentUser = Sidebar.enforceAdminSession();
+  if (!currentUser) throw new Error('Missing admin session');
   Sidebar.render({ activePage: 'audit', user: currentUser });
   Navbar.render({
     title: 'Audit Trail',

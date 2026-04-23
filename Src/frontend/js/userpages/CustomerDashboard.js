@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 4. Load all dashboard data concurrently
     await Promise.all([
         loadMyPets(customer),
-        loadNotifications(),
+        loadNotifications(customer),
         loadActiveReservations(customer),
     ]);
 });
@@ -182,15 +182,23 @@ async function loadActiveReservations(customer) {
 }
 
 /* ── NOTIFICATIONS ─────────────────────────────────── */
-async function loadNotifications() {
+async function loadNotifications(customer) {
     const listEl = document.getElementById('notif-list');
     if (!listEl) return;
 
     listEl.innerHTML = `<div style="padding:24px;text-align:center"><div class="spinner"></div></div>`;
 
-    // เรียก API จริง (ถ้า Backend ยังไม่มีระบบ Notif มันจะคืนค่าว่างมา ซึ่งถูกต้องแล้ว)
-    const res = await CustomerAPI.notifications.getAll({ page: 1, page_size: 20 });
-    const notifications = (res.ok && res.data?.data) ? res.data.data : [];
+    const customerId = String(customer?.id || customer?.customerid || localStorage.getItem('customer_id') || '').trim();
+    const res = await CustomerAPI.notifications.getAll({
+        page: 1,
+        page_size: 50,
+        customer_id: customerId,
+        customerid: customerId,
+        owner_id: customerId,
+        userid: customerId
+    });
+    const rawNotifications = (res.ok && res.data?.data) ? res.data.data : [];
+    const notifications = rawNotifications.filter(n => isNotificationForCustomer(n, customerId));
 
     if (notifications.length === 0) {
         listEl.innerHTML = `
@@ -201,8 +209,54 @@ async function loadNotifications() {
         return;
     }
 
-    const page = paginateCustomerList(notifications, 'user-dashboard-notifications', 5, listEl, loadNotifications);
+    const page = paginateCustomerList(
+        notifications,
+        'user-dashboard-notifications',
+        5,
+        listEl,
+        () => loadNotifications(customer)
+    );
     listEl.innerHTML = page.pageItems.map(n => renderNotifItem(n)).join('');
+}
+
+function isNotificationForCustomer(notification, customerId) {
+    if (!notification || !customerId) return false;
+
+    const scope = String(notification.scope || notification.visibility || notification.audience || '').toUpperCase();
+    if (scope && ['STAFF', 'INTERNAL', 'ADMIN', 'GLOBAL_STAFF'].includes(scope)) return false;
+
+    const type = String(notification.type || '').toUpperCase();
+    if (['NEW_BOOKING_ALERT'].includes(type)) return false;
+
+    const linkedIds = [
+        notification.customer_id, notification.customerid,
+        notification.owner_id, notification.ownerid,
+        notification.user_id, notification.userid,
+        notification.related_customer_id, notification.related_customerid,
+        notification.target_id, notification.target_user_id, notification.recipient_id
+    ]
+        .filter(v => v !== undefined && v !== null && String(v).trim() !== '')
+        .map(v => String(v));
+
+    if (linkedIds.length > 0) {
+        return linkedIds.includes(customerId);
+    }
+
+    const payload = notification.payload || notification.meta || notification.data || {};
+    if (payload && typeof payload === 'object') {
+        const payloadIds = [
+            payload.customer_id, payload.customerid,
+            payload.owner_id, payload.ownerid,
+            payload.user_id, payload.userid,
+            payload.related_customer_id, payload.related_customerid,
+            payload.target_id, payload.target_user_id, payload.recipient_id
+        ]
+            .filter(v => v !== undefined && v !== null && String(v).trim() !== '')
+            .map(v => String(v));
+        if (payloadIds.includes(customerId)) return true;
+    }
+
+    return false;
 }
 
 function paginateCustomerList(items, key, pageSize, anchor, onChange) {

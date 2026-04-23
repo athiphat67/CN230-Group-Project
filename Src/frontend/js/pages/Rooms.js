@@ -6,7 +6,7 @@
 'use strict';
 
 let roomSizeOptions = ['SMALL', 'MEDIUM', 'LARGE'];
-let petTypeOptions = ['CAT', 'DOG'];
+let petTypeOptions = ['CAT', 'DOG', 'SMALL_PET', 'OTHER'];
 const DEFAULT_STATUS_OPTIONS = ['AVAILABLE', 'OCCUPIED', 'MAINTENANCE'];
 
 let ROOMS = [];
@@ -49,29 +49,18 @@ async function loadRoomOptions() {
 
 async function loadRooms() {
   setLoading(true);
-  const res = await window.API.rooms.getAll();
+  const res = await window.RoomStore.fetchRooms();
 
   if (!res.ok) {
     setLoading(false);
-    showRoomToast(res.data?.message || 'Unable to load rooms.', 'error');
+    showRoomToast(res.raw?.data?.message || 'Unable to load rooms.', 'error');
     return;
   }
 
-  ROOMS = normalizeRooms(res.data?.data || res.data || []);
+  ROOMS = res.data;
   syncStatusOptionsFromRooms();
   renderStatusOptions();
   renderAll();
-}
-
-function normalizeRooms(rows) {
-  return rows.map(room => ({
-    room_id: room.room_id ?? room.roomid,
-    room_number: room.room_number ?? room.roomnumber,
-    room_type: room.room_type ?? room.roomsize,
-    pet_type: room.pet_type ?? room.pettype,
-    price_per_night: Number(room.price_per_night ?? room.rate ?? 0),
-    status: String(room.status || 'AVAILABLE').toUpperCase(),
-  }));
 }
 
 function syncStatusOptionsFromRooms() {
@@ -285,6 +274,7 @@ async function saveRoom() {
   }
 
   showRoomToast(editingRoomId ? 'Room updated.' : 'Room created.');
+  broadcastRoomsChanged();
   closeRoomModal();
   await loadRooms();
 }
@@ -306,6 +296,7 @@ async function quickUpdateStatus(roomId, status) {
   }
 
   showRoomToast(`Room ${room.room_number} marked ${statusLabel(status)}.`);
+  broadcastRoomsChanged();
   await loadRooms();
 }
 
@@ -321,6 +312,7 @@ async function deleteRoom(roomId) {
   }
 
   showRoomToast(`Room ${room.room_number} deleted.`, 'warn');
+  broadcastRoomsChanged();
   await loadRooms();
 }
 
@@ -471,6 +463,10 @@ function showRoomToast(msg, type = 'success') {
   toast.style.cssText = `position:fixed;bottom:24px;right:24px;z-index:9999;background:${c.bg};color:${c.color};border:1.5px solid ${c.border};padding:12px 20px;border-radius:14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.12);animation:slideUp .3s ease;max-width:380px;`;
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 4000);
+}
+
+function broadcastRoomsChanged() {
+  localStorage.setItem('rooms_last_updated_at', String(Date.now()));
 }
 
 window.filterRooms = filterRooms;

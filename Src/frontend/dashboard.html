@@ -195,21 +195,57 @@
 
     </div><!-- /.db-main-grid -->
 
-    <!-- ── ROOM STATUS SECTION ── -->
-    <div class="db-section-hdr" style="margin-top:28px">
-      <div class="db-section-title">
-        🏨 สถานะห้องพักทั้งหมด
-        <div class="db-legend">
-          <span class="db-legend-item"><span class="db-dot occupied"></span>มีผู้เข้าพัก</span>
-          <span class="db-legend-item"><span class="db-dot available"></span>ว่าง</span>
-          <span class="db-legend-item"><span class="db-dot maintenance"></span>ซ่อมบำรุง</span>
+    <!-- ── PREMIUM ROOM STATUS SECTION ── -->
+    <section class="db-rooms-shell">
+      <div class="db-rooms-shell-head">
+        <div>
+          <div class="db-shell-kicker">Operations Control</div>
+          <div class="db-section-title">🏨 Room Intelligence</div>
+          <div class="db-legend">
+            <span class="db-legend-item"><span class="db-dot occupied"></span>มีผู้เข้าพัก</span>
+            <span class="db-legend-item"><span class="db-dot available"></span>ว่าง</span>
+            <span class="db-legend-item"><span class="db-dot maintenance"></span>ซ่อมบำรุง</span>
+          </div>
+        </div>
+        <div class="db-rooms-shell-actions">
+          <a href="Rooms.html" class="btn-cancel">จัดการห้องทั้งหมด</a>
+          <a href="Bookings.html" class="btn-primary">สร้างการจอง</a>
         </div>
       </div>
-      <a href="Bookings.html" class="db-section-link">จัดการห้องพัก →</a>
-    </div>
-    <div id="room-grid-wrap" class="db-room-grid-wrap">
-      <div class="db-loading-state">กำลังโหลดสถานะห้อง...</div>
-    </div>
+
+      <div class="db-room-summary-row">
+        <div class="db-room-summary-card">
+          <span>ห้องทั้งหมด</span>
+          <strong id="db-room-total">—</strong>
+        </div>
+        <div class="db-room-summary-card available">
+          <span>ห้องว่าง</span>
+          <strong id="db-room-available">—</strong>
+        </div>
+        <div class="db-room-summary-card occupied">
+          <span>มีผู้เข้าพัก</span>
+          <strong id="db-room-occupied">—</strong>
+        </div>
+        <div class="db-room-summary-card maintenance">
+          <span>ต้องดูแล</span>
+          <strong id="db-room-maintenance">—</strong>
+        </div>
+      </div>
+
+      <div class="db-room-controls">
+        <div class="db-room-filter-tabs">
+          <button class="db-room-filter active" data-room-filter="ALL">ทั้งหมด</button>
+          <button class="db-room-filter" data-room-filter="AVAILABLE">ว่าง</button>
+          <button class="db-room-filter" data-room-filter="OCCUPIED">มีผู้เข้าพัก</button>
+          <button class="db-room-filter" data-room-filter="MAINTENANCE">ซ่อมบำรุง</button>
+        </div>
+        <input id="db-room-search" class="db-room-search" type="text" placeholder="ค้นหาห้อง / ประเภท / โซน..." />
+      </div>
+
+      <div id="room-grid-wrap" class="db-room-grid-wrap">
+        <div class="db-loading-state">กำลังโหลดสถานะห้อง...</div>
+      </div>
+    </section>
 
   </div><!-- /.content -->
 </main>
@@ -236,6 +272,7 @@
 <script src="js/components/sidebar.js"></script>
 <script src="js/components/navbar.js"></script>
 <script src="js/services/api.js"></script>
+<script src="js/services/roomsStore.js"></script>
 <script src="js/components/pagination.js"></script>
 <script src="js/pages/dashboard.js"></script>
 <script>

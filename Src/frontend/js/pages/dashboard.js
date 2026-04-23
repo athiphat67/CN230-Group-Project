@@ -7,10 +7,15 @@
 /* ─── STATE ─────────────────────────────── */
 let _clockAction = null;   // 'CLOCK_IN' | 'CLOCK_OUT'
 let _clockTimer  = null;
+let _dashboardData = { bookings: [], rooms: [], analytics: null };
+let _roomFilter = 'ALL';
+let _roomSearch = '';
 
 /* ─── INIT ──────────────────────────────── */
 document.addEventListener('DOMContentLoaded', async () => {
   _setWelcome();
+  bindRoomControls();
+  bindRoomSyncListeners();
   await loadDashboard();
 });
 
@@ -46,7 +51,7 @@ async function loadDashboard() {
       window.API.bookings.getAll(),
       window.API.notifications.getAll({ page: 1, page_size: 20 }),
       window.API.staff.getAll(),
-      window.API.rooms.getAll(),
+      window.RoomStore.fetchRooms(),
       window.API.analytics.getDashboard({ start_date: today, end_date: today }),
     ]);
 
@@ -55,8 +60,9 @@ async function loadDashboard() {
     const notifData = _extractNotif(notifRes);
     const notifs    = notifData.data;
     const staff     = _extract(staffRes,      []);
-    const rooms     = _extract(roomsRes,      []);
+    const rooms     = _extractRooms(roomsRes);
     const analytics = _extractObj(analyticsRes, null);
+    _dashboardData = { bookings, rooms, analytics };
 
     // Render each section
     renderStats(bookings, analytics, rooms);
@@ -98,6 +104,13 @@ function _extractNotif(settled) {
   };
 }
 
+function _extractRooms(settled) {
+  if (settled.status !== 'fulfilled') return [];
+  const payload = settled.value;
+  if (!payload.ok) return [];
+  return payload.data || [];
+}
+
 /* ─── 1. KPI STAT CARDS ──────────────────── */
 function renderStats(bookings, analytics, rooms) {
   const today = new Date().toLocaleDateString('en-CA');
@@ -108,8 +121,12 @@ function renderStats(bookings, analytics, rooms) {
 
   // นับ ACTIVE (กำลังพัก)
   const active     = bookings.filter(b => b.status === 'CHECKED_IN').length;
-  const totalRooms = rooms.length || 1;
-  const occ        = Math.round((active / totalRooms) * 100);
+  const roomSummary = window.RoomStore.summarizeRooms(
+    rooms,
+    new Set(bookings.filter(b => b.status === 'CHECKED_IN').map(b => b.room_id))
+  );
+  const totalRooms = roomSummary.total || 1;
+  const occ = Math.round((active / totalRooms) * 100);
   _setText('stat-active', active);
   _setText('stat-occupancy', `Occupancy ${occ}%`);
 
@@ -340,6 +357,10 @@ function renderRoomGrid(rooms, bookings) {
 
   if (!rooms.length) {
     wrap.innerHTML = '<div class="db-loading-state">ไม่พบข้อมูลห้องพัก</div>';
+    _setText('db-room-total', '0');
+    _setText('db-room-available', '0');
+    _setText('db-room-occupied', '0');
+    _setText('db-room-maintenance', '0');
     return;
   }
 
@@ -354,7 +375,8 @@ function renderRoomGrid(rooms, bookings) {
   const zoneConfig = {
     CAT: { label: 'โซนแมว (Cat Suites)', icon: '🐱' },
     DOG: { label: 'โซนสุนัข (Dog Wing)', icon: '🐶' },
-    OTHER: { label: 'ห้องอื่นๆ', icon: '🐾' },
+    SMALL_PET: { label: 'โซนหนู/กระต่าย (Small Pets)', icon: '🐰' }, // <-- เพิ่มบรรทัดนี้
+    OTHER: { label: 'โซนอื่นๆ (Other)', icon: '🐾' }, // <-- อัปเดตบรรทัดนี้
   };
 
   // Active booking room IDs
@@ -362,19 +384,55 @@ function renderRoomGrid(rooms, bookings) {
     bookings.filter(b => b.status === 'CHECKED_IN').map(b => b.room_id)
   );
 
+  const summary = window.RoomStore.summarizeRooms(rooms, activeRoomIds);
+  _setText('db-room-total', summary.total);
+  _setText('db-room-available', summary.available);
+  _setText('db-room-occupied', summary.occupied);
+  _setText('db-room-maintenance', summary.maintenance);
+
   wrap.innerHTML = '';
 
   Object.entries(zones).forEach(([zone, zoneRooms]) => {
     const cfg = zoneConfig[zone] || { label: zone, icon: '🏠' };
-    const occupied  = zoneRooms.filter(r => r.status !== 'AVAILABLE' && r.status !== 'MAINTENANCE' || activeRoomIds.has(r.room_id)).length;
-    const available = zoneRooms.filter(r => r.status === 'AVAILABLE' && !activeRoomIds.has(r.room_id)).length;
+    const searchedRooms = zoneRooms.filter(r => {
+      const q = _roomSearch.trim().toLowerCase();
+      if (!q) return true;
+      return [r.room_number, r.room_type, r.pet_type, r.status].some(v => String(v || '').toLowerCase().includes(q));
+    });
+
+    const filteredRooms = searchedRooms.filter(r => {
+      if (_roomFilter === 'ALL') return true;
+      const liveStatus = window.RoomStore.inferLiveStatus(r, activeRoomIds);
+      if (_roomFilter === 'OCCUPIED') return ['OCCUPIED', 'RESERVED', 'CHECKED_IN'].includes(liveStatus);
+      if (_roomFilter === 'MAINTENANCE') return ['MAINTENANCE', 'CLEANING'].includes(liveStatus);
+      return liveStatus === _roomFilter;
+    });
+
+    if (!filteredRooms.length) return;
+
+    const occupied = filteredRooms.filter(r => ['OCCUPIED', 'RESERVED', 'CHECKED_IN'].includes(window.RoomStore.inferLiveStatus(r, activeRoomIds))).length;
+    const available = filteredRooms.filter(r => window.RoomStore.inferLiveStatus(r, activeRoomIds) === 'AVAILABLE').length;
     const pct = Math.round((occupied / zoneRooms.length) * 100);
 
-    const roomDots = zoneRooms.map(r => {
+    const roomDots = filteredRooms.map(r => {
+      const liveStatus = window.RoomStore.inferLiveStatus(r, activeRoomIds);
       let cls = 'available';
-      if (activeRoomIds.has(r.room_id) || r.status === 'OCCUPIED') cls = 'occupied';
-      else if (r.status === 'MAINTENANCE') cls = 'maintenance';
-      return `<div class="db-mini-room ${cls}" title="${r.room_number || r.room_type}">${r.room_number || ''}</div>`;
+      if (['OCCUPIED', 'RESERVED', 'CHECKED_IN'].includes(liveStatus)) cls = 'occupied';
+      else if (['MAINTENANCE', 'CLEANING'].includes(liveStatus)) cls = 'maintenance';
+      const statusLabel = cls === 'occupied' ? 'มีผู้เข้าพัก' : cls === 'maintenance' ? 'ซ่อมบำรุง' : 'พร้อมใช้งาน';
+      return `
+      <article class="db-room-tile ${cls}" title="${r.room_number || r.room_type}">
+        <div class="db-room-tile-head">
+          <span class="db-room-pill">${r.room_number || '-'}</span>
+          <span class="db-room-rate">฿${Number(r.price_per_night || 0).toLocaleString()}</span>
+        </div>
+        <div class="db-room-tile-meta">
+          <span>${_statusLabel(r.room_type)}</span>
+          <span>•</span>
+          <span>${_statusLabel(r.pet_type)}</span>
+        </div>
+        <div class="db-room-tile-status ${cls}">${statusLabel}</div>
+      </article>`;
     }).join('');
 
     const card = document.createElement('div');
@@ -388,11 +446,52 @@ function renderRoomGrid(rooms, bookings) {
       <div class="db-zone-footer">
         <span>🔴 ${occupied} มีผู้เข้าพัก</span>
         <span>🟢 ${available} ว่าง</span>
-        <span>ทั้งหมด ${zoneRooms.length}</span>
+        <span>แสดง ${filteredRooms.length}/${zoneRooms.length}</span>
       </div>
     `;
     wrap.appendChild(card);
   });
+
+  if (!wrap.children.length) {
+    wrap.innerHTML = '<div class="db-loading-state">ไม่พบห้องตามเงื่อนไขที่เลือก</div>';
+  }
+}
+
+function bindRoomControls() {
+  document.querySelectorAll('.db-room-filter').forEach(btn => {
+    btn.addEventListener('click', () => {
+      _roomFilter = btn.dataset.roomFilter || 'ALL';
+      document.querySelectorAll('.db-room-filter').forEach(x => x.classList.remove('active'));
+      btn.classList.add('active');
+      renderRoomGrid(_dashboardData.rooms, _dashboardData.bookings);
+    });
+  });
+
+  const searchInput = document.getElementById('db-room-search');
+  searchInput?.addEventListener('input', e => {
+    _roomSearch = e.target.value || '';
+    renderRoomGrid(_dashboardData.rooms, _dashboardData.bookings);
+  });
+}
+
+function bindRoomSyncListeners() {
+  window.addEventListener('storage', event => {
+    if (event.key === 'rooms_last_updated_at') refreshRoomsOnly();
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') refreshRoomsOnly();
+  });
+
+  window.addEventListener('focus', refreshRoomsOnly);
+}
+
+async function refreshRoomsOnly() {
+  const roomsRes = await window.RoomStore.fetchRooms();
+  if (!roomsRes.ok) return;
+  _dashboardData.rooms = roomsRes.data;
+  renderStats(_dashboardData.bookings, _dashboardData.analytics, _dashboardData.rooms);
+  renderRoomGrid(_dashboardData.rooms, _dashboardData.bookings);
 }
 
 /* ─── CLOCK IN / OUT ─────────────────────── */
@@ -497,7 +596,10 @@ function _setText(id, val) {
 
 function _petEmoji(species) {
   const s = (species || '').toLowerCase();
-  return s.includes('cat') ? '🐱' : s.includes('dog') ? '🐶' : '🐾';
+  if (s.includes('cat')) return '🐱';
+  if (s.includes('dog')) return '🐶';
+  if (s.includes('small_pet')) return '🐰'; // <-- เพิ่มบรรทัดนี้
+  return '🐾';
 }
 
 function _fmtDate(s) {
@@ -520,4 +622,11 @@ function _calcNights(checkin, checkout) {
 
 function _roleLabel(role) {
   return { ADMIN: 'ผู้ดูแลระบบ', STAFF: 'พนักงาน', OWNER: 'เจ้าของ' }[role] ?? role;
+}
+
+function _statusLabel(value) {
+  return String(value || '—')
+    .toLowerCase()
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase());
 }

@@ -70,7 +70,7 @@ function normalizeBooking(b) {
     id: `BK-${String(b.booking_id).padStart(4, '0')}`,
     pet_id: b.pet_id,
     pet_name: b.pet_name || '—',
-    pet_emoji: species === 'cat' ? '🐱' : species === 'dog' ? '🐶' : '🐾',
+    pet_emoji: species === 'cat' ? '🐱' : species === 'dog' ? '🐶' : species === 'small_pet' ? '🐰' : '🐾',
     breed: b.breed || '—',
     notes: b.notes || '',
     owner_id: b.owner_id,
@@ -739,7 +739,7 @@ async function confirmNewPet() {
     nb_petId = parseInt(petId);
     nb_petSpecies = species.toLowerCase();
 
-    const emoji = species === 'CAT' ? '🐱' : species === 'DOG' ? '🐶' : '🐾';
+    const emoji = species === 'CAT' ? '🐱' : species === 'DOG' ? '🐶' : species === 'SMALL_PET' ? '🐰' : '🐾';
     const displayText = `${emoji} ${name}${breed ? ` (${species}, ${breed})` : ` (${species})`}`;
 
     // Lock in: badge

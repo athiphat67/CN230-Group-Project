@@ -1,48 +1,59 @@
 :::mermaid
-    erDiagram
-    Customer ||--o{ Pet : "owns"
-    Customer ||--o{ Booking : "makes"
-    Booking ||--|{ BookingDetail : "contains"
-    Pet ||--o{ BookingDetail : "stays_in"
-    Room ||--o{ BookingDetail : "hosts"
+erDiagram
+    customer ||--o{ pet : "owns"
+    customer ||--o{ booking : "makes"
+    pet ||--o{ vaccinationrecord : "has_record"
+    pet ||--o{ mealplan : "has_plan"
+    booking ||--|{ bookingdetail : "contains"
+    pet ||--o{ bookingdetail : "stays_in"
+    room ||--o{ bookingdetail : "hosts"
 
-    Customer {
-        SERIAL CustomerID PK
-        VARCHAR CustomerUsername UK
-        VARCHAR CustomerEmail UK
-        VARCHAR FirstName
-        VARCHAR LastName
-        VARCHAR PhoneNumber
+    customer {
+        serial4 customerid PK
+        varchar customerusername
+        varchar firstname
+        varchar lastname
     }
-    Pet {
-        SERIAL PetID PK
-        INT CustomerID FK
-        VARCHAR Name
-        species_enum Species
-        TEXT MedicalCondition
-        TEXT Allergy
-        BOOLEAN IsVaccinated
+    pet {
+        serial4 petid PK
+        int4 customerid FK
+        varchar name
+        species_enum species
+        bool isvaccinated
+        bpchar sex
     }
-    Room {
-        SERIAL RoomID PK
-        VARCHAR RoomNumber UK
-        room_size_enum RoomSize
-        room_status_enum Status
-        DECIMAL Rate
+    vaccinationrecord {
+        serial4 vaccine_id PK
+        int4 pet_id FK
+        varchar vaccine_name
+        date administered_date
+        date expiry_date
     }
-    Booking {
-        SERIAL BookingID PK
-        INT CustomerID FK
-        TIMESTAMP CheckInDate
-        TIMESTAMP CheckOutDate
-        booking_status Status
-        DECIMAL LockedRate
-        INT CreatedBy_StaffID
+    mealplan {
+        serial4 mealplan_id PK
+        int4 pet_id FK
+        varchar meal_period
+        varchar food_type
+        numeric quantity_grams
     }
-    BookingDetail {
-        SERIAL BookingDetailID PK
-        INT BookingID FK
-        INT PetID FK
-        INT RoomID FK
+    room {
+        serial4 roomid PK
+        varchar roomnumber UK
+        room_size_enum roomsize
+        numeric rate
+        room_status_enum status
+    }
+    booking {
+        serial4 bookingid PK
+        int4 customerid FK
+        timestamp checkindate
+        timestamp checkoutdate
+        booking_status status
+    }
+    bookingdetail {
+        serial4 bookingdetailid PK
+        int4 bookingid FK
+        int4 petid FK
+        int4 roomid FK
     }
 :::

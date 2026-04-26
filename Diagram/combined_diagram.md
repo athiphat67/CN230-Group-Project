@@ -1,184 +1,232 @@
 :::mermaid
-    erDiagram
-    %% ── RELATIONSHIPS ──
-    Customer ||--o{ Pet : "owns"
-    Customer ||--o{ Booking : "makes"
+ erDiagram
+    %% ── RELATIONSHIPS (Crow's Foot) ──
+    customer ||--o{ pet : "owns"
+    customer ||--o{ booking : "makes"
+    customer ||--o{ notification : "triggers (actor)"
     
-    Booking ||--|{ BookingDetail : "contains"
-    Pet ||--o{ BookingDetail : "stays_in"
-    Room ||--o{ BookingDetail : "hosts"
+    pet ||--o{ vaccinationrecord : "has_record"
+    pet ||--o{ mealplan : "has_plan"
+    pet ||--o{ bookingdetail : "stays_in"
     
-    BookingDetail ||--o{ CareLog : "has_log"
+    booking ||--|{ bookingdetail : "contains (at least 1)"
+    booking ||--o{ bookingservice : "includes_service"
+    booking ||--o| invoice : "generates (1-to-1)"
+    booking ||--o{ notification : "has_notification"
     
-    Booking ||--o{ BookingService : "includes_service"
-    InventoryItem ||--o{ BookingService : "provides"
+    room ||--o{ bookingdetail : "hosts"
     
-    BookingDetail ||--o{ InventoryUsage : "uses_item"
-    InventoryItem ||--o{ InventoryUsage : "consumed_in"
+    bookingdetail ||--o{ carelog : "has_log"
+    bookingdetail ||--o{ inventoryusage : "uses_item"
     
-    Booking ||--o| Invoice : "generates (1-to-1)"
+    inventoryitem ||--o{ bookingservice : "provides"
+    inventoryitem ||--o{ inventoryusage : "consumed_in"
     
-    Staff ||--o{ Attendance : "logs"
-    Staff ||--o{ LeaveRecord : "requests"
-    Staff ||--o{ LeaveRecord : "approves"
-    Staff ||--o{ AuditTrail : "performs"
-    
-    %% Staff involvement in operations
-    Staff ||--o{ Booking : "creates"
-    Staff ||--o{ Booking : "cancels"
-    Staff ||--o{ CareLog : "logs"
-    Staff ||--o{ InventoryUsage : "dispenses"
-    Staff ||--o{ Invoice : "issues"
+    staff ||--o{ attendance : "logs"
+    staff ||--o{ leaverecord : "requests/approves"
+    staff ||--o{ auditlog : "performs"
+    staff ||--o{ booking : "creates/cancels"
+    staff ||--o{ invoice : "issues"
+    staff ||--o{ carelog : "logs"
+    staff ||--o{ inventoryusage : "dispenses"
+    staff ||--o{ notification : "receives/triggers"
 
     %% ── TABLES ──
-    Customer {
-        SERIAL CustomerID PK
-        VARCHAR CustomerUsername UK
-        VARCHAR PasswordHash
-        VARCHAR FirstName
-        VARCHAR LastName
-        VARCHAR PhoneNumber
-        VARCHAR CustomerEmail UK
-        TEXT Address
+    customer {
+        serial4 customerid PK
+        varchar customerusername UK
+        varchar firstname
+        varchar lastname
+        varchar phonenumber
+        varchar customeremail UK
+        text address
     }
 
-    Staff {
-        SERIAL StaffID PK
-        VARCHAR StaffUsername UK
-        VARCHAR PasswordHash
-        VARCHAR FirstName
-        VARCHAR LastName
-        VARCHAR Role
-        BOOLEAN IsOnDuty
-        VARCHAR PhoneNumber
-        VARCHAR StaffEmail UK
-        DATE HireDate
+    staff {
+        serial4 staffid PK
+        varchar staffusername UK
+        varchar firstname
+        varchar lastname
+        varchar role
+        bool isonduty
+        varchar phonenumber
+        varchar staffemail UK
+        date hiredate
+        bool isActive
     }
 
-    Pet {
-        SERIAL PetID PK
-        INT CustomerID FK
-        VARCHAR Name
-        species_enum Species
-        VARCHAR Breed
-        DECIMAL Weight
-        TEXT MedicalCondition
-        TEXT Allergy
-        BOOLEAN IsVaccinated
-        TEXT VaccineRecord
+    pet {
+        serial4 petid PK
+        int4 customerid FK
+        varchar name
+        species_enum species
+        varchar breed
+        numeric weight
+        text medicalcondition
+        text allergy
+        bool isvaccinated
+        text vaccinerecord
+        date dob
+        bpchar sex
+        varchar coat_color
+        text behavior_notes
     }
 
-    Room {
-        SERIAL RoomID PK
-        VARCHAR RoomNumber UK
-        room_size_enum RoomSize
-        pet_type_enum PetType
-        DECIMAL Rate
-        room_status_enum Status
+    vaccinationrecord {
+        serial4 vaccine_id PK
+        int4 pet_id FK
+        varchar vaccine_name
+        date administered_date
+        date expiry_date
+        varchar vet_clinic
+        timestamp created_at
     }
 
-    Booking {
-        SERIAL BookingID PK
-        INT CustomerID FK
-        TIMESTAMP CheckInDate
-        TIMESTAMP CheckOutDate
-        booking_status Status
-        INT CreatedBy_StaffID FK
-        DECIMAL LockedRate
-        DATE CancelledAt
-        INT CancelledByStaffID FK
+    mealplan {
+        serial4 mealplan_id PK
+        int4 pet_id FK
+        varchar meal_period
+        varchar food_type
+        numeric quantity_grams
+        text notes
+        timestamp created_at
     }
 
-    BookingDetail {
-        SERIAL BookingDetailID PK
-        INT BookingID FK
-        INT PetID FK
-        INT RoomID FK
+    room {
+        serial4 roomid PK
+        varchar roomnumber UK
+        room_size_enum roomsize
+        pet_type_enum pettype
+        numeric rate
+        room_status_enum status
     }
 
-    CareLog {
-        SERIAL LogID PK
-        INT BookingDetailID FK
-        TIMESTAMP LogDate
-        food_status_enum FoodStatus
-        potty_status_enum PottyStatus
-        BOOLEAN MedicationGiven
-        TEXT StaffNote
-        VARCHAR PhotoURL
-        INT LoggedBy_StaffID FK
+    booking {
+        serial4 bookingid PK
+        int4 customerid FK
+        timestamp checkindate
+        timestamp checkoutdate
+        booking_status status
+        int4 createdby_staffid FK
+        numeric lockedrate
+        date cancelledat
+        int4 cancelledbystaffid FK
     }
 
-    InventoryItem {
-        SERIAL ItemID PK
-        VARCHAR ItemName
-        VARCHAR Category
-        INT QuantityInStock
-        DECIMAL UnitPrice
-        INT LowStockThreshold
-        BOOLEAN IsChargeable
+    bookingdetail {
+        serial4 bookingdetailid PK
+        int4 bookingid FK
+        int4 petid FK
+        int4 roomid FK
     }
 
-    BookingService {
-        SERIAL BookingServiceID PK
-        INT BookingID FK
-        INT ItemID FK
-        INT Quantity
-        DECIMAL UnitPrice
+    carelog {
+        serial4 logid PK
+        int4 bookingdetailid FK
+        timestamp logdate
+        food_status_enum foodstatus
+        potty_status_enum pottystatus
+        bool medicationgiven
+        text staffnote
+        varchar photourl
+        int4 loggedby_staffid FK
+        mood_type mood
+        text behavior_notes
     }
 
-    InventoryUsage {
-        SERIAL UsageID PK
-        INT BookingDetailID FK
-        INT ItemID FK
-        INT QuantityUsed
-        TIMESTAMP UsageDate
-        INT StaffID FK
+    inventoryitem {
+        serial4 itemid PK
+        varchar itemname
+        varchar category
+        int4 quantityinstock
+        numeric unitprice
+        int4 lowstockthreshold
+        bool ischargeable
+        date expiry_date
     }
 
-    Invoice {
-        SERIAL InvoiceID PK
-        INT BookingID FK
-        INT IssuedBy_StaffID FK
-        DECIMAL RoomTotal
-        DECIMAL ServiceTotal
-        DECIMAL VetEmergencyCost
-        DECIMAL GrandTotal
-        DECIMAL DepositPaid
-        VARCHAR PaymentMethod
-        payment_status PaymentStatus
-        TIMESTAMP PaymentDate
+    bookingservice {
+        serial4 bookingserviceid PK
+        int4 bookingid FK
+        int4 itemid FK
+        int4 quantity
+        numeric unitprice
     }
 
-    Attendance {
-        SERIAL AttendanceID PK
-        INT StaffID FK
-        DATE WorkDate
-        TIMESTAMP ClockInTime
-        TIMESTAMP ClockOutTime
-        attendance_status Status
-        VARCHAR Remark
+    inventoryusage {
+        serial4 usageid PK
+        int4 bookingdetailid FK
+        int4 itemid FK
+        int4 quantityused
+        timestamp usagedate
+        int4 staffid FK
     }
 
-    LeaveRecord {
-        SERIAL LeaveID PK
-        INT StaffID FK
-        leave_type LeaveType
-        DATE StartDate
-        DATE EndDate
-        TEXT Reason
-        leave_status Status
-        INT ApprovedBy FK
-        TIMESTAMP CreatedAt
+    invoice {
+        serial4 invoiceid PK
+        int4 bookingid FK
+        int4 issuedby_staffid FK
+        numeric roomtotal
+        numeric servicetotal
+        numeric vetemergencycost
+        numeric grandtotal
+        numeric depositpaid
+        varchar paymentmethod
+        payment_status paymentstatus
+        timestamp paymentdate
+        numeric amountpaid
+        timestamp lastpaymentdate
     }
 
-    AuditTrail {
-        SERIAL AuditID PK
-        INT StaffID FK
-        VARCHAR StaffName
-        VARCHAR ActionType
-        VARCHAR TableAffected
-        INT RecordID
-        TEXT Description
-        TIMESTAMP Timestamp
+    attendance {
+        serial4 attendanceid PK
+        int4 staffid FK
+        date workdate
+        timestamp clockin
+        timestamp clockout
+        attendance_status status
+        varchar note
+    }
+
+    leaverecord {
+        serial4 leaveid PK
+        int4 staffid FK
+        leave_type leavetype
+        date startdate
+        date enddate
+        text reason
+        leave_status status
+        int4 approvedby FK
+        timestamp createdat
+        timestamp updatedat
+    }
+
+    auditlog {
+        serial4 audit_id PK
+        int4 staff_id FK
+        audit_action action_type
+        varchar table_affected
+        varchar record_id
+        text description
+        timestamp timestamp
+    }
+
+    notification {
+        serial4 notification_id PK
+        notification_type type
+        varchar title
+        text body
+        int4 booking_id FK
+        bool is_read
+        timestamp sent_at
+        int4 recipient_staff_id FK
+        text message
+        int4 related_id
+        timestamp created_at
+        timestamp updated_at
+        int4 actor_staff_id FK
+        int4 actor_customer_id FK
+        int4 target_id
+        jsonb metadata
     }
 :::

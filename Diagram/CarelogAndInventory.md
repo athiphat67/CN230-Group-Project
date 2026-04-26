@@ -1,56 +1,56 @@
 :::mermaid
 erDiagram
-    Booking ||--o{ BookingService : "includes_service"
-    Booking ||--o| Invoice : "generates (1-to-1)"
-    BookingDetail ||--o{ CareLog : "has_log"
-    BookingDetail ||--o{ InventoryUsage : "uses_item"
-    InventoryItem ||--o{ BookingService : "provides"
-    InventoryItem ||--o{ InventoryUsage : "consumed_in"
+    booking ||--o{ bookingservice : "includes_service"
+    booking ||--o| invoice : "generates (1-to-1)"
+    bookingdetail ||--o{ carelog : "has_log"
+    bookingdetail ||--o{ inventoryusage : "uses_item"
+    inventoryitem ||--o{ bookingservice : "provides"
+    inventoryitem ||--o{ inventoryusage : "consumed_in"
 
-    Booking {
-        SERIAL BookingID PK
-        booking_status Status
+    booking {
+        serial4 bookingid PK
+        booking_status status
     }
-    BookingDetail {
-        SERIAL BookingDetailID PK
-        INT BookingID FK
+    bookingdetail {
+        serial4 bookingdetailid PK
+        int4 bookingid FK
     }
-    CareLog {
-        SERIAL LogID PK
-        INT BookingDetailID FK
-        TIMESTAMP LogDate
-        food_status_enum FoodStatus
-        potty_status_enum PottyStatus
-        BOOLEAN MedicationGiven
-        TEXT StaffNote
+    carelog {
+        serial4 logid PK
+        int4 bookingdetailid FK
+        timestamp logdate
+        food_status_enum foodstatus
+        potty_status_enum pottystatus
+        mood_type mood
+        text staffnote
     }
-    InventoryItem {
-        SERIAL ItemID PK
-        VARCHAR ItemName
-        INT QuantityInStock
-        DECIMAL UnitPrice
-        BOOLEAN IsChargeable
+    inventoryitem {
+        serial4 itemid PK
+        varchar itemname
+        int4 quantityinstock
+        numeric unitprice
+        bool ischargeable
     }
-    BookingService {
-        SERIAL BookingServiceID PK
-        INT BookingID FK
-        INT ItemID FK
-        INT Quantity
-        DECIMAL UnitPrice
+    bookingservice {
+        serial4 bookingserviceid PK
+        int4 bookingid FK
+        int4 itemid FK
+        int4 quantity
+        numeric unitprice
     }
-    InventoryUsage {
-        SERIAL UsageID PK
-        INT BookingDetailID FK
-        INT ItemID FK
-        INT QuantityUsed
-        TIMESTAMP UsageDate
+    inventoryusage {
+        serial4 usageid PK
+        int4 bookingdetailid FK
+        int4 itemid FK
+        int4 quantityused
+        timestamp usagedate
     }
-    Invoice {
-        SERIAL InvoiceID PK
-        INT BookingID FK
-        DECIMAL GrandTotal
-        DECIMAL DepositPaid
-        payment_status PaymentStatus
-        TIMESTAMP PaymentDate
+    invoice {
+        serial4 invoiceid PK
+        int4 bookingid FK
+        numeric grandtotal
+        numeric depositpaid
+        numeric amountpaid
+        payment_status paymentstatus
     }
 :::

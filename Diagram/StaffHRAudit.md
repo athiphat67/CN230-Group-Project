@@ -1,40 +1,48 @@
 :::mermaid
-    erDiagram
-    Staff ||--o{ Attendance : "logs"
-    Staff ||--o{ LeaveRecord : "requests"
-    Staff ||--o{ LeaveRecord : "approves"
-    Staff ||--o{ AuditTrail : "performs"
+erDiagram
+    staff ||--o{ attendance : "logs"
+    staff ||--o{ leaverecord : "requests/approves"
+    staff ||--o{ auditlog : "performs"
+    staff ||--o{ notification : "receives/triggers"
 
-    Staff {
-        SERIAL StaffID PK
-        VARCHAR StaffUsername UK
-        VARCHAR Role
-        BOOLEAN IsOnDuty
-        VARCHAR StaffEmail UK
+    staff {
+        serial4 staffid PK
+        varchar staffusername UK
+        varchar role
+        bool isonduty
+        bool isActive
     }
-    Attendance {
-        SERIAL AttendanceID PK
-        INT StaffID FK
-        DATE WorkDate
-        TIMESTAMP ClockInTime
-        TIMESTAMP ClockOutTime
-        attendance_status Status
+    attendance {
+        serial4 attendanceid PK
+        int4 staffid FK
+        date workdate
+        timestamp clockin
+        timestamp clockout
+        attendance_status status
     }
-    LeaveRecord {
-        SERIAL LeaveID PK
-        INT StaffID FK
-        leave_type LeaveType
-        DATE StartDate
-        DATE EndDate
-        leave_status Status
-        INT ApprovedBy FK
+    leaverecord {
+        serial4 leaveid PK
+        int4 staffid FK
+        leave_type leavetype
+        date startdate
+        date enddate
+        leave_status status
     }
-    AuditTrail {
-        SERIAL AuditID PK
-        INT StaffID FK
-        VARCHAR StaffName
-        VARCHAR ActionType
-        VARCHAR TableAffected
-        TIMESTAMP Timestamp
+    auditlog {
+        serial4 audit_id PK
+        int4 staff_id FK
+        audit_action action_type
+        varchar table_affected
+        timestamp timestamp
+    }
+    notification {
+        serial4 notification_id PK
+        notification_type type
+        varchar title
+        int4 recipient_staff_id FK
+        int4 actor_staff_id FK
+        int4 actor_customer_id
+        bool is_read
+        jsonb metadata
     }
 :::

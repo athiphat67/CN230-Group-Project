@@ -107,6 +107,9 @@ function saveVaccineEntry() {
   if (!name || !date || !expiry) {
     showToast('Please fill in vaccine name, date, and expiry.', 'warning'); return;
   }
+  if (new Date(expiry) < new Date(date)) {
+    showToast('Expiry date must be the same as or after administered date.', 'warning'); return;
+  }
 
   vaccineEntries.push({ vaccine_name: name, administered_date: date, expiry_date: expiry, vet_clinic: clinic });
   renderVaccineTable();
@@ -126,7 +129,7 @@ function renderVaccineTable() {
   if (!tbody) return;
 
   if (vaccineEntries.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--text-3);padding:16px;font-size:13px">No vaccinations added yet</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-3);padding:16px;font-size:13px">No vaccinations added yet</td></tr>`;
     window.Pagination?.render(
       { pageItems: [], total: 0, start: 0, end: 0, totalPages: 1, page: 1 },
       { key: 'add-pet-vaccines', containerEl: ensureVaccinePager(tbody), label: 'vaccinations', onChange: renderVaccineTable }
@@ -151,6 +154,7 @@ function renderVaccineTable() {
       <td style="font-weight:600;color:var(--text-1)">${escHtml(v.vaccine_name)}</td>
       <td>${formatDate(v.administered_date)}</td>
       <td>${formatDate(v.expiry_date)}</td>
+      <td>${v.vet_clinic ? escHtml(v.vet_clinic) : '—'}</td>
       <td>
         <button class="btn-icon" title="Remove" style="width:28px;height:28px" onclick="removeVaccineEntry(${i})">
           <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -179,7 +183,9 @@ function updateVaccineRecord() {
   const recordField = document.getElementById('vaccine-record-text');
   if (recordField) {
     recordField.value = vaccineEntries.length > 0
-      ? vaccineEntries.map(v => `${v.vaccine_name} (${formatDate(v.administered_date)})`).join(', ')
+      ? vaccineEntries
+        .map(v => `${v.vaccine_name} (${formatDate(v.administered_date)}${v.vet_clinic ? ` - ${v.vet_clinic}` : ''})`)
+        .join(', ')
       : '';
   }
   const vaccCheck = document.getElementById('is-vaccinated');
@@ -222,12 +228,14 @@ async function submitPetForm(e, customer) {
   setButtonLoading(btn, false);
 
   if (res.ok) {
-    const petId = res.data?.pet_id || res.data?.data?.pet_id;
+    const petId = res.data?.pet_id || res.data?.data?.pet_id || res.data?.petid || res.data?.data?.petid || res.data?.id;
+    
     if (petId && vaccineEntries.length > 0) {
       await Promise.all(vaccineEntries.map(v => CustomerAPI.pets.addVaccine(petId, {
         vaccine_name: v.vaccine_name,
         administered_date: v.administered_date,
         expiry_date: v.expiry_date,
+        vet_clinic: v.vet_clinic // เพิ่มบรรทัดนี้เข้าไปเพื่อให้ตรงกับที่รับค่ามา
       })));
     }
     showToast('เพิ่มสัตว์เลี้ยงสำเร็จ! 🐾', 'success');

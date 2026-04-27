@@ -13,6 +13,8 @@ POST   /api/pets/{pet_id}/meal-plans     บันทึกแผนอาหา
 from flask import Blueprint, jsonify, current_app, request
 import psycopg2
 import psycopg2.extras
+from psycopg2 import sql
+from datetime import datetime
 from utils import token_required
 
 pets_bp = Blueprint("pets", __name__)
@@ -54,6 +56,53 @@ def format_pet(p):
     if p.get("weight_kg") is not None:
         p["weight_kg"] = float(p["weight_kg"])
     return p
+
+
+def _parse_date_or_none(value):
+    if not value:
+        return None
+    return datetime.strptime(value, "%Y-%m-%d").date()
+
+
+def _resolve_vaccine_table(cur):
+    """
+    รองรับทั้ง schema ใหม่ (vaccinationrecord) และ schema เก่า (vaccine)
+    เพื่อไม่ให้ข้อมูลเดิมใช้งานไม่ได้ระหว่าง migration
+    """
+    cur.execute(
+        """
+        SELECT table_name
+        FROM information_schema.tables
+        WHERE table_schema = 'public'
+          AND table_name IN ('vaccinationrecord', 'vaccine')
+        ORDER BY CASE WHEN table_name = 'vaccinationrecord' THEN 0 ELSE 1 END
+        LIMIT 1;
+    """
+    )
+    row = cur.fetchone()
+    if not row:
+        raise ValueError("ไม่พบตารางวัคซีน (vaccinationrecord / vaccine)")
+
+    table = row[0] if isinstance(row, tuple) else row["table_name"]
+    if table == "vaccinationrecord":
+        return {
+            "table": table,
+            "id": "vaccine_id",
+            "pet_id": "pet_id",
+            "name": "vaccine_name",
+            "administered": "administered_date",
+            "expiry": "expiry_date",
+            "clinic": "vet_clinic",
+        }
+    return {
+        "table": "vaccine",
+        "id": "vaccineid",
+        "pet_id": "petid",
+        "name": "vaccinename",
+        "administered": "administereddate",
+        "expiry": "expirydate",
+        "clinic": "vetclinic",
+    }
 
 
 # ── 1. Get All Pets (GET /api/pets) ────────────────────────────────────
@@ -195,6 +244,12 @@ def add_pet(current_user):
         if is_vac is None:
             is_vac = data.get("is_vaccinated", False)
 
+        vaccine_record = (
+            data.get("vaccinerecord")
+            or data.get("vaccine_record")
+            or "ไม่มี"
+        )
+
         # กันเหนียว ถ้าไม่ได้ส่ง customer_id มาเลยให้ฟ้อง Error แทนการพังที่ Database
         if not customer_id:
             return jsonify({"error": True, "message": "ข้อมูลไม่ครบถ้วน: ไม่พบรหัสลูกค้า (customer_id)"}), 400
@@ -219,7 +274,7 @@ def add_pet(current_user):
                 medical,                         # ใช้ตัวแปรที่เราดักจับมาแล้ว
                 allergy,                         # ใช้ตัวแปรที่เราดักจับมาแล้ว
                 is_vac,                          # ใช้ตัวแปรที่เราดักจับมาแล้ว
-                data.get("vaccine_record", "ไม่มี"),
+                vaccine_record,
                 data.get("behavior_notes"),
             ),
         )
@@ -411,13 +466,30 @@ def get_vaccines(current_user, pet_id):
     try:
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        mapping = _resolve_vaccine_table(cur)
         cur.execute(
+            sql.SQL(
+                """
+                SELECT
+                    {id_col} AS vaccine_id,
+                    {pet_col} AS pet_id,
+                    {name_col} AS vaccine_name,
+                    {admin_col} AS administered_date,
+                    {exp_col} AS expiry_date,
+                    {clinic_col} AS vet_clinic
+                FROM {table}
+                WHERE {pet_col} = %s
+                ORDER BY {admin_col} DESC
             """
-            SELECT vaccine_id, pet_id, vaccine_name, administered_date, expiry_date
-            FROM vaccinationrecord
-            WHERE pet_id = %s
-            ORDER BY administered_date DESC
-        """,
+            ).format(
+                id_col=sql.Identifier(mapping["id"]),
+                pet_col=sql.Identifier(mapping["pet_id"]),
+                name_col=sql.Identifier(mapping["name"]),
+                admin_col=sql.Identifier(mapping["administered"]),
+                exp_col=sql.Identifier(mapping["expiry"]),
+                clinic_col=sql.Identifier(mapping["clinic"]),
+                table=sql.Identifier(mapping["table"]),
+            ),
             (pet_id,),
         )
         records = cur.fetchall()
@@ -478,22 +550,46 @@ def add_vaccine(current_user, pet_id):
         conn = get_db_connection()
         cur = conn.cursor()
 
+        vaccine_name = (data.get("vaccine_name") or "").strip()
+        administered_date = data.get("administered_date")
+        expiry_date = data.get("expiry_date")
+        vet_clinic = (data.get("vet_clinic") or data.get("clinic_name") or "").strip() or None
+
+        if not vaccine_name or not administered_date or not expiry_date:
+            return jsonify({"error": True, "message": "กรุณากรอกชื่อวัคซีน วันที่ฉีด และวันหมดอายุ"}), 400
+
+        adm_date = _parse_date_or_none(administered_date)
+        exp_date = _parse_date_or_none(expiry_date)
+        if exp_date < adm_date:
+            return jsonify({"error": True, "message": "วันหมดอายุต้องไม่ก่อนวันที่ฉีด"}), 400
+
+        mapping = _resolve_vaccine_table(cur)
         cur.execute(
+            sql.SQL(
+                """
+                INSERT INTO {table} ({pet_col}, {name_col}, {admin_col}, {exp_col}, {clinic_col})
+                VALUES (%s, %s, %s, %s, %s)
+                RETURNING {id_col};
             """
-            INSERT INTO vaccinationrecord (pet_id, vaccine_name, administered_date, expiry_date)
-            VALUES (%s, %s, %s, %s)
-            RETURNING vaccine_id;
-        """,
+            ).format(
+                table=sql.Identifier(mapping["table"]),
+                pet_col=sql.Identifier(mapping["pet_id"]),
+                name_col=sql.Identifier(mapping["name"]),
+                admin_col=sql.Identifier(mapping["administered"]),
+                exp_col=sql.Identifier(mapping["expiry"]),
+                clinic_col=sql.Identifier(mapping["clinic"]),
+                id_col=sql.Identifier(mapping["id"]),
+            ),
             (
                 pet_id,
-                data.get("vaccine_name"),
-                data.get("administered_date"),
-                data.get("expiry_date"),
+                vaccine_name,
+                administered_date,
+                expiry_date,
+                vet_clinic,
             ),
         )
         new_id = cur.fetchone()[0]
 
-        # อัปเดต isvaccinated = TRUE ในตาราง pet
         cur.execute("UPDATE pet SET isvaccinated = TRUE WHERE petid = %s", (pet_id,))
 
         conn.commit()
@@ -508,6 +604,123 @@ def add_vaccine(current_user, pet_id):
             }
         ), 201
 
+    except Exception as e:
+        return jsonify({"error": True, "message": str(e)}), 500
+
+
+@pets_bp.route("/<int:pet_id>/vaccines/<int:vaccine_id>", methods=["PUT"])
+@token_required
+def update_vaccine(current_user, pet_id, vaccine_id):
+    try:
+        data = request.get_json() or {}
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        mapping = _resolve_vaccine_table(cur)
+        cur.execute(
+            sql.SQL(
+                """
+                SELECT {id_col}
+                FROM {table}
+                WHERE {id_col} = %s AND {pet_col} = %s
+            """
+            ).format(
+                id_col=sql.Identifier(mapping["id"]),
+                pet_col=sql.Identifier(mapping["pet_id"]),
+                table=sql.Identifier(mapping["table"]),
+            ),
+            (vaccine_id, pet_id),
+        )
+        exists = cur.fetchone()
+        if not exists:
+            return jsonify({"error": True, "message": "ไม่พบประวัติวัคซีน"}), 404
+
+        vaccine_name = (data.get("vaccine_name") or "").strip()
+        administered_date = data.get("administered_date")
+        expiry_date = data.get("expiry_date")
+        vet_clinic = (data.get("vet_clinic") or data.get("clinic_name") or "").strip() or None
+
+        if not vaccine_name or not administered_date or not expiry_date:
+            return jsonify({"error": True, "message": "กรุณากรอกชื่อวัคซีน วันที่ฉีด และวันหมดอายุ"}), 400
+
+        adm_date = _parse_date_or_none(administered_date)
+        exp_date = _parse_date_or_none(expiry_date)
+        if exp_date < adm_date:
+            return jsonify({"error": True, "message": "วันหมดอายุต้องไม่ก่อนวันที่ฉีด"}), 400
+
+        cur.execute(
+            sql.SQL(
+                """
+                UPDATE {table}
+                SET {name_col} = %s,
+                    {admin_col} = %s,
+                    {exp_col} = %s,
+                    {clinic_col} = %s
+                WHERE {id_col} = %s AND {pet_col} = %s
+            """
+            ).format(
+                table=sql.Identifier(mapping["table"]),
+                name_col=sql.Identifier(mapping["name"]),
+                admin_col=sql.Identifier(mapping["administered"]),
+                exp_col=sql.Identifier(mapping["expiry"]),
+                clinic_col=sql.Identifier(mapping["clinic"]),
+                id_col=sql.Identifier(mapping["id"]),
+                pet_col=sql.Identifier(mapping["pet_id"]),
+            ),
+            (vaccine_name, administered_date, expiry_date, vet_clinic, vaccine_id, pet_id),
+        )
+
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({"status": "success", "message": "อัปเดตประวัติวัคซีนเรียบร้อย"}), 200
+    except Exception as e:
+        return jsonify({"error": True, "message": str(e)}), 500
+
+
+@pets_bp.route("/<int:pet_id>/vaccines/<int:vaccine_id>", methods=["DELETE"])
+@token_required
+def delete_vaccine(current_user, pet_id, vaccine_id):
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        mapping = _resolve_vaccine_table(cur)
+
+        cur.execute(
+            sql.SQL(
+                """
+                DELETE FROM {table}
+                WHERE {id_col} = %s AND {pet_col} = %s
+            """
+            ).format(
+                table=sql.Identifier(mapping["table"]),
+                id_col=sql.Identifier(mapping["id"]),
+                pet_col=sql.Identifier(mapping["pet_id"]),
+            ),
+            (vaccine_id, pet_id),
+        )
+
+        if cur.rowcount == 0:
+            return jsonify({"error": True, "message": "ไม่พบประวัติวัคซีน"}), 404
+
+        cur.execute(
+            sql.SQL("SELECT COUNT(*) FROM {table} WHERE {pet_col} = %s").format(
+                table=sql.Identifier(mapping["table"]),
+                pet_col=sql.Identifier(mapping["pet_id"]),
+            ),
+            (pet_id,),
+        )
+        remaining = cur.fetchone()[0]
+        if remaining == 0:
+            cur.execute(
+                "UPDATE pet SET isvaccinated = FALSE, vaccinerecord = 'ไม่มี' WHERE petid = %s",
+                (pet_id,),
+            )
+
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({"status": "success", "message": "ลบประวัติวัคซีนเรียบร้อย"}), 200
     except Exception as e:
         return jsonify({"error": True, "message": str(e)}), 500
 

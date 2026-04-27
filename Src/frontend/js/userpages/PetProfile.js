@@ -214,11 +214,17 @@ async function addVaccinePrompt(petId) {
   if (!administeredDate) return;
   const expiryDate = prompt('Expiry date (YYYY-MM-DD)');
   if (!expiryDate) return;
+  if (new Date(expiryDate) < new Date(administeredDate)) {
+    showToast('Expiry date must be the same as or after administered date.', 'warning');
+    return;
+  }
+  const clinicName = prompt('Vet clinic (optional)', '') || '';
 
   const res = await CustomerAPI.pets.addVaccine(petId, {
     vaccine_name: vaccineName.trim(),
     administered_date: administeredDate,
     expiry_date: expiryDate,
+    vet_clinic: clinicName.trim(),
   });
   if (res.ok) {
     showToast('Vaccination record added.', 'success');
@@ -290,12 +296,71 @@ function renderVaccinations(vaccines, isVaccinated) {
           <div class="vaccine-entry__date" style="color:${daysLeft < 0 ? 'var(--danger)' : daysLeft <= 30 ? 'var(--warning)' : 'var(--success)'}">
             ${formatDate(v.expiry_date)}
           </div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button type="button" class="btn btn-secondary" style="padding:4px 10px;font-size:12px" onclick="editVaccinePrompt(${v.pet_id}, ${v.vaccine_id})">Edit</button>
+            <button type="button" class="btn btn-secondary" style="padding:4px 10px;font-size:12px" onclick="deleteVaccinePrompt(${v.pet_id}, ${v.vaccine_id})">Delete</button>
+          </div>
         </div>
         <span class="badge" style="font-size:10px;${daysLeft < 0 ? 'background:var(--danger-light);color:#dc2626' : daysLeft <= 30 ? 'background:var(--warning-light);color:#D97706' : 'background:var(--success-light);color:#059669'}">
           ${statusLabel}
         </span>
       </div>`;
   }).join('');
+}
+
+async function editVaccinePrompt(petId, vaccineId) {
+  const listRes = await CustomerAPI.pets.getVaccines(petId);
+  if (!listRes.ok) {
+    showToast(listRes.data?.message || 'Unable to load vaccination records.', 'error');
+    return;
+  }
+  const vaccines = listRes.data?.data || [];
+  const vaccine = vaccines.find(v => Number(v.vaccine_id) === Number(vaccineId));
+  if (!vaccine) {
+    showToast('Vaccination record not found.', 'error');
+    return;
+  }
+
+  const vaccineName = prompt('Vaccine name', vaccine.vaccine_name || '');
+  if (vaccineName === null) return;
+  const administeredDate = prompt('Administered date (YYYY-MM-DD)', vaccine.administered_date || '');
+  if (administeredDate === null) return;
+  const expiryDate = prompt('Expiry date (YYYY-MM-DD)', vaccine.expiry_date || '');
+  if (expiryDate === null) return;
+  const clinicName = prompt('Vet clinic', vaccine.vet_clinic || '') || '';
+
+  if (!vaccineName.trim() || !administeredDate || !expiryDate) {
+    showToast('Please fill vaccine name, administered date, and expiry date.', 'warning');
+    return;
+  }
+  if (new Date(expiryDate) < new Date(administeredDate)) {
+    showToast('Expiry date must be the same as or after administered date.', 'warning');
+    return;
+  }
+
+  const res = await CustomerAPI.pets.updateVaccine(petId, vaccineId, {
+    vaccine_name: vaccineName.trim(),
+    administered_date: administeredDate,
+    expiry_date: expiryDate,
+    vet_clinic: clinicName.trim(),
+  });
+  if (res.ok) {
+    showToast('Vaccination record updated.', 'success');
+    await loadPetProfile(petId, checkCustomerAccess());
+  } else {
+    showToast(res.data?.message || 'Unable to update vaccination.', 'error');
+  }
+}
+
+async function deleteVaccinePrompt(petId, vaccineId) {
+  if (!confirm('Delete this vaccination record?')) return;
+  const res = await CustomerAPI.pets.deleteVaccine(petId, vaccineId);
+  if (res.ok) {
+    showToast('Vaccination record deleted.', 'success');
+    await loadPetProfile(petId, checkCustomerAccess());
+  } else {
+    showToast(res.data?.message || 'Unable to delete vaccination.', 'error');
+  }
 }
 
 function renderAllergies(allergyText) {

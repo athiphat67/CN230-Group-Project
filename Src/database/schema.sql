@@ -77,11 +77,36 @@ CREATE TABLE Pet (
     Name             VARCHAR(100) NOT NULL,
     Species          species_enum NOT NULL,
     Breed            VARCHAR(100),
+    Sex              CHAR(1),
+    DOB              DATE,
     Weight           DECIMAL(5,2),
+    Coat_Color       VARCHAR(80),
     MedicalCondition TEXT         NOT NULL DEFAULT 'ไม่มี',
     Allergy          TEXT         NOT NULL DEFAULT 'ไม่มี',
     IsVaccinated     BOOLEAN      NOT NULL DEFAULT FALSE,
-    VaccineRecord    TEXT         NOT NULL DEFAULT 'ไม่มี'
+    VaccineRecord    TEXT         NOT NULL DEFAULT 'ไม่มี',
+    Behavior_Notes   TEXT
+);
+
+-- ── 5.1 VACCINATION RECORD ─────────────────────────────────────
+CREATE TABLE VaccinationRecord (
+    Vaccine_ID         SERIAL PRIMARY KEY,
+    Pet_ID             INT          NOT NULL REFERENCES Pet(PetID) ON DELETE CASCADE,
+    Vaccine_Name       VARCHAR(120) NOT NULL,
+    Administered_Date  DATE         NOT NULL,
+    Expiry_Date        DATE         NOT NULL,
+    Vet_Clinic         VARCHAR(255),
+    CONSTRAINT chk_vaccine_dates CHECK (Expiry_Date >= Administered_Date)
+);
+
+-- ── 5.2 MEAL PLAN ──────────────────────────────────────────────
+CREATE TABLE MealPlan (
+    MealPlan_ID     SERIAL PRIMARY KEY,
+    Pet_ID          INT          NOT NULL REFERENCES Pet(PetID) ON DELETE CASCADE,
+    Meal_Period     VARCHAR(20)  NOT NULL,
+    Food_Type       VARCHAR(255) NOT NULL,
+    Quantity_Grams  DECIMAL(8,2) NOT NULL DEFAULT 0,
+    Notes           TEXT
 );
 
 -- ── 6. ROOM ───────────────────────────────────────────────────

@@ -243,6 +243,15 @@ function renderViewModalContent(pet) {
                 <div class="pp-vaccine-item">
                   <div><strong>${v.vaccine_name}</strong></div>
                   <div class="pp-text-sub">${formatDate(v.administered_date)} (หมดอายุ: ${formatDate(v.expiry_date)})</div>
+                  <div class="pp-text-sub">${v.vet_clinic ? `คลินิก: ${v.vet_clinic}` : ''}</div>
+                  <div style="display:flex;gap:8px;margin-top:8px">
+                    <button class="pp-btn-icon edit" title="แก้ไขวัคซีน" onclick="editVaccineRecord(${v.vaccine_id})">
+                      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    </button>
+                    <button class="pp-btn-icon delete" title="ลบวัคซีน" onclick="deleteVaccineRecord(${v.vaccine_id})">
+                      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </button>
+                  </div>
                 </div>
               `).join('')
             : '<div class="pp-empty-sub">ไม่มีประวัติวัคซีน</div>'}
@@ -381,14 +390,74 @@ async function saveVaccine() {
     vaccine_name: document.getElementById('vacc-name').value.trim(),
     administered_date: document.getElementById('vacc-date').value,
     expiry_date: document.getElementById('vacc-expiry').value,
-    clinic_name: document.getElementById('vacc-clinic').value.trim()
+    vet_clinic: document.getElementById('vacc-clinic').value.trim()
   };
+
+  if (!payload.vaccine_name || !payload.administered_date || !payload.expiry_date) {
+    showToast('⚠️ กรุณากรอกชื่อวัคซีน วันที่ฉีด และวันหมดอายุ', 'warn');
+    return;
+  }
+  if (new Date(payload.expiry_date) < new Date(payload.administered_date)) {
+    showToast('⚠️ วันหมดอายุต้องไม่ก่อนวันที่ฉีด', 'warn');
+    return;
+  }
 
   const res = await window.API.pets.addVaccine(selectedPetId, payload);
   if (res.ok) {
     showToast('✅ บันทึกประวัติวัคซีนเรียบร้อย');
     closeModal('modal-vaccine');
     await loadPetsData(); // รีโหลดเพื่ออัปเดต Badge สถานะวัคซีนในตาราง
+    await openViewPet(selectedPetId);
+  } else {
+    showToast('เกิดข้อผิดพลาด: ' + res.data.message, 'warn');
+  }
+}
+
+async function editVaccineRecord(vaccineId) {
+  const pet = PETS.find(p => p.pet_id === selectedPetId);
+  const vaccine = pet?.vaccines?.find(v => v.vaccine_id === vaccineId);
+  if (!vaccine) return;
+
+  const vaccineName = prompt('ชื่อวัคซีน', vaccine.vaccine_name || '');
+  if (vaccineName === null) return;
+  const administeredDate = prompt('วันที่ฉีด (YYYY-MM-DD)', vaccine.administered_date || '');
+  if (administeredDate === null) return;
+  const expiryDate = prompt('วันหมดอายุ (YYYY-MM-DD)', vaccine.expiry_date || '');
+  if (expiryDate === null) return;
+  const vetClinic = prompt('คลินิก / โรงพยาบาล', vaccine.vet_clinic || '') || '';
+
+  if (!vaccineName.trim() || !administeredDate || !expiryDate) {
+    showToast('⚠️ กรุณากรอกข้อมูลวัคซีนให้ครบถ้วน', 'warn');
+    return;
+  }
+  if (new Date(expiryDate) < new Date(administeredDate)) {
+    showToast('⚠️ วันหมดอายุต้องไม่ก่อนวันที่ฉีด', 'warn');
+    return;
+  }
+
+  const res = await window.API.pets.updateVaccine(selectedPetId, vaccineId, {
+    vaccine_name: vaccineName.trim(),
+    administered_date: administeredDate,
+    expiry_date: expiryDate,
+    vet_clinic: vetClinic.trim(),
+  });
+
+  if (res.ok) {
+    showToast('✅ อัปเดตประวัติวัคซีนเรียบร้อย');
+    await loadPetsData();
+    await openViewPet(selectedPetId);
+  } else {
+    showToast('เกิดข้อผิดพลาด: ' + res.data.message, 'warn');
+  }
+}
+
+async function deleteVaccineRecord(vaccineId) {
+  if (!confirm('ยืนยันการลบประวัติวัคซีนรายการนี้?')) return;
+  const res = await window.API.pets.deleteVaccine(selectedPetId, vaccineId);
+  if (res.ok) {
+    showToast('✅ ลบประวัติวัคซีนเรียบร้อย');
+    await loadPetsData();
+    await openViewPet(selectedPetId);
   } else {
     showToast('เกิดข้อผิดพลาด: ' + res.data.message, 'warn');
   }

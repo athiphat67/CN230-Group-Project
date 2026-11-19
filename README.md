@@ -13,6 +13,21 @@
 
 ---
 
+## 💼 The problem it solves
+
+Small pet hotels often run on LINE chats, paper check-in sheets and spreadsheets. That leads to double-booked rooms, missed feeding or medication notes, and bills that don't match the services given. Purrfect Stay puts the whole stay on one system, from booking through check-in, daily care, billing and checkout, with role-based access for admins and staff.
+
+## 🧱 Engineering highlights
+
+- **Relational design first:** 17 normalized tables, 15 indexes and a trigger, kept as versioned migrations in [`supabase/migrations/`](supabase/migrations/).
+- **Raw SQL, no ORM:** every query is hand-written with `psycopg2`, so the schema design is visible in the code.
+- **Security basics:** bcrypt password hashing, JWT auth (HS256, 12 h expiry), admin-only routes, and an audit trail.
+- **Full coverage of the spec:** all 7 functional requirements (FR1–FR7) are implemented end to end, with 106 frontend unit tests.
+
+**My role:** full-stack developer (team of 4).
+
+---
+
 ## ⚙️ Technology Stack
 
 | Layer | Technology |
